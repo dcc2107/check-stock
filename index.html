@@ -1496,8 +1496,10 @@ function renderResults() {
   }
 
   people.forEach(function(person, i) {
-    const items = grouped.get(person).slice().sort(function(a, b) { return b.orderQty - a.orderQty; });
-    const notItems = (notGrouped.get(person) || []).slice().sort(function(a, b) { return a.sku.localeCompare(b.sku); });
+    // เรียงตามลำดับใน Standard PDF เดิม (อันดับขายดีของแต่ละตระกูล) ไม่ใช่ตามจำนวนสั่งหรือตัวอักษร —
+    // ตัวที่ต้องสั่งไล่เลข 1,2,3,... ตามลำดับนี้ ส่วนตัวที่ไม่เข้าเกณฑ์ก็ไล่เลข 1,2,3,... แยกฝั่งเดียวกัน
+    const items = grouped.get(person).slice();
+    const notItems = (notGrouped.get(person) || []).slice();
     const companies = Array.from(new Set(items.map(function(r){return r.company;})));
     const details = document.createElement('details');
     details.className = 'person-panel';
