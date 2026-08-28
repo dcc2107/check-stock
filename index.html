@@ -603,17 +603,11 @@
   </header>
 
   <section class="card">
-    <div class="step-head"><span class="step-num">1</span><span class="step-title">เลือกบริษัทของไฟล์ที่จะอัปโหลด</span></div>
-    <div class="step-sub">แต่ละบริษัทมีไฟล์สต็อกคนละไฟล์ — เลือกให้ตรงก่อนแนบไฟล์</div>
-    <div class="company-grid" id="companyGrid"></div>
-  </section>
-
-  <section class="card">
-    <div class="step-head"><span class="step-num">2</span><span class="step-title">แนบไฟล์สต็อก (.TXT หรือ .CSV จาก Express)</span></div>
-    <div class="step-sub">อัปโหลดได้หลายไฟล์พร้อมกัน ระบบจะรวมยอดให้เอง</div>
+    <div class="step-head"><span class="step-num">1</span><span class="step-title">แนบไฟล์สต็อก (.TXT หรือ .CSV จาก Express)</span></div>
+    <div class="step-sub">โยนไฟล์ของทุกบริษัทที่ดูแลพร้อมกันได้เลย ระบบจะตรวจจับเองว่าไฟล์ไหนเป็นของบริษัทไหน จากรหัสสินค้าในไฟล์</div>
     <label class="dropzone" id="dropzone" for="fileInput">
       <div><strong>แตะเพื่อเลือกไฟล์</strong> หรือลากไฟล์มาวางที่นี่</div>
-      <div style="font-size:12.5px;margin-top:4px;">รองรับ .TXT หรือ .CSV ที่ export จากโปรแกรม Express</div>
+      <div style="font-size:12.5px;margin-top:4px;">รองรับ .TXT หรือ .CSV ที่ export จากโปรแกรม Express &middot; อัปโหลดได้หลายไฟล์ หลายบริษัทพร้อมกัน</div>
       <input type="file" id="fileInput" multiple accept=".txt,.TXT,.csv,.CSV">
     </label>
     <ul class="file-list" id="fileList"></ul>
@@ -624,10 +618,15 @@
   </section>
 
   <section class="card" id="resultsSection" style="display:none;">
-    <div class="step-head"><span class="step-num">3</span><span class="step-title">ผลลัพธ์</span></div>
+    <div class="step-head"><span class="step-num">2</span><span class="step-title">ผลลัพธ์</span></div>
     <div class="stat-strip" id="statStrip"></div>
     <div class="pending-note" id="pendingNote"></div>
-    <div class="row-actions" style="margin-top:0;margin-bottom:16px;">
+    <div class="row-actions" style="margin-top:0;margin-bottom:16px;flex-wrap:wrap;">
+      <label style="font-size:13px;color:var(--ink-muted);display:inline-flex;align-items:center;gap:6px;">ดูเฉพาะคนนี้
+        <select id="personFilter" style="font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);">
+          <option value="">ทั้งหมด</option>
+        </select>
+      </label>
       <button class="btn btn-ghost btn-sm" id="downloadAllBtn">ดาวน์โหลดรวมทุกคน (CSV)</button>
     </div>
     <details class="person-panel" id="diagnosticsPanel" style="margin-bottom:16px;">
@@ -662,17 +661,31 @@ const STANDARDS = [{"sku":"3-HD-26-502","prefix":"3HD","min":4,"max":14,"lot":10
 ;
 
 const COMPANY_ORDER = ['อามาด้า', 'มิยาโมโตะ', 'ปีเตอร์', 'เฟิร์ส'];
-const companyPrefixes = {};
-STANDARDS.forEach(function(s) {
-  if (!companyPrefixes[s.company]) companyPrefixes[s.company] = new Set();
-  companyPrefixes[s.company].add(s.prefix);
-});
+// แต่ละ SKU ผูกกับบริษัทเดียวเสมอ — ใช้จับคู่ตรงตัวกับ SKU ใน Standard (ไม่เดา prefix จากรูปแบบ SKU
+// เพราะบาง SKU เช่นตระกูล 3HD เขียนเป็น "3-HD-26-502" ซึ่งมีขีดกลางอยู่ในตัว prefix เองด้วย)
+const skuToCompany = {};
+STANDARDS.forEach(function(s) { skuToCompany[s.sku] = s.company; });
+
+// ใช้ตรวจจับว่าไฟล์ที่อัปโหลดมาเป็นของบริษัทไหน โดยไม่ต้องให้ผู้ใช้เลือกเอง —
+// นับว่า SKU ในไฟล์ตรงกับ Standard ของบริษัทไหนมากที่สุด
+function detectCompanyFromStock(stockMap) {
+  const tally = {};
+  stockMap.forEach(function(qty, sku) {
+    const company = skuToCompany[sku];
+    if (company) tally[company] = (tally[company] || 0) + 1;
+  });
+  let best = null, bestCount = 0;
+  Object.keys(tally).forEach(function(c) {
+    if (tally[c] > bestCount) { best = c; bestCount = tally[c]; }
+  });
+  return best;
+}
 
 const state = {
-  selectedCompany: null,
-  files: [],
+  fileEntries: [], // { file, parsed:{stock,desc,diag}|null, detected: company|null, error: string|null }
   companyResults: {}, // company -> array of computed rows
   companyDiagnostics: {}, // company -> parsing diagnostics
+  personFilter: '', // '' = ทั้งหมด
   downloadsApi: null,
   downloadsChecked: false,
   mrpCounter: 0
@@ -702,33 +715,6 @@ function showToast(msg) {
   toastTimer = setTimeout(function() { el.classList.remove('show'); }, 3200);
 }
 
-// ---------- company grid ----------
-function renderCompanyGrid() {
-  const grid = document.getElementById('companyGrid');
-  grid.innerHTML = '';
-  COMPANY_ORDER.forEach(function(company) {
-    const prefixes = Array.from(companyPrefixes[company] || []).sort();
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'company-card' + (state.selectedCompany === company ? ' active' : '');
-    const done = state.companyResults[company];
-    let doneBadge = '';
-    if (done) {
-      const needCount = done.filter(function(r){return r.needOrder;}).length;
-      doneBadge = '<span class="done-badge">เช็คแล้ว &middot; ' + needCount + ' รายการ</span>';
-    }
-    btn.innerHTML =
-      '<span class="cname">' + company + doneBadge + '</span>' +
-      '<span class="cchips">' + prefixes.map(function(p){return '<span class="chip">' + p + '</span>';}).join('') + '</span>';
-    btn.addEventListener('click', function() {
-      state.selectedCompany = company;
-      renderCompanyGrid();
-      updateProcessButton();
-    });
-    grid.appendChild(btn);
-  });
-}
-
 // ---------- file handling ----------
 const fileInput = document.getElementById('fileInput');
 const dropzone = document.getElementById('dropzone');
@@ -736,18 +722,30 @@ const fileListEl = document.getElementById('fileList');
 
 function renderFileList() {
   fileListEl.innerHTML = '';
-  state.files.forEach(function(f, idx) {
+  state.fileEntries.forEach(function(entry, idx) {
     const li = document.createElement('li');
-    const kb = (f.size / 1024).toFixed(1);
-    li.innerHTML = '<span class="fname">' + f.name + ' &middot; ' + kb + ' KB</span>';
+    const kb = (entry.file.size / 1024).toFixed(1);
+    let tagHtml;
+    if (entry.error) {
+      tagHtml = '<span class="done-badge" style="color:var(--critical);background:var(--critical-soft);">อ่านไฟล์ไม่สำเร็จ</span>';
+    } else if (entry.detected) {
+      tagHtml = '<span class="done-badge">' + entry.detected + '</span>';
+    } else if (entry.parsed) {
+      tagHtml = '<span class="done-badge" style="color:var(--critical);background:var(--critical-soft);">ไม่รู้จักไฟล์นี้</span>';
+    } else {
+      tagHtml = '<span class="chip">กำลังอ่าน...</span>';
+    }
+    const wrap = document.createElement('span');
+    wrap.style.cssText = 'display:flex;align-items:center;gap:8px;overflow:hidden;';
+    wrap.innerHTML = '<span class="fname">' + entry.file.name + ' &middot; ' + kb + ' KB</span>' + tagHtml;
+    li.appendChild(wrap);
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.setAttribute('aria-label', 'ลบไฟล์ ' + f.name);
+    btn.setAttribute('aria-label', 'ลบไฟล์ ' + entry.file.name);
     btn.textContent = '×';
     btn.addEventListener('click', function() {
-      state.files.splice(idx, 1);
+      state.fileEntries.splice(idx, 1);
       renderFileList();
-      updateProcessButton();
     });
     li.appendChild(btn);
     fileListEl.appendChild(li);
@@ -755,14 +753,30 @@ function renderFileList() {
   updateProcessButton();
 }
 
-function addFiles(fileArr) {
-  for (const f of fileArr) state.files.push(f);
+// อ่านและตรวจจับบริษัทของแต่ละไฟล์ทันทีตอนเพิ่มเข้ามา (ไม่ต้องรอกดประมวลผล)
+// เพื่อให้โยนไฟล์ของหลายบริษัทเข้าไปพร้อมกันได้ โดยไม่ต้องเลือกบริษัทเอง
+async function addFiles(fileArr) {
+  const startIdx = state.fileEntries.length;
+  fileArr.forEach(function(f) { state.fileEntries.push({ file: f, parsed: null, detected: null, error: null }); });
+  renderFileList();
+  for (let i = 0; i < fileArr.length; i++) {
+    const entry = state.fileEntries[startIdx + i];
+    try {
+      const text = await readFileAsText874(entry.file);
+      const parsed = parseStockText(text);
+      entry.parsed = parsed;
+      entry.detected = detectCompanyFromStock(parsed.stock);
+    } catch (err) {
+      entry.error = 'อ่านไฟล์ไม่สำเร็จ';
+    }
+  }
   renderFileList();
 }
 
 fileInput.addEventListener('change', function(e) {
-  addFiles(Array.from(e.target.files));
+  const files = Array.from(e.target.files);
   fileInput.value = '';
+  addFiles(files);
 });
 
 ['dragenter', 'dragover'].forEach(function(evt) {
@@ -783,7 +797,7 @@ dropzone.addEventListener('drop', function(e) {
 
 function updateProcessButton() {
   const btn = document.getElementById('processBtn');
-  btn.disabled = !(state.selectedCompany && state.files.length > 0);
+  btn.disabled = !state.fileEntries.some(function(e) { return e.detected; });
 }
 
 // ---------- parsing (mirrors the Express .TXT export format) ----------
@@ -859,13 +873,14 @@ function readFileAsText874(file) {
   });
 }
 
-async function processCompany(company, files) {
+// รวมยอดจากไฟล์ที่ตรวจจับแล้วว่าเป็นของบริษัทเดียวกัน (อ่าน/parse ไว้ล่วงหน้าแล้วตอนอัปโหลด)
+function mergeEntries(entries) {
   const merged = new Map();
   const mergedDesc = new Map();
   const diag = { totalLines: 0, candidateLines: 0, parsedLines: 0, unparsedSamples: [], anomalyFlags: [] };
-  for (const file of files) {
-    const text = await readFileAsText874(file);
-    const parsed = parseStockText(text);
+  entries.forEach(function(entry) {
+    if (!entry.parsed) return;
+    const parsed = entry.parsed;
     parsed.stock.forEach(function(qty, sku) {
       merged.set(sku, (merged.get(sku) || 0) + qty);
     });
@@ -876,12 +891,16 @@ async function processCompany(company, files) {
     diag.candidateLines += parsed.diag.candidateLines;
     diag.parsedLines += parsed.diag.parsedLines;
     parsed.diag.unparsedSamples.forEach(function(s) {
-      if (diag.unparsedSamples.length < 20) diag.unparsedSamples.push({ file: file.name, sku: s.sku, line: s.line });
+      if (diag.unparsedSamples.length < 20) diag.unparsedSamples.push({ file: entry.file.name, sku: s.sku, line: s.line });
     });
     parsed.diag.anomalyFlags.forEach(function(s) {
-      if (diag.anomalyFlags.length < 20) diag.anomalyFlags.push({ file: file.name, sku: s.sku, line: s.line });
+      if (diag.anomalyFlags.length < 20) diag.anomalyFlags.push({ file: entry.file.name, sku: s.sku, line: s.line });
     });
-  }
+  });
+  return { merged: merged, mergedDesc: mergedDesc, diag: diag };
+}
+
+function computeRowsForCompany(company, merged, mergedDesc, diag) {
   const relevant = STANDARDS.filter(function(s) { return s.company === company; });
   const rows = relevant.map(function(s) {
     const found = merged.has(s.sku);
@@ -914,23 +933,42 @@ async function processCompany(company, files) {
 }
 
 // ---------- process button ----------
-document.getElementById('processBtn').addEventListener('click', async function() {
+// ไม่ต้องเลือกบริษัทเองแล้ว — จัดกลุ่มไฟล์ตามบริษัทที่ตรวจจับได้ แล้วประมวลผลทุกบริษัทที่พบรวดเดียว
+document.getElementById('processBtn').addEventListener('click', function() {
   const btn = this;
   const statusEl = document.getElementById('processStatus');
   btn.disabled = true;
   statusEl.textContent = 'กำลังประมวลผล...';
   try {
-    const result = await processCompany(state.selectedCompany, state.files);
-    const rows = result.rows;
-    state.companyResults[state.selectedCompany] = rows;
-    state.companyDiagnostics[state.selectedCompany] = result.diag;
-    const needCount = rows.filter(function(r){return r.needOrder;}).length;
-    statusEl.textContent = 'เสร็จแล้ว: ' + state.selectedCompany + ' ต้องสั่งเพิ่ม ' + needCount + ' รายการ';
-    state.files = [];
+    const byCompany = {};
+    const unrecognized = [];
+    state.fileEntries.forEach(function(entry) {
+      if (entry.detected) {
+        if (!byCompany[entry.detected]) byCompany[entry.detected] = [];
+        byCompany[entry.detected].push(entry);
+      } else if (!entry.error) {
+        unrecognized.push(entry.file.name);
+      }
+    });
+    const companies = Object.keys(byCompany);
+    companies.forEach(function(company) {
+      const m = mergeEntries(byCompany[company]);
+      const result = computeRowsForCompany(company, m.merged, m.mergedDesc, m.diag);
+      state.companyResults[company] = result.rows;
+      state.companyDiagnostics[company] = result.diag;
+    });
+    const totalNeed = companies.reduce(function(sum, c) {
+      return sum + state.companyResults[c].filter(function(r){return r.needOrder;}).length;
+    }, 0);
+    statusEl.textContent = 'เสร็จแล้ว: ' + companies.join(', ') + ' — ต้องสั่งเพิ่มรวม ' + totalNeed + ' รายการ';
+    state.fileEntries = [];
     renderFileList();
-    renderCompanyGrid();
     renderResults();
-    showToast('เช็คสต็อก ' + state.selectedCompany + ' เสร็จแล้ว');
+    if (unrecognized.length > 0) {
+      showToast('มีไฟล์ที่ไม่รู้จัก ' + unrecognized.length + ' ไฟล์ — ไม่ได้นำไปประมวลผล: ' + unrecognized.join(', '));
+    } else {
+      showToast('เช็คสต็อกเสร็จแล้ว: ' + companies.join(', '));
+    }
   } catch (err) {
     statusEl.textContent = '';
     showToast('เกิดข้อผิดพลาด: ' + err.message);
@@ -1481,17 +1519,32 @@ function renderResults() {
 
   renderDiagnostics(rows);
 
+  // dropdown "ดูเฉพาะคนนี้" — รายชื่อคนรับผิดชอบทั้งหมดที่มีข้อมูลจากบริษัทที่เช็คแล้ว
+  const allPersons = Array.from(new Set(rows.map(function(r){ return r.person; }))).sort(function(a, b) { return a.localeCompare(b, 'th'); });
+  const personSelect = document.getElementById('personFilter');
+  const prevFilter = state.personFilter;
+  personSelect.innerHTML = '<option value="">ทั้งหมด</option>' + allPersons.map(function(p) { return '<option value="' + p + '">' + p + '</option>'; }).join('');
+  if (allPersons.indexOf(prevFilter) !== -1) {
+    personSelect.value = prevFilter;
+  } else {
+    state.personFilter = '';
+    personSelect.value = '';
+  }
+
   const grouped = groupByPerson(needRows);
   const notNeedRows = rows.filter(function(r){return !r.needOrder;});
   const notGrouped = groupByPerson(notNeedRows);
-  const people = Array.from(grouped.keys()).sort(function(a, b) {
+  let people = Array.from(grouped.keys()).sort(function(a, b) {
     return grouped.get(b).length - grouped.get(a).length;
   });
+  if (state.personFilter) {
+    people = people.filter(function(p) { return p === state.personFilter; });
+  }
 
   const panels = document.getElementById('personPanels');
   panels.innerHTML = '';
   if (people.length === 0) {
-    panels.innerHTML = '<div class="empty-state">ยังไม่มีรายการที่ต้องสั่งเพิ่มจากข้อมูลที่เช็คแล้ว</div>';
+    panels.innerHTML = '<div class="empty-state">' + (state.personFilter ? 'ไม่มีรายการที่ต้องสั่งเพิ่มของ ' + state.personFilter : 'ยังไม่มีรายการที่ต้องสั่งเพิ่มจากข้อมูลที่เช็คแล้ว') + '</div>';
     return;
   }
 
@@ -1601,6 +1654,10 @@ if (gateForm) {
   });
 }
 
-renderCompanyGrid();
+document.getElementById('personFilter').addEventListener('change', function() {
+  state.personFilter = this.value;
+  renderResults();
+});
+
 renderFileList();
 </script>
