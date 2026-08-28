@@ -370,6 +370,32 @@
   .person-body { padding: 0 16px 16px; }
   .person-companies { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
 
+  details.company-section {
+    border: 1.5px solid var(--accent);
+    border-radius: 14px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    background: var(--accent-soft);
+  }
+  details.company-section > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  details.company-section > summary::-webkit-details-marker { display: none; }
+  .company-section-title {
+    font-family: "Kanit", sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--accent-strong);
+  }
+  .company-section-body { padding: 0 12px 12px; background: var(--surface); }
+  .company-section-body details.person-panel { margin-top: 10px; }
+
   .table-scroll { overflow-x: auto; }
   table.order-table {
     width: 100%;
@@ -1254,9 +1280,10 @@ function buildMrpSheetXml(person, items, notItems) {
   const now = new Date();
   const planNo = nextMrpPlanNumber(now);
   const totalQty = items.reduce(function(sum, r) { return sum + r.orderQty; }, 0);
+  const company = (items[0] && items[0].company) || '';
   const rows = [];
 
-  rows.push('<row r="1">' + cellStr('A1', 'AMADA XTREME - MRP ORDER REPORT (' + person + ')', 1) + '</row>');
+  rows.push('<row r="1">' + cellStr('A1', 'AMADA XTREME - MRP ORDER REPORT (' + company + ' · ' + person + ')', 1) + '</row>');
   rows.push('<row r="2">' + cellStr('A2', 'เลขที่แผน') + cellStr('B2', planNo) + '</row>');
   rows.push('<row r="3">' + cellStr('A3', 'วันที่สร้าง') + cellStr('B3', thaiShortDate(now)) + '</row>');
   rows.push('<row r="4">' + cellStr('A4', 'สถานะแผน') + cellStr('B4', 'ยังไม่สั่ง') + '</row>');
@@ -1360,6 +1387,7 @@ function buildMrpPrintHtml(person, items, notItems) {
   const now = new Date();
   const planNo = nextMrpPlanNumber(now);
   const totalQty = items.reduce(function(sum, r) { return sum + r.orderQty; }, 0);
+  const company = (items[0] && items[0].company) || '';
   const notList = notItems || [];
 
   const legendHtml = [
@@ -1428,7 +1456,7 @@ function buildMrpPrintHtml(person, items, notItems) {
     '@page { size: A4 landscape; margin: 12mm; }' +
     '</style>' +
     '<div class="mrp-print">' +
-    '<div class="mrp-eyebrow">AMADA XTREME &middot; MRP ORDER REPORT</div>' +
+    '<div class="mrp-eyebrow">AMADA XTREME &middot; MRP ORDER REPORT &middot; ' + xmlEscape(company) + '</div>' +
     '<h1>รายการสั่งซื้อของ ' + xmlEscape(person) + '</h1>' +
     '<div class="mrp-meta">' +
     '<div><span class="k">เลขที่แผน</span>' + planNo + '</div>' +
@@ -1531,36 +1559,51 @@ function renderResults() {
     personSelect.value = '';
   }
 
-  const grouped = groupByPerson(needRows);
-  const notNeedRows = rows.filter(function(r){return !r.needOrder;});
-  const notGrouped = groupByPerson(notNeedRows);
-  let people = Array.from(grouped.keys()).sort(function(a, b) {
-    return grouped.get(b).length - grouped.get(a).length;
-  });
-  if (state.personFilter) {
-    people = people.filter(function(p) { return p === state.personFilter; });
-  }
-
+  // แยกผลลัพธ์เป็นบล็อกตามบริษัทก่อนเป็นอันดับแรก (แต่ละบริษัทประชุมแยกกัน)
+  // แล้วค่อยแยกย่อยเป็นคนรับผิดชอบภายในบริษัทนั้นอีกที — คนที่ดูแลหลายบริษัทจะเห็นชื่อตัวเองซ้ำได้
+  // ในหลายบล็อกบริษัท แต่ละบล็อกมีแค่ของบริษัทนั้นบริษัทเดียว ไม่ปนกัน
   const panels = document.getElementById('personPanels');
   panels.innerHTML = '';
-  if (people.length === 0) {
-    panels.innerHTML = '<div class="empty-state">' + (state.personFilter ? 'ไม่มีรายการที่ต้องสั่งเพิ่มของ ' + state.personFilter : 'ยังไม่มีรายการที่ต้องสั่งเพิ่มจากข้อมูลที่เช็คแล้ว') + '</div>';
-    return;
-  }
+  const companiesPresent = COMPANY_ORDER.filter(function(c) { return !!state.companyResults[c]; });
+  let anyRendered = false;
 
-  people.forEach(function(person, i) {
+  companiesPresent.forEach(function(company) {
+    const companyRows = rows.filter(function(r) { return r.company === company; });
+    const grouped = groupByPerson(companyRows.filter(function(r){return r.needOrder;}));
+    const notGrouped = groupByPerson(companyRows.filter(function(r){return !r.needOrder;}));
+    let people = Array.from(grouped.keys()).sort(function(a, b) {
+      return grouped.get(b).length - grouped.get(a).length;
+    });
+    if (state.personFilter) {
+      people = people.filter(function(p) { return p === state.personFilter; });
+    }
+    if (people.length === 0) return;
+    anyRendered = true;
+
+    const companyNeedCount = people.reduce(function(sum, p) { return sum + grouped.get(p).length; }, 0);
+    const companySection = document.createElement('details');
+    companySection.className = 'company-section';
+    companySection.setAttribute('open', '');
+    const companySummary = document.createElement('summary');
+    companySummary.innerHTML =
+      '<span class="company-section-title">' + company + '</span>' +
+      '<span class="pmeta"><span class="count-badge">' + companyNeedCount + ' รายการ</span><span class="chev">&#8250;</span></span>';
+    companySection.appendChild(companySummary);
+    const companyBody = document.createElement('div');
+    companyBody.className = 'company-section-body';
+
+    people.forEach(function(person, i) {
     // เรียงตามลำดับใน Standard PDF เดิม (อันดับขายดีของแต่ละตระกูล) ไม่ใช่ตามจำนวนสั่งหรือตัวอักษร —
     // ตัวที่ต้องสั่งไล่เลข 1,2,3,... ตามลำดับนี้ ส่วนตัวที่ไม่เข้าเกณฑ์ก็ไล่เลข 1,2,3,... แยกฝั่งเดียวกัน
     const items = grouped.get(person).slice();
     const notItems = (notGrouped.get(person) || []).slice();
-    const companies = Array.from(new Set(items.map(function(r){return r.company;})));
     const details = document.createElement('details');
     details.className = 'person-panel';
-    if (i < 2) details.setAttribute('open', '');
+    if (i === 0) details.setAttribute('open', '');
 
     const summary = document.createElement('summary');
     summary.innerHTML =
-      '<span>' + person + ' <span class="psub">(' + companies.join(', ') + ')</span></span>' +
+      '<span>' + person + '</span>' +
       '<span class="pmeta"><span class="count-badge">' + items.length + ' รายการ</span><span class="chev">&#8250;</span></span>';
     details.appendChild(summary);
 
@@ -1578,7 +1621,7 @@ function renderResults() {
     dlBtn.textContent = 'ดาวน์โหลด CSV ของ ' + person;
     dlBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      offerDownload('สั่งเพิ่ม_' + person + '.csv', buildCsv(items));
+      offerDownload('สั่งเพิ่ม_' + company + '_' + person + '.csv', buildCsv(items));
     });
     btnRow.appendChild(dlBtn);
 
@@ -1588,7 +1631,7 @@ function renderResults() {
     mrpBtn.addEventListener('click', function(e) {
       e.preventDefault();
       const blob = buildMrpWorkbook(person, items, notItems);
-      offerBinaryDownload('MRP_' + person + '.xlsx', blob);
+      offerBinaryDownload('MRP_' + company + '_' + person + '.xlsx', blob);
     });
     btnRow.appendChild(mrpBtn);
 
@@ -1611,7 +1654,7 @@ function renderResults() {
     const table = document.createElement('table');
     table.className = 'order-table';
     table.innerHTML =
-      '<thead><tr><th>บริษัท</th><th>Prefix</th><th>SKU</th><th class="num">สต็อก</th><th class="num">Min</th><th class="num">Max</th><th class="num">สั่งเพิ่ม</th></tr></thead>';
+      '<thead><tr><th>Prefix</th><th>SKU</th><th class="num">สต็อก</th><th class="num">Min</th><th class="num">Max</th><th class="num">สั่งเพิ่ม</th></tr></thead>';
     const tbody = document.createElement('tbody');
     items.forEach(function(r) {
       const tr = document.createElement('tr');
@@ -1619,7 +1662,6 @@ function renderResults() {
       const pillLabel = r.stock <= 0 ? 'หมด' : 'ต่ำ';
       const noteDot = !r.found ? '<span class="note-dot" title="ไม่พบในไฟล์สต็อก ถือว่าคงเหลือ = 0"></span>' : '';
       tr.innerHTML =
-        '<td data-label="บริษัท">' + r.company + '</td>' +
         '<td data-label="Prefix">' + r.prefix + '</td>' +
         '<td data-label="SKU">' + r.sku + noteDot + '</td>' +
         '<td data-label="สต็อก" class="num">' + r.stock.toLocaleString('th-TH') + ' <span class="status-pill ' + pillClass + '">' + pillLabel + '</span></td>' +
@@ -1632,8 +1674,16 @@ function renderResults() {
     tableScroll.appendChild(table);
     body.appendChild(tableScroll);
     details.appendChild(body);
-    panels.appendChild(details);
+    companyBody.appendChild(details);
+    });
+
+    companySection.appendChild(companyBody);
+    panels.appendChild(companySection);
   });
+
+  if (!anyRendered) {
+    panels.innerHTML = '<div class="empty-state">' + (state.personFilter ? 'ไม่มีรายการที่ต้องสั่งเพิ่มของ ' + state.personFilter : 'ยังไม่มีรายการที่ต้องสั่งเพิ่มจากข้อมูลที่เช็คแล้ว') + '</div>';
+  }
 }
 
 const GATE_PASSWORD = 'stock';
