@@ -666,25 +666,31 @@ const COMPANY_ORDER = ['อามาด้า', 'มิยาโมโตะ', '
 const skuToCompany = {};
 STANDARDS.forEach(function(s) { skuToCompany[s.sku] = s.company; });
 
-// ใช้ตรวจจับว่าไฟล์ที่อัปโหลดมาเป็นของบริษัทไหน โดยไม่ต้องให้ผู้ใช้เลือกเอง —
-// นับว่า SKU ในไฟล์ตรงกับ Standard ของบริษัทไหนมากที่สุด
-function detectCompanyFromStock(stockMap) {
-  const tally = {};
-  stockMap.forEach(function(qty, sku) {
-    const company = skuToCompany[sku];
-    if (company) tally[company] = (tally[company] || 0) + 1;
+// นับว่าไฟล์นี้มี SKU ที่รู้จัก (อยู่ใน Standard ของบริษัทไหนก็ได้) กี่รายการ —
+// ใช้บอกแค่ว่า "อ่านไฟล์นี้ออกไหม" ไม่ได้ใช้เดาว่าไฟล์เป็นของบริษัทไหน เพราะไฟล์บางบริษัท
+// (เช่น ปีเตอร์) เป็นรายงานรวมข้ามบริษัท มี SKU ของบริษัทอื่นปนอยู่เยอะกว่า SKU ของตัวเองด้วยซ้ำ
+function countRecognizedSkus(stockMap) {
+  let count = 0;
+  stockMap.forEach(function(qty, sku) { if (skuToCompany[sku]) count++; });
+  return count;
+}
+
+// สัดส่วนขั้นต่ำของ SKU ทั้งหมดของบริษัทหนึ่ง ที่ต้องเจอในข้อมูลรวม ถึงจะถือว่า "มีไฟล์ของบริษัทนี้แล้ว"
+// (กันไม่ให้ SKU ที่ปนมาจากไฟล์บริษัทอื่นเพียงไม่กี่ตัว ถูกนับว่าเช็คบริษัทนั้นแล้วทั้งที่ข้อมูลจริงไม่มี)
+const COVERAGE_THRESHOLD = 0.35;
+function companiesCoveredBy(merged) {
+  return COMPANY_ORDER.filter(function(company) {
+    const skus = STANDARDS.filter(function(s) { return s.company === company; });
+    let found = 0;
+    skus.forEach(function(s) { if (merged.has(s.sku)) found++; });
+    return found >= Math.ceil(skus.length * COVERAGE_THRESHOLD);
   });
-  let best = null, bestCount = 0;
-  Object.keys(tally).forEach(function(c) {
-    if (tally[c] > bestCount) { best = c; bestCount = tally[c]; }
-  });
-  return best;
 }
 
 const state = {
-  fileEntries: [], // { file, parsed:{stock,desc,diag}|null, detected: company|null, error: string|null }
+  fileEntries: [], // { file, parsed:{stock,desc,diag}|null, recognized: number|null, error: string|null }
   companyResults: {}, // company -> array of computed rows
-  companyDiagnostics: {}, // company -> parsing diagnostics
+  diag: null, // parsing diagnostics for the last processed batch (shared across all companies in it)
   personFilter: '', // '' = ทั้งหมด
   downloadsApi: null,
   downloadsChecked: false,
@@ -728,10 +734,10 @@ function renderFileList() {
     let tagHtml;
     if (entry.error) {
       tagHtml = '<span class="done-badge" style="color:var(--critical);background:var(--critical-soft);">อ่านไฟล์ไม่สำเร็จ</span>';
-    } else if (entry.detected) {
-      tagHtml = '<span class="done-badge">' + entry.detected + '</span>';
-    } else if (entry.parsed) {
+    } else if (entry.recognized === 0) {
       tagHtml = '<span class="done-badge" style="color:var(--critical);background:var(--critical-soft);">ไม่รู้จักไฟล์นี้</span>';
+    } else if (typeof entry.recognized === 'number') {
+      tagHtml = '<span class="done-badge">พบ ' + entry.recognized.toLocaleString('th-TH') + ' รหัสที่รู้จัก</span>';
     } else {
       tagHtml = '<span class="chip">กำลังอ่าน...</span>';
     }
@@ -757,7 +763,7 @@ function renderFileList() {
 // เพื่อให้โยนไฟล์ของหลายบริษัทเข้าไปพร้อมกันได้ โดยไม่ต้องเลือกบริษัทเอง
 async function addFiles(fileArr) {
   const startIdx = state.fileEntries.length;
-  fileArr.forEach(function(f) { state.fileEntries.push({ file: f, parsed: null, detected: null, error: null }); });
+  fileArr.forEach(function(f) { state.fileEntries.push({ file: f, parsed: null, recognized: null, error: null }); });
   renderFileList();
   for (let i = 0; i < fileArr.length; i++) {
     const entry = state.fileEntries[startIdx + i];
@@ -765,7 +771,7 @@ async function addFiles(fileArr) {
       const text = await readFileAsText874(entry.file);
       const parsed = parseStockText(text);
       entry.parsed = parsed;
-      entry.detected = detectCompanyFromStock(parsed.stock);
+      entry.recognized = countRecognizedSkus(parsed.stock);
     } catch (err) {
       entry.error = 'อ่านไฟล์ไม่สำเร็จ';
     }
@@ -797,7 +803,7 @@ dropzone.addEventListener('drop', function(e) {
 
 function updateProcessButton() {
   const btn = document.getElementById('processBtn');
-  btn.disabled = !state.fileEntries.some(function(e) { return e.detected; });
+  btn.disabled = !state.fileEntries.some(function(e) { return e.recognized > 0; });
 }
 
 // ---------- parsing (mirrors the Express .TXT export format) ----------
@@ -933,42 +939,37 @@ function computeRowsForCompany(company, merged, mergedDesc, diag) {
 }
 
 // ---------- process button ----------
-// ไม่ต้องเลือกบริษัทเองแล้ว — จัดกลุ่มไฟล์ตามบริษัทที่ตรวจจับได้ แล้วประมวลผลทุกบริษัทที่พบรวดเดียว
+// ไม่ต้องเลือกบริษัทเองแล้ว — รวม SKU จากไฟล์ที่โยนเข้ามาทั้งหมดเป็นกองเดียว (ไม่ผูกไฟล์กับบริษัทใดบริษัทหนึ่ง
+// เพราะบางไฟล์ เช่น ปีเตอร์ เป็นรายงานรวมข้ามบริษัทอยู่แล้ว) แล้วเช็คทีละบริษัทว่ามี SKU ของตัวเองอยู่ในกองนี้
+// มากพอไหม (COVERAGE_THRESHOLD) ถ้ามากพอถือว่า "มีไฟล์ของบริษัทนี้แล้ว" ค่อยคำนวณให้
 document.getElementById('processBtn').addEventListener('click', function() {
   const btn = this;
   const statusEl = document.getElementById('processStatus');
   btn.disabled = true;
   statusEl.textContent = 'กำลังประมวลผล...';
   try {
-    const byCompany = {};
-    const unrecognized = [];
-    state.fileEntries.forEach(function(entry) {
-      if (entry.detected) {
-        if (!byCompany[entry.detected]) byCompany[entry.detected] = [];
-        byCompany[entry.detected].push(entry);
-      } else if (!entry.error) {
-        unrecognized.push(entry.file.name);
-      }
-    });
-    const companies = Object.keys(byCompany);
+    const usable = state.fileEntries.filter(function(e) { return e.parsed && e.recognized > 0; });
+    if (usable.length === 0) throw new Error('ไม่มีไฟล์ที่อ่านค่าได้');
+    const m = mergeEntries(usable);
+    const companies = companiesCoveredBy(m.merged);
     companies.forEach(function(company) {
-      const m = mergeEntries(byCompany[company]);
       const result = computeRowsForCompany(company, m.merged, m.mergedDesc, m.diag);
       state.companyResults[company] = result.rows;
-      state.companyDiagnostics[company] = result.diag;
     });
+    state.diag = m.diag;
     const totalNeed = companies.reduce(function(sum, c) {
       return sum + state.companyResults[c].filter(function(r){return r.needOrder;}).length;
     }, 0);
-    statusEl.textContent = 'เสร็จแล้ว: ' + companies.join(', ') + ' — ต้องสั่งเพิ่มรวม ' + totalNeed + ' รายการ';
+    if (companies.length === 0) {
+      statusEl.textContent = '';
+      showToast('ไม่พบ SKU ที่ตรงกับบริษัทไหนมากพอ ตรวจสอบไฟล์อีกครั้ง');
+    } else {
+      statusEl.textContent = 'เสร็จแล้ว: ' + companies.join(', ') + ' — ต้องสั่งเพิ่มรวม ' + totalNeed + ' รายการ';
+      showToast('เช็คสต็อกเสร็จแล้ว: ' + companies.join(', '));
+    }
     state.fileEntries = [];
     renderFileList();
     renderResults();
-    if (unrecognized.length > 0) {
-      showToast('มีไฟล์ที่ไม่รู้จัก ' + unrecognized.length + ' ไฟล์ — ไม่ได้นำไปประมวลผล: ' + unrecognized.join(', '));
-    } else {
-      showToast('เช็คสต็อกเสร็จแล้ว: ' + companies.join(', '));
-    }
   } catch (err) {
     statusEl.textContent = '';
     showToast('เกิดข้อผิดพลาด: ' + err.message);
@@ -1466,10 +1467,9 @@ function renderDiagnostics(rows) {
       sample + (notFound.length > 30 ? ', … อีก ' + (notFound.length - 30) + ' รายการ' : '') + '</div>');
   }
 
-  COMPANY_ORDER.forEach(function(company) {
-    const diag = state.companyDiagnostics[company];
-    if (!diag) return;
-    parts.push('<div style="font-size:13.5px;font-weight:600;margin:14px 0 6px;">' + company + '</div>');
+  const diag = state.diag;
+  if (diag) {
+    parts.push('<div style="font-size:13.5px;font-weight:600;margin:14px 0 6px;">ไฟล์ที่อัปโหลดล่าสุด</div>');
     parts.push('<div style="font-size:12.5px;color:var(--ink-muted);margin-bottom:6px;">' +
       'อ่านบรรทัดในไฟล์ทั้งหมด ' + diag.totalLines.toLocaleString('th-TH') +
       ' &middot; รายการสินค้าที่จับคู่ได้ ' + diag.parsedLines.toLocaleString('th-TH') +
@@ -1489,7 +1489,7 @@ function renderDiagnostics(rows) {
         diag.anomalyFlags.map(function(s) { return '<li>[' + xmlEscape(s.file) + '] SKU ' + xmlEscape(s.sku) + '</li>'; }).join('') +
         '</ul>');
     }
-  });
+  }
 
   body.innerHTML = parts.join('');
 }
