@@ -895,28 +895,25 @@ function computeRowsForCompany(company, merged, mergedDesc, diag) {
   const rows = relevant.map(function(s) {
     const found = merged.has(s.sku);
     const stock = found ? merged.get(s.sku) : 0;
-    // Weekly reorder policy (กติกาใหม่, per team spec 2026-08-27):
-    // Lot รายสัปดาห์ = MAX(10, roundup10(เฉลี่ย/เดือน ÷ 4)) — computed from avg/month, NOT from Standard Lot.
-    // Program Min = MAX(0, Standard Min - Lot รายสัปดาห์) — the actual reorder trigger point.
-    // Order qty (when triggered) = roundup10(Standard Min - Position), then capped down to fit Standard Max.
-    const lotWeekly = Math.max(10, Math.ceil((s.avg / 4) / 10) * 10);
-    const programMin = Math.max(0, s.min - lotWeekly);
-    const belowProgramMin = stock <= programMin;
+    // "เป้าหมาย 12 วัน" reorder policy (แทนสูตร Min/Max เดิม ทั้งหมด, per spec 2026-09-01):
+    // เป้าหมาย 12 วัน = MAX(1, avg ÷ 4 ÷ 7 × 12) = MAX(1, avg × 3 ÷ 7) — avg = เฉลี่ยต่อเดือนจาก Standard
+    // Position ตามสเปกเต็ม = คงเหลือ + WIP + Confirmed − Reserved แต่ตอนนี้ยังไม่มีข้อมูล WIP/Confirmed/Reserved
+    // ในระบบ เลยใช้ "คงเหลือ" (stock) แทน Position ไปก่อน — เหมือนที่ไฟล์ MRP ของหัวหน้าใช้จริง
+    // เงื่อนไขสั่ง: Position < เป้าหมาย 12 วัน (ใช้ < ไม่ใช่ ≤)
+    // จำนวนสั่ง: ปัดขึ้นหลัก 10, อย่างน้อย 10 — ไม่แตะ Standard Min/Max เลย
+    const avgWeekly = Math.round((s.avg / 4) * 100) / 100;
+    const target12 = Math.max(1, Math.round((s.avg * 3 / 7) * 100) / 100);
+    const position = stock;
+    const needOrder = position < target12;
     let orderQty = 0;
-    if (belowProgramMin) {
-      orderQty = Math.ceil((s.min - stock) / 10) * 10;
-      if ((stock + orderQty) > s.max) {
-        const room = s.max - stock;
-        orderQty = Math.max(0, Math.floor(room / 10) * 10);
-      }
+    if (needOrder) {
+      orderQty = Math.max(10, Math.ceil((target12 - position) / 10) * 10);
     }
-    const needOrder = orderQty > 0;
-    const blockedByMaxCap = belowProgramMin && !needOrder;
     return {
       sku: s.sku, prefix: s.prefix, person: s.person, company: s.company,
-      min: s.min, max: s.max, lot: s.lot, lotWeekly: lotWeekly, programMin: programMin, avg: s.avg,
-      avgWeekly: Math.round((s.avg / 4) * 100) / 100, desc: mergedDesc.get(s.sku) || '',
-      stock: stock, found: found, needOrder: needOrder, blockedByMaxCap: blockedByMaxCap,
+      min: s.min, max: s.max, lot: s.lot, avg: s.avg,
+      avgWeekly: avgWeekly, target12: target12, desc: mergedDesc.get(s.sku) || '',
+      stock: stock, found: found, needOrder: needOrder,
       orderQty: orderQty
     };
   });
@@ -1184,8 +1181,8 @@ function buildMrpSheetXml(person, items, notItems) {
     cellStr('E7', '1-19', 5) +
     '</row>');
 
-  const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ตาม Standard', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'จำนวนสั่ง (ชิ้น)', 'สถานะ', 'ระดับจำนวน'];
-  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+  const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'จำนวนสั่ง (ชิ้น)', 'สถานะ', 'ระดับจำนวน'];
+  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
   rows.push('<row r="8">' + headerCols.map(function(col, i) { return cellStr(col + '8', headerCells[i], 1); }).join('') + '</row>');
 
   items.forEach(function(item, i) {
@@ -1197,18 +1194,19 @@ function buildMrpSheetXml(person, items, notItems) {
       cellStr('B' + r, item.sku, s) +
       cellStr('C' + r, item.desc || '-', s) +
       cellNum('D' + r, item.avgWeekly, s) +
-      cellNum('E' + r, item.stock, s) +
-      cellNum('F' + r, item.orderQty, s) +
-      cellStr('G' + r, 'ยังไม่สั่ง', s) +
-      cellStr('H' + r, tier.label, s) +
+      cellNum('E' + r, item.target12, s) +
+      cellNum('F' + r, item.stock, s) +
+      cellNum('G' + r, item.orderQty, s) +
+      cellStr('H' + r, 'ยังไม่สั่ง', s) +
+      cellStr('I' + r, tier.label, s) +
       '</row>');
   });
 
   const totalRow = items.length + 10;
   rows.push('<row r="' + totalRow + '">' +
     cellStr('C' + totalRow, 'รวม', 1) +
-    cellNum('F' + totalRow, totalQty, 1) +
-    cellStr('G' + totalRow, 'ชิ้น', 1) +
+    cellNum('G' + totalRow, totalQty, 1) +
+    cellStr('H' + totalRow, 'ชิ้น', 1) +
     '</row>');
 
   let lastRow = totalRow;
@@ -1221,8 +1219,8 @@ function buildMrpSheetXml(person, items, notItems) {
       cellStr('C' + notHeaderRow, 'SKU', 1) +
       '</row>');
     const notColHeaderRow = notHeaderRow + 1;
-    const notHeaderCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ตาม Standard', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล'];
-    rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], 1); }).join('') + '</row>');
+    const notHeaderCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล'];
+    rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E','F'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], 1); }).join('') + '</row>');
     notList.forEach(function(item, i) {
       const r = notColHeaderRow + 1 + i;
       rows.push('<row r="' + r + '">' +
@@ -1230,22 +1228,24 @@ function buildMrpSheetXml(person, items, notItems) {
         cellStr('B' + r, item.sku) +
         cellStr('C' + r, item.desc || '-') +
         cellNum('D' + r, item.avgWeekly) +
-        cellNum('E' + r, item.stock) +
+        cellNum('E' + r, item.target12) +
+        cellNum('F' + r, item.stock) +
         '</row>');
     });
     lastRow = notColHeaderRow + notList.length;
   }
 
-  const lastRef = 'H' + lastRow;
+  const lastRef = 'I' + lastRow;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<dimension ref="A1:' + lastRef + '"/>' +
     '<cols><col min="1" max="1" width="8.83" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/>' +
     '<col min="3" max="3" width="42" customWidth="1"/><col min="4" max="4" width="24" customWidth="1"/>' +
-    '<col min="5" max="5" width="24" customWidth="1"/><col min="6" max="6" width="16" customWidth="1"/>' +
-    '<col min="7" max="7" width="12" customWidth="1"/><col min="8" max="8" width="16" customWidth="1"/></cols>' +
+    '<col min="5" max="5" width="18" customWidth="1"/><col min="6" max="6" width="24" customWidth="1"/>' +
+    '<col min="7" max="7" width="16" customWidth="1"/><col min="8" max="8" width="12" customWidth="1"/>' +
+    '<col min="9" max="9" width="16" customWidth="1"/></cols>' +
     '<sheetData>' + rows.join('') + '</sheetData>' +
-    '<mergeCells count="1"><mergeCell ref="A1:H1"/></mergeCells>' +
+    '<mergeCells count="1"><mergeCell ref="A1:I1"/></mergeCells>' +
     '</worksheet>';
 }
 
@@ -1294,6 +1294,7 @@ function buildMrpPrintHtml(person, items, notItems) {
       '<td>' + xmlEscape(item.sku) + '</td>' +
       '<td>' + xmlEscape(item.desc || '-') + '</td>' +
       '<td class="mrp-num">' + item.avgWeekly.toLocaleString('th-TH') + '</td>' +
+      '<td class="mrp-num">' + item.target12.toLocaleString('th-TH') + '</td>' +
       '<td class="mrp-num">' + item.stock.toLocaleString('th-TH') + '</td>' +
       '<td class="mrp-num">' + item.orderQty.toLocaleString('th-TH') + '</td>' +
       '<td>ยังไม่สั่ง</td>' +
@@ -1307,6 +1308,7 @@ function buildMrpPrintHtml(person, items, notItems) {
       '<td>' + xmlEscape(item.sku) + '</td>' +
       '<td>' + xmlEscape(item.desc || '-') + '</td>' +
       '<td class="mrp-num">' + item.avgWeekly.toLocaleString('th-TH') + '</td>' +
+      '<td class="mrp-num">' + item.target12.toLocaleString('th-TH') + '</td>' +
       '<td class="mrp-num">' + item.stock.toLocaleString('th-TH') + '</td>' +
       '</tr>';
   }).join('');
@@ -1316,7 +1318,7 @@ function buildMrpPrintHtml(person, items, notItems) {
     '<table>' +
     '<thead><tr>' +
     '<th>ลำดับ</th><th>SKU</th><th>ชื่อสินค้า</th>' +
-    '<th class="mrp-num">เฉลี่ย/สัปดาห์</th><th class="mrp-num">ยอดคงเหลือ</th>' +
+    '<th class="mrp-num">เฉลี่ย/สัปดาห์</th><th class="mrp-num">เป้าหมาย 12 วัน</th><th class="mrp-num">ยอดคงเหลือ</th>' +
     '</tr></thead>' +
     '<tbody>' + notRowsHtml + '</tbody>' +
     '</table>'
@@ -1356,11 +1358,11 @@ function buildMrpPrintHtml(person, items, notItems) {
     '<table>' +
     '<thead><tr>' +
     '<th>ลำดับ</th><th>SKU</th><th>ชื่อสินค้า</th>' +
-    '<th class="mrp-num">เฉลี่ย/สัปดาห์</th><th class="mrp-num">ยอดคงเหลือ</th><th class="mrp-num">จำนวนสั่ง (ชิ้น)</th>' +
+    '<th class="mrp-num">เฉลี่ย/สัปดาห์</th><th class="mrp-num">เป้าหมาย 12 วัน</th><th class="mrp-num">ยอดคงเหลือ</th><th class="mrp-num">จำนวนสั่ง (ชิ้น)</th>' +
     '<th>สถานะ</th><th>ระดับจำนวน</th>' +
     '</tr></thead>' +
     '<tbody>' + rowsHtml + '</tbody>' +
-    '<tfoot><tr><td colspan="5"></td><td class="mrp-num">' + totalQty.toLocaleString('th-TH') + '</td><td>ชิ้น</td><td></td></tr></tfoot>' +
+    '<tfoot><tr><td colspan="6"></td><td class="mrp-num">' + totalQty.toLocaleString('th-TH') + '</td><td>ชิ้น</td><td></td></tr></tfoot>' +
     '</table>' +
     notSectionHtml +
     '</div>';
@@ -1511,7 +1513,7 @@ function renderResults() {
     const table = document.createElement('table');
     table.className = 'order-table';
     table.innerHTML =
-      '<thead><tr><th>Prefix</th><th>SKU</th><th class="num">สต็อก</th><th class="num">Min</th><th class="num">Max</th><th class="num">สั่งเพิ่ม</th></tr></thead>';
+      '<thead><tr><th>Prefix</th><th>SKU</th><th class="num">สต็อก</th><th class="num">เป้าหมาย 12 วัน</th><th class="num">สั่งเพิ่ม</th></tr></thead>';
     const tbody = document.createElement('tbody');
     items.forEach(function(r) {
       const tr = document.createElement('tr');
@@ -1522,8 +1524,7 @@ function renderResults() {
         '<td data-label="Prefix">' + r.prefix + '</td>' +
         '<td data-label="SKU">' + r.sku + noteDot + '</td>' +
         '<td data-label="สต็อก" class="num">' + r.stock.toLocaleString('th-TH') + ' <span class="status-pill ' + pillClass + '">' + pillLabel + '</span></td>' +
-        '<td data-label="Min" class="num">' + r.min.toLocaleString('th-TH') + '</td>' +
-        '<td data-label="Max" class="num">' + r.max.toLocaleString('th-TH') + '</td>' +
+        '<td data-label="เป้าหมาย 12 วัน" class="num">' + r.target12.toLocaleString('th-TH') + '</td>' +
         '<td data-label="สั่งเพิ่ม" class="num">' + r.orderQty.toLocaleString('th-TH') + '</td>';
       tbody.appendChild(tr);
     });
