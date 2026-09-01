@@ -370,32 +370,6 @@
   .person-body { padding: 0 16px 16px; }
   .person-companies { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
 
-  details.company-section {
-    border: 1.5px solid var(--accent);
-    border-radius: 14px;
-    margin-bottom: 16px;
-    overflow: hidden;
-    background: var(--accent-soft);
-  }
-  details.company-section > summary {
-    list-style: none;
-    cursor: pointer;
-    padding: 14px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-  details.company-section > summary::-webkit-details-marker { display: none; }
-  .company-section-title {
-    font-family: "Kanit", sans-serif;
-    font-weight: 700;
-    font-size: 17px;
-    color: var(--accent-strong);
-  }
-  .company-section-body { padding: 0 12px 12px; background: var(--surface); }
-  .company-section-body details.person-panel { margin-top: 10px; }
-
   .table-scroll { overflow-x: auto; }
   table.order-table {
     width: 100%;
@@ -596,11 +570,16 @@
   </header>
 
   <section class="card">
-    <div class="step-head"><span class="step-num">1</span><span class="step-title">แนบไฟล์สต็อก (.TXT หรือ .CSV จาก Express)</span></div>
-    <div class="step-sub">โยนไฟล์ของทุกบริษัทที่ดูแลพร้อมกันได้เลย ระบบจะตรวจจับเองว่าไฟล์ไหนเป็นของบริษัทไหน จากรหัสสินค้าในไฟล์</div>
+    <div class="step-head"><span class="step-num">1</span><span class="step-title">เลือกบริษัท</span></div>
+    <div class="company-grid" id="companyGrid"></div>
+  </section>
+
+  <section class="card">
+    <div class="step-head"><span class="step-num">2</span><span class="step-title">แนบไฟล์สต็อก (.TXT หรือ .CSV จาก Express)</span></div>
+    <div class="step-sub">อัปโหลดไฟล์สต็อกของบริษัทที่เลือกไว้ด้านบน อัปโหลดได้หลายไฟล์พร้อมกันถ้ามีหลายไฟล์ย่อย</div>
     <label class="dropzone" id="dropzone" for="fileInput">
       <div><strong>แตะเพื่อเลือกไฟล์</strong> หรือลากไฟล์มาวางที่นี่</div>
-      <div style="font-size:12.5px;margin-top:4px;">รองรับ .TXT หรือ .CSV ที่ export จากโปรแกรม Express &middot; อัปโหลดได้หลายไฟล์ หลายบริษัทพร้อมกัน</div>
+      <div style="font-size:12.5px;margin-top:4px;">รองรับ .TXT หรือ .CSV ที่ export จากโปรแกรม Express &middot; อัปโหลดได้หลายไฟล์พร้อมกัน</div>
       <input type="file" id="fileInput" multiple accept=".txt,.TXT,.csv,.CSV">
     </label>
     <ul class="file-list" id="fileList"></ul>
@@ -611,7 +590,7 @@
   </section>
 
   <section class="card" id="resultsSection" style="display:none;">
-    <div class="step-head"><span class="step-num">2</span><span class="step-title">ผลลัพธ์</span></div>
+    <div class="step-head"><span class="step-num">3</span><span class="step-title">ผลลัพธ์</span></div>
     <div class="stat-strip" id="statStrip"></div>
     <div class="pending-note" id="pendingNote"></div>
     <div class="row-actions" style="margin-top:0;margin-bottom:16px;flex-wrap:wrap;">
@@ -647,31 +626,18 @@ const COMPANY_ORDER = ['อามาด้า', 'มิยาโมโตะ', '
 const skuToCompany = {};
 STANDARDS.forEach(function(s) { skuToCompany[s.sku] = s.company; });
 
-// นับว่าไฟล์นี้มี SKU ที่รู้จัก (อยู่ใน Standard ของบริษัทไหนก็ได้) กี่รายการ —
-// ใช้บอกแค่ว่า "อ่านไฟล์นี้ออกไหม" ไม่ได้ใช้เดาว่าไฟล์เป็นของบริษัทไหน เพราะไฟล์บางบริษัท
-// (เช่น ปีเตอร์) เป็นรายงานรวมข้ามบริษัท มี SKU ของบริษัทอื่นปนอยู่เยอะกว่า SKU ของตัวเองด้วยซ้ำ
-function countRecognizedSkus(stockMap) {
+// นับว่าไฟล์นี้มี SKU ของ "บริษัทที่เลือกไว้" กี่รายการ — เตือนไว้เผื่อโยนไฟล์ผิดบริษัทเข้ามา
+function countRecognizedSkus(stockMap, company) {
   let count = 0;
-  stockMap.forEach(function(qty, sku) { if (skuToCompany[sku]) count++; });
+  stockMap.forEach(function(qty, sku) { if (skuToCompany[sku] === company) count++; });
   return count;
 }
 
-// สัดส่วนขั้นต่ำของ SKU ทั้งหมดของบริษัทหนึ่ง ที่ต้องเจอในข้อมูลรวม ถึงจะถือว่า "มีไฟล์ของบริษัทนี้แล้ว"
-// (กันไม่ให้ SKU ที่ปนมาจากไฟล์บริษัทอื่นเพียงไม่กี่ตัว ถูกนับว่าเช็คบริษัทนั้นแล้วทั้งที่ข้อมูลจริงไม่มี)
-const COVERAGE_THRESHOLD = 0.35;
-function companiesCoveredBy(merged) {
-  return COMPANY_ORDER.filter(function(company) {
-    const skus = STANDARDS.filter(function(s) { return s.company === company; });
-    let found = 0;
-    skus.forEach(function(s) { if (merged.has(s.sku)) found++; });
-    return found >= Math.ceil(skus.length * COVERAGE_THRESHOLD);
-  });
-}
-
 const state = {
+  selectedCompany: null,
   fileEntries: [], // { file, parsed:{stock,desc,diag}|null, recognized: number|null, error: string|null }
-  companyResults: {}, // company -> array of computed rows
-  diag: null, // parsing diagnostics for the last processed batch (shared across all companies in it)
+  companyResults: {}, // company -> array of computed rows (มีอยู่แค่ 1 คีย์เสมอ คือบริษัทที่เลือกไว้)
+  diag: null, // parsing diagnostics for the last processed batch
   personFilter: '', // '' = ทั้งหมด
   downloadsApi: null,
   downloadsChecked: false,
@@ -691,6 +657,43 @@ const state = {
     state.downloadsChecked = true;
   }
 })();
+
+// ---------- company selection ----------
+const companyGrid = document.getElementById('companyGrid');
+function renderCompanyGrid() {
+  companyGrid.innerHTML = '';
+  COMPANY_ORDER.forEach(function(company) {
+    const skuCount = STANDARDS.filter(function(s) { return s.company === company; }).length;
+    const active = state.selectedCompany === company;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'company-card' + (active ? ' active' : '');
+    btn.innerHTML =
+      '<span class="cname">' + company + (active ? '<span class="done-badge">เลือกอยู่</span>' : '') + '</span>' +
+      '<span class="cchips"><span class="chip">' + skuCount + ' SKU</span></span>';
+    btn.addEventListener('click', function() {
+      if (state.selectedCompany === company) return;
+      state.selectedCompany = company;
+      state.fileEntries = [];
+      state.companyResults = {};
+      state.diag = null;
+      document.getElementById('processStatus').textContent = '';
+      renderCompanyGrid();
+      renderFileList();
+      renderResults();
+      updateUploadGate();
+    });
+    companyGrid.appendChild(btn);
+  });
+}
+function updateUploadGate() {
+  const enabled = !!state.selectedCompany;
+  const dz = document.getElementById('dropzone');
+  dz.style.opacity = enabled ? '' : '0.5';
+  dz.style.pointerEvents = enabled ? '' : 'none';
+  document.getElementById('fileInput').disabled = !enabled;
+}
+renderCompanyGrid();
 
 // ---------- toast ----------
 let toastTimer = null;
@@ -752,7 +755,7 @@ async function addFiles(fileArr) {
       const text = await readFileAsText874(entry.file);
       const parsed = parseStockText(text);
       entry.parsed = parsed;
-      entry.recognized = countRecognizedSkus(parsed.stock);
+      entry.recognized = countRecognizedSkus(parsed.stock, state.selectedCompany);
     } catch (err) {
       entry.error = 'อ่านไฟล์ไม่สำเร็จ';
     }
@@ -784,7 +787,7 @@ dropzone.addEventListener('drop', function(e) {
 
 function updateProcessButton() {
   const btn = document.getElementById('processBtn');
-  btn.disabled = !state.fileEntries.some(function(e) { return e.recognized > 0; });
+  btn.disabled = !state.selectedCompany || !state.fileEntries.some(function(e) { return e.recognized > 0; });
 }
 
 // ---------- parsing (mirrors the Express .TXT export format) ----------
@@ -921,34 +924,23 @@ function computeRowsForCompany(company, merged, mergedDesc, diag) {
 }
 
 // ---------- process button ----------
-// ไม่ต้องเลือกบริษัทเองแล้ว — รวม SKU จากไฟล์ที่โยนเข้ามาทั้งหมดเป็นกองเดียว (ไม่ผูกไฟล์กับบริษัทใดบริษัทหนึ่ง
-// เพราะบางไฟล์ เช่น ปีเตอร์ เป็นรายงานรวมข้ามบริษัทอยู่แล้ว) แล้วเช็คทีละบริษัทว่ามี SKU ของตัวเองอยู่ในกองนี้
-// มากพอไหม (COVERAGE_THRESHOLD) ถ้ามากพอถือว่า "มีไฟล์ของบริษัทนี้แล้ว" ค่อยคำนวณให้
 document.getElementById('processBtn').addEventListener('click', function() {
   const btn = this;
   const statusEl = document.getElementById('processStatus');
   btn.disabled = true;
   statusEl.textContent = 'กำลังประมวลผล...';
   try {
+    if (!state.selectedCompany) throw new Error('กรุณาเลือกบริษัทก่อน');
     const usable = state.fileEntries.filter(function(e) { return e.parsed && e.recognized > 0; });
     if (usable.length === 0) throw new Error('ไม่มีไฟล์ที่อ่านค่าได้');
     const m = mergeEntries(usable);
-    const companies = companiesCoveredBy(m.merged);
-    companies.forEach(function(company) {
-      const result = computeRowsForCompany(company, m.merged, m.mergedDesc, m.diag);
-      state.companyResults[company] = result.rows;
-    });
+    const result = computeRowsForCompany(state.selectedCompany, m.merged, m.mergedDesc, m.diag);
+    state.companyResults = {};
+    state.companyResults[state.selectedCompany] = result.rows;
     state.diag = m.diag;
-    const totalNeed = companies.reduce(function(sum, c) {
-      return sum + state.companyResults[c].filter(function(r){return r.needOrder;}).length;
-    }, 0);
-    if (companies.length === 0) {
-      statusEl.textContent = '';
-      showToast('ไม่พบ SKU ที่ตรงกับบริษัทไหนมากพอ ตรวจสอบไฟล์อีกครั้ง');
-    } else {
-      statusEl.textContent = 'เสร็จแล้ว: ' + companies.join(', ') + ' — ต้องสั่งเพิ่มรวม ' + totalNeed + ' รายการ';
-      showToast('เช็คสต็อกเสร็จแล้ว: ' + companies.join(', '));
-    }
+    const totalNeed = result.rows.filter(function(r){return r.needOrder;}).length;
+    statusEl.textContent = 'เสร็จแล้ว: ' + state.selectedCompany + ' — ต้องสั่งเพิ่มรวม ' + totalNeed + ' รายการ';
+    showToast('เช็คสต็อกเสร็จแล้ว: ' + state.selectedCompany);
     state.fileEntries = [];
     renderFileList();
     renderResults();
@@ -1432,17 +1424,12 @@ function renderResults() {
     '<div class="stat-tile warn"><div class="stat-label">ต้องสั่งเพิ่ม</div><div class="stat-value">' + needRows.length.toLocaleString('th-TH') + '</div></div>' +
     '<div class="stat-tile critical"><div class="stat-label">สต็อกหมด (0 ชิ้น)</div><div class="stat-value">' + zeroRows.length.toLocaleString('th-TH') + '</div></div>';
 
-  const pending = COMPANY_ORDER.filter(function(c) { return !state.companyResults[c]; });
   const pendingNote = document.getElementById('pendingNote');
-  if (pending.length > 0) {
-    pendingNote.innerHTML = 'ยังไม่ได้เช็ค: ' + pending.map(function(c){return '<span class="chip">' + c + '</span>';}).join(' ');
-  } else {
-    pendingNote.innerHTML = '<span class="chip" style="color:var(--ok);background:var(--ok-soft);">เช็คครบทั้ง 4 บริษัทแล้ว</span>';
-  }
+  pendingNote.innerHTML = '<span class="chip" style="color:var(--accent);background:var(--accent-soft);">บริษัท: ' + state.selectedCompany + '</span>';
 
   renderDiagnostics(rows);
 
-  // dropdown "ดูเฉพาะคนนี้" — รายชื่อคนรับผิดชอบทั้งหมดที่มีข้อมูลจากบริษัทที่เช็คแล้ว
+  // dropdown "ดูเฉพาะคนนี้" — รายชื่อคนรับผิดชอบทั้งหมดของบริษัทนี้
   const allPersons = Array.from(new Set(rows.map(function(r){ return r.person; }))).sort(function(a, b) { return a.localeCompare(b, 'th'); });
   const personSelect = document.getElementById('personFilter');
   const prevFilter = state.personFilter;
@@ -1454,40 +1441,24 @@ function renderResults() {
     personSelect.value = '';
   }
 
-  // แยกผลลัพธ์เป็นบล็อกตามบริษัทก่อนเป็นอันดับแรก (แต่ละบริษัทประชุมแยกกัน)
-  // แล้วค่อยแยกย่อยเป็นคนรับผิดชอบภายในบริษัทนั้นอีกที — คนที่ดูแลหลายบริษัทจะเห็นชื่อตัวเองซ้ำได้
-  // ในหลายบล็อกบริษัท แต่ละบล็อกมีแค่ของบริษัทนั้นบริษัทเดียว ไม่ปนกัน
+  const company = state.selectedCompany;
   const panels = document.getElementById('personPanels');
   panels.innerHTML = '';
-  const companiesPresent = COMPANY_ORDER.filter(function(c) { return !!state.companyResults[c]; });
-  let anyRendered = false;
+  const grouped = groupByPerson(rows.filter(function(r){return r.needOrder;}));
+  const notGrouped = groupByPerson(rows.filter(function(r){return !r.needOrder;}));
+  let people = Array.from(grouped.keys()).sort(function(a, b) {
+    return grouped.get(b).length - grouped.get(a).length;
+  });
+  if (state.personFilter) {
+    people = people.filter(function(p) { return p === state.personFilter; });
+  }
 
-  companiesPresent.forEach(function(company) {
-    const companyRows = rows.filter(function(r) { return r.company === company; });
-    const grouped = groupByPerson(companyRows.filter(function(r){return r.needOrder;}));
-    const notGrouped = groupByPerson(companyRows.filter(function(r){return !r.needOrder;}));
-    let people = Array.from(grouped.keys()).sort(function(a, b) {
-      return grouped.get(b).length - grouped.get(a).length;
-    });
-    if (state.personFilter) {
-      people = people.filter(function(p) { return p === state.personFilter; });
-    }
-    if (people.length === 0) return;
-    anyRendered = true;
+  if (people.length === 0) {
+    panels.innerHTML = '<div class="empty-state">' + (state.personFilter ? 'ไม่มีรายการที่ต้องสั่งเพิ่มของ ' + state.personFilter : 'ยังไม่มีรายการที่ต้องสั่งเพิ่มจากข้อมูลที่เช็คแล้ว') + '</div>';
+    return;
+  }
 
-    const companyNeedCount = people.reduce(function(sum, p) { return sum + grouped.get(p).length; }, 0);
-    const companySection = document.createElement('details');
-    companySection.className = 'company-section';
-    companySection.setAttribute('open', '');
-    const companySummary = document.createElement('summary');
-    companySummary.innerHTML =
-      '<span class="company-section-title">' + company + '</span>' +
-      '<span class="pmeta"><span class="count-badge">' + companyNeedCount + ' รายการ</span><span class="chev">&#8250;</span></span>';
-    companySection.appendChild(companySummary);
-    const companyBody = document.createElement('div');
-    companyBody.className = 'company-section-body';
-
-    people.forEach(function(person, i) {
+  people.forEach(function(person, i) {
     // เรียงตามลำดับใน Standard PDF เดิม (อันดับขายดีของแต่ละตระกูล) ไม่ใช่ตามจำนวนสั่งหรือตัวอักษร —
     // ตัวที่ต้องสั่งไล่เลข 1,2,3,... ตามลำดับนี้ ส่วนตัวที่ไม่เข้าเกณฑ์ก็ไล่เลข 1,2,3,... แยกฝั่งเดียวกัน
     const items = grouped.get(person).slice();
@@ -1560,16 +1531,8 @@ function renderResults() {
     tableScroll.appendChild(table);
     body.appendChild(tableScroll);
     details.appendChild(body);
-    companyBody.appendChild(details);
-    });
-
-    companySection.appendChild(companyBody);
-    panels.appendChild(companySection);
+    panels.appendChild(details);
   });
-
-  if (!anyRendered) {
-    panels.innerHTML = '<div class="empty-state">' + (state.personFilter ? 'ไม่มีรายการที่ต้องสั่งเพิ่มของ ' + state.personFilter : 'ยังไม่มีรายการที่ต้องสั่งเพิ่มจากข้อมูลที่เช็คแล้ว') + '</div>';
-  }
 }
 
 const GATE_PASSWORD = 'stock';
@@ -1596,4 +1559,5 @@ document.getElementById('personFilter').addEventListener('change', function() {
 });
 
 renderFileList();
+updateUploadGate();
 </script>
