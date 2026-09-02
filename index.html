@@ -599,6 +599,7 @@
           <option value="">ทั้งหมด</option>
         </select>
       </label>
+      <button type="button" class="btn btn-ghost btn-sm" id="downloadAllXlsxBtn">สร้างรีพอร์ตรวมทุกคน (.xlsx)</button>
     </div>
     <details class="person-panel" id="diagnosticsPanel" style="margin-bottom:16px;">
       <summary><span>ตรวจสอบคุณภาพข้อมูล <span class="psub">(ไม่ใช่การรับประกันความถูกต้อง 100% — ใช้ดูจุดที่ควรเช็คมือ)</span></span>
@@ -1262,6 +1263,111 @@ function buildMrpWorkbook(person, items, notItems) {
   return buildZip(zipFiles);
 }
 
+// รีพอร์ตรวมทุกคนของบริษัทเดียว (ไม่แยกชื่อคนรับผิดชอบเป็นไฟล์ต่างหาก แต่ใส่คอลัมน์
+// "ผู้รับผิดชอบ" ไว้แทน ให้เห็นทุกรหัส SKU ของบริษัทนั้นในไฟล์เดียว)
+function buildAllSkuSheetXml(company, items, notItems) {
+  const now = new Date();
+  const planNo = nextMrpPlanNumber(now);
+  const totalQty = items.reduce(function(sum, r) { return sum + r.orderQty; }, 0);
+  const rows = [];
+
+  rows.push('<row r="1">' + cellStr('A1', 'AMADA XTREME - MRP ORDER REPORT (' + company + ' · รวมทุกคน)', 1) + '</row>');
+  rows.push('<row r="2">' + cellStr('A2', 'เลขที่แผน') + cellStr('B2', planNo) + '</row>');
+  rows.push('<row r="3">' + cellStr('A3', 'วันที่สร้าง') + cellStr('B3', thaiShortDate(now)) + '</row>');
+  rows.push('<row r="4">' + cellStr('A4', 'สถานะแผน') + cellStr('B4', 'ยังไม่สั่ง') + '</row>');
+  rows.push('<row r="5">' + cellStr('A5', 'จำนวนรายการ') + cellNum('B5', items.length) + cellStr('C5', 'SKU') + '</row>');
+  rows.push('<row r="6">' + cellStr('A6', 'จำนวนรวม') + cellNum('B6', totalQty) + cellStr('C6', 'ชิ้น') + '</row>');
+  rows.push('<row r="7">' +
+    cellStr('A7', 'เกณฑ์สี (ตามสีพื้นหลังแถว)') +
+    cellStr('B7', '100 ขึ้นไป', 2) +
+    cellStr('C7', '50-99', 3) +
+    cellStr('D7', '20-49', 4) +
+    cellStr('E7', '1-19', 5) +
+    '</row>');
+
+  const headerCells = ['ลำดับ', 'SKU', 'ผู้รับผิดชอบ', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'จำนวนสั่ง (ชิ้น)', 'สถานะ', 'ระดับจำนวน'];
+  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+  rows.push('<row r="8">' + headerCols.map(function(col, i) { return cellStr(col + '8', headerCells[i], 1); }).join('') + '</row>');
+
+  items.forEach(function(item, i) {
+    const r = i + 9;
+    const tier = tierFor(item.orderQty);
+    const s = tier.style;
+    rows.push('<row r="' + r + '">' +
+      cellNum('A' + r, i + 1, s) +
+      cellStr('B' + r, item.sku, s) +
+      cellStr('C' + r, item.person, s) +
+      cellStr('D' + r, item.desc || '-', s) +
+      cellNum('E' + r, item.avgWeekly, s) +
+      cellNum('F' + r, item.target12, s) +
+      cellNum('G' + r, item.stock, s) +
+      cellNum('H' + r, item.orderQty, s) +
+      cellStr('I' + r, 'ยังไม่สั่ง', s) +
+      cellStr('J' + r, tier.label, s) +
+      '</row>');
+  });
+
+  const totalRow = items.length + 10;
+  rows.push('<row r="' + totalRow + '">' +
+    cellStr('D' + totalRow, 'รวม', 1) +
+    cellNum('H' + totalRow, totalQty, 1) +
+    cellStr('I' + totalRow, 'ชิ้น', 1) +
+    '</row>');
+
+  let lastRow = totalRow;
+  const notList = notItems || [];
+  if (notList.length > 0) {
+    const notHeaderRow = totalRow + 2;
+    rows.push('<row r="' + notHeaderRow + '">' +
+      cellStr('A' + notHeaderRow, 'รายการไม่เข้าเกณฑ์สั่งซื้อ', 1) +
+      cellNum('B' + notHeaderRow, notList.length, 1) +
+      cellStr('C' + notHeaderRow, 'SKU', 1) +
+      '</row>');
+    const notColHeaderRow = notHeaderRow + 1;
+    const notHeaderCells = ['ลำดับ', 'SKU', 'ผู้รับผิดชอบ', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล'];
+    rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E','F','G'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], 1); }).join('') + '</row>');
+    notList.forEach(function(item, i) {
+      const r = notColHeaderRow + 1 + i;
+      rows.push('<row r="' + r + '">' +
+        cellNum('A' + r, i + 1) +
+        cellStr('B' + r, item.sku) +
+        cellStr('C' + r, item.person) +
+        cellStr('D' + r, item.desc || '-') +
+        cellNum('E' + r, item.avgWeekly) +
+        cellNum('F' + r, item.target12) +
+        cellNum('G' + r, item.stock) +
+        '</row>');
+    });
+    lastRow = notColHeaderRow + notList.length;
+  }
+
+  const lastRef = 'J' + lastRow;
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+    '<dimension ref="A1:' + lastRef + '"/>' +
+    '<cols><col min="1" max="1" width="8.83" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/>' +
+    '<col min="3" max="3" width="16" customWidth="1"/><col min="4" max="4" width="42" customWidth="1"/>' +
+    '<col min="5" max="5" width="24" customWidth="1"/><col min="6" max="6" width="18" customWidth="1"/>' +
+    '<col min="7" max="7" width="24" customWidth="1"/><col min="8" max="8" width="16" customWidth="1"/>' +
+    '<col min="9" max="9" width="12" customWidth="1"/><col min="10" max="10" width="16" customWidth="1"/></cols>' +
+    '<sheetData>' + rows.join('') + '</sheetData>' +
+    '<mergeCells count="1"><mergeCell ref="A1:J1"/></mergeCells>' +
+    '</worksheet>';
+}
+
+function buildMrpWorkbookAll(company, items, notItems) {
+  const sheetXml = buildAllSkuSheetXml(company, items, notItems);
+  const zipFiles = [
+    { name: '[Content_Types].xml', content: XLSX_STATIC.contentTypes },
+    { name: '_rels/.rels', content: XLSX_STATIC.rootRels },
+    { name: 'xl/workbook.xml', content: XLSX_STATIC.workbook },
+    { name: 'xl/_rels/workbook.xml.rels', content: XLSX_STATIC.workbookRels },
+    { name: 'xl/styles.xml', content: XLSX_STATIC.styles },
+    { name: 'xl/worksheets/sheet1.xml', content: sheetXml }
+  ];
+  return buildZip(zipFiles);
+}
+
 function tierColorHex(styleIdx) {
   if (styleIdx === 2) return '#C6EFCE';
   if (styleIdx === 3) return '#BDD7EE';
@@ -1557,6 +1663,17 @@ if (gateForm) {
 document.getElementById('personFilter').addEventListener('change', function() {
   state.personFilter = this.value;
   renderResults();
+});
+
+document.getElementById('downloadAllXlsxBtn').addEventListener('click', function(e) {
+  e.preventDefault();
+  const rows = allRows();
+  if (rows.length === 0) return;
+  const company = state.selectedCompany;
+  const items = rows.filter(function(r){return r.needOrder;}).sort(function(a, b) { return a.person.localeCompare(b.person, 'th'); });
+  const notItems = rows.filter(function(r){return !r.needOrder;}).sort(function(a, b) { return a.person.localeCompare(b.person, 'th'); });
+  const blob = buildMrpWorkbookAll(company, items, notItems);
+  offerBinaryDownload('MRP_' + company + '_รวมทุกคน.xlsx', blob);
 });
 
 renderFileList();
