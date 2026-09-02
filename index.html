@@ -583,6 +583,15 @@
       <input type="file" id="fileInput" multiple accept=".txt,.TXT,.csv,.CSV">
     </label>
     <ul class="file-list" id="fileList"></ul>
+
+    <div class="step-sub" style="margin-top:18px;">แนบไฟล์แผนผลิต/แผนส่งออก (WIP) — ไม่บังคับ อัปโหลดเพื่อแสดงยอดที่กำลังผลิตอยู่เป็นข้อมูลอ้างอิงเฉยๆ ไม่นำไปรวมคำนวณจำนวนสั่ง</div>
+    <label class="dropzone" id="wipDropzone" for="wipFileInput">
+      <div><strong>แตะเพื่อเลือกไฟล์ WIP</strong> หรือลากไฟล์มาวางที่นี่</div>
+      <div style="font-size:12.5px;margin-top:4px;">รองรับ .CSV ที่ save จากไฟล์แผนผลิต/แผนส่งออก (ต้องมีคอลัมน์ "รหัส", "จำนวน", "ลูกค้า")</div>
+      <input type="file" id="wipFileInput" multiple accept=".csv,.CSV">
+    </label>
+    <ul class="file-list" id="wipFileList"></ul>
+
     <div class="row-actions">
       <button class="btn btn-primary" id="processBtn" disabled>ประมวลผล</button>
       <span id="processStatus" style="font-size:13px;color:var(--ink-muted);"></span>
@@ -637,6 +646,7 @@ function countRecognizedSkus(stockMap, company) {
 const state = {
   selectedCompany: null,
   fileEntries: [], // { file, parsed:{stock,desc,diag}|null, recognized: number|null, error: string|null }
+  wipEntries: [], // { file, parsed:{wip:Map<sku,qty>,rowCount,excludedCount}|null, recognized: number|null, error: string|null } — ไฟล์แผนผลิต (WIP) ไม่บังคับ
   companyResults: {}, // company -> array of computed rows (มีอยู่แค่ 1 คีย์เสมอ คือบริษัทที่เลือกไว้)
   diag: null, // parsing diagnostics for the last processed batch
   personFilter: '', // '' = ทั้งหมด
@@ -676,11 +686,13 @@ function renderCompanyGrid() {
       if (state.selectedCompany === company) return;
       state.selectedCompany = company;
       state.fileEntries = [];
+      state.wipEntries = [];
       state.companyResults = {};
       state.diag = null;
       document.getElementById('processStatus').textContent = '';
       renderCompanyGrid();
       renderFileList();
+      renderWipFileList();
       renderResults();
       updateUploadGate();
     });
@@ -693,6 +705,10 @@ function updateUploadGate() {
   dz.style.opacity = enabled ? '' : '0.5';
   dz.style.pointerEvents = enabled ? '' : 'none';
   document.getElementById('fileInput').disabled = !enabled;
+  const wdz = document.getElementById('wipDropzone');
+  wdz.style.opacity = enabled ? '' : '0.5';
+  wdz.style.pointerEvents = enabled ? '' : 'none';
+  document.getElementById('wipFileInput').disabled = !enabled;
 }
 renderCompanyGrid();
 
@@ -786,6 +802,83 @@ dropzone.addEventListener('drop', function(e) {
   if (e.dataTransfer && e.dataTransfer.files) addFiles(Array.from(e.dataTransfer.files));
 });
 
+// ---------- WIP file handling (ไฟล์แผนผลิต/แผนส่งออก — ไม่บังคับ, เอาไว้แสดงผลเฉยๆ ไม่เอาไปคำนวณจำนวนสั่ง) ----------
+const wipFileInput = document.getElementById('wipFileInput');
+const wipDropzone = document.getElementById('wipDropzone');
+const wipFileListEl = document.getElementById('wipFileList');
+
+function renderWipFileList() {
+  wipFileListEl.innerHTML = '';
+  state.wipEntries.forEach(function(entry, idx) {
+    const li = document.createElement('li');
+    const kb = (entry.file.size / 1024).toFixed(1);
+    let tagHtml;
+    if (entry.error) {
+      tagHtml = '<span class="done-badge" style="color:var(--critical);background:var(--critical-soft);">อ่านไฟล์ไม่สำเร็จ</span>';
+    } else if (entry.recognized === 0) {
+      tagHtml = '<span class="done-badge" style="color:var(--critical);background:var(--critical-soft);">ไม่พบคอลัมน์ที่ต้องการ</span>';
+    } else if (typeof entry.recognized === 'number') {
+      tagHtml = '<span class="done-badge">พบ ' + entry.recognized.toLocaleString('th-TH') + ' รหัส (ตัดออก ' + entry.parsed.excludedCount.toLocaleString('th-TH') + ' แถวลูกค้าภายนอก)</span>';
+    } else {
+      tagHtml = '<span class="chip">กำลังอ่าน...</span>';
+    }
+    const wrap = document.createElement('span');
+    wrap.style.cssText = 'display:flex;align-items:center;gap:8px;overflow:hidden;';
+    wrap.innerHTML = '<span class="fname">' + entry.file.name + ' &middot; ' + kb + ' KB</span>' + tagHtml;
+    li.appendChild(wrap);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'ลบไฟล์ ' + entry.file.name);
+    btn.textContent = '×';
+    btn.addEventListener('click', function() {
+      state.wipEntries.splice(idx, 1);
+      renderWipFileList();
+    });
+    li.appendChild(btn);
+    wipFileListEl.appendChild(li);
+  });
+}
+
+async function addWipFiles(fileArr) {
+  const startIdx = state.wipEntries.length;
+  fileArr.forEach(function(f) { state.wipEntries.push({ file: f, parsed: null, recognized: null, error: null }); });
+  renderWipFileList();
+  for (let i = 0; i < fileArr.length; i++) {
+    const entry = state.wipEntries[startIdx + i];
+    try {
+      const text = await readFileAsText874(entry.file);
+      const parsed = parseWipCsv(text);
+      entry.parsed = parsed;
+      entry.recognized = parsed.wip.size;
+    } catch (err) {
+      entry.error = 'อ่านไฟล์ไม่สำเร็จ';
+    }
+  }
+  renderWipFileList();
+}
+
+wipFileInput.addEventListener('change', function(e) {
+  const files = Array.from(e.target.files);
+  wipFileInput.value = '';
+  addWipFiles(files);
+});
+
+['dragenter', 'dragover'].forEach(function(evt) {
+  wipDropzone.addEventListener(evt, function(e) {
+    e.preventDefault();
+    wipDropzone.classList.add('drag');
+  });
+});
+['dragleave', 'drop'].forEach(function(evt) {
+  wipDropzone.addEventListener(evt, function(e) {
+    e.preventDefault();
+    wipDropzone.classList.remove('drag');
+  });
+});
+wipDropzone.addEventListener('drop', function(e) {
+  if (e.dataTransfer && e.dataTransfer.files) addWipFiles(Array.from(e.dataTransfer.files));
+});
+
 function updateProcessButton() {
   const btn = document.getElementById('processBtn');
   btn.disabled = !state.selectedCompany || !state.fileEntries.some(function(e) { return e.recognized > 0; });
@@ -848,6 +941,78 @@ function parseStockText(text) {
   return { stock: stock, desc: desc, diag: diag };
 }
 
+// ---------- parsing (ไฟล์แผนผลิต/แผนส่งออก, CSV ที่ save จาก Excel ด้วยเอ็นโค้ดเดียวกับ Express) ----------
+// ไม่ยึดตำแหน่งคอลัมน์ตายตัว (A/B/C/...) เพราะไฟล์รอบถัดไปคอลัมน์อาจสลับ/เปลี่ยนได้ —
+// หาตำแหน่งคอลัมน์จากชื่อหัวข้อ "รหัส"/"จำนวน"/"ลูกค้า" ในแถวหัวตารางแทน
+const WIP_EXCLUDED_CUSTOMERS = new Set(['tatar', 'eg trading']);
+
+function splitCsvLine(line) {
+  const cells = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuotes = false;
+      } else {
+        cur += ch;
+      }
+    } else if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === ',') {
+      cells.push(cur);
+      cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  cells.push(cur);
+  return cells.map(function(c) { return c.trim(); });
+}
+
+function parseWipCsv(text) {
+  const wip = new Map();
+  const lines = text.split(/\r?\n/).filter(function(l) { return l.trim() !== ''; });
+  let headerIdx = -1, skuCol = -1, qtyCol = -1, customerCol = -1;
+  for (let i = 0; i < Math.min(lines.length, 10); i++) {
+    const cells = splitCsvLine(lines[i]);
+    const sc = cells.indexOf('รหัส');
+    const qc = cells.indexOf('จำนวน');
+    const cc = cells.indexOf('ลูกค้า');
+    if (sc !== -1 && qc !== -1) {
+      headerIdx = i; skuCol = sc; qtyCol = qc; customerCol = cc;
+      break;
+    }
+  }
+  let excludedCount = 0;
+  if (headerIdx !== -1) {
+    for (let i = headerIdx + 1; i < lines.length; i++) {
+      const cells = splitCsvLine(lines[i]);
+      const sku = (cells[skuCol] || '').trim();
+      const qty = parseFloat((cells[qtyCol] || '').replace(/,/g, ''));
+      if (!sku || isNaN(qty)) continue;
+      const customer = customerCol !== -1 ? (cells[customerCol] || '').trim().toLowerCase() : '';
+      if (WIP_EXCLUDED_CUSTOMERS.has(customer)) { excludedCount++; continue; }
+      wip.set(sku, (wip.get(sku) || 0) + qty);
+    }
+  }
+  return { wip: wip, excludedCount: excludedCount };
+}
+
+// รวมยอด WIP จากหลายไฟล์ (ถ้าอัปโหลดมากกว่า 1 ไฟล์)
+function mergeWipEntries(entries) {
+  const wip = new Map();
+  entries.forEach(function(entry) {
+    if (!entry.parsed) return;
+    entry.parsed.wip.forEach(function(qty, sku) {
+      wip.set(sku, (wip.get(sku) || 0) + qty);
+    });
+  });
+  return wip;
+}
+
 function readFileAsText874(file) {
   return new Promise(function(resolve, reject) {
     const reader = new FileReader();
@@ -891,17 +1056,20 @@ function mergeEntries(entries) {
   return { merged: merged, mergedDesc: mergedDesc, diag: diag };
 }
 
-function computeRowsForCompany(company, merged, mergedDesc, diag) {
+function computeRowsForCompany(company, merged, mergedDesc, diag, wipMap) {
   const relevant = STANDARDS.filter(function(s) { return s.company === company; });
   const rows = relevant.map(function(s) {
     const found = merged.has(s.sku);
     const stock = found ? merged.get(s.sku) : 0;
     // "เป้าหมาย 12 วัน" reorder policy (แทนสูตร Min/Max เดิม ทั้งหมด, per spec 2026-09-01):
     // เป้าหมาย 12 วัน = MAX(1, avg ÷ 4 ÷ 7 × 12) = MAX(1, avg × 3 ÷ 7) — avg = เฉลี่ยต่อเดือนจาก Standard
-    // Position ตามสเปกเต็ม = คงเหลือ + WIP + Confirmed − Reserved แต่ตอนนี้ยังไม่มีข้อมูล WIP/Confirmed/Reserved
+    // Position ตามสเปกเต็ม = คงเหลือ + WIP + Confirmed − Reserved แต่ตอนนี้ยังไม่มีข้อมูล Confirmed/Reserved
     // ในระบบ เลยใช้ "คงเหลือ" (stock) แทน Position ไปก่อน — เหมือนที่ไฟล์ MRP ของหัวหน้าใช้จริง
     // เงื่อนไขสั่ง: Position < เป้าหมาย 12 วัน (ใช้ < ไม่ใช่ ≤)
     // จำนวนสั่ง: ปัดขึ้นหลัก 10, อย่างน้อย 10 — ไม่แตะ Standard Min/Max เลย
+    // WIP (ถ้ามีไฟล์แผนผลิตแนบมา) แสดงเป็นข้อมูลอ้างอิงในรีพอร์ตเฉยๆ (per user 2026-09-02) — ไม่เอาไปรวมกับ
+    // คงเหลือ/ไม่มีผลต่อ needOrder หรือ orderQty เลย
+    const wip = (wipMap && wipMap.has(s.sku)) ? wipMap.get(s.sku) : 0;
     const avgWeekly = Math.round((s.avg / 4) * 100) / 100;
     const target12 = Math.max(1, Math.round((s.avg * 3 / 7) * 100) / 100);
     const position = stock;
@@ -914,7 +1082,7 @@ function computeRowsForCompany(company, merged, mergedDesc, diag) {
       sku: s.sku, prefix: s.prefix, person: s.person, company: s.company,
       min: s.min, max: s.max, lot: s.lot, avg: s.avg,
       avgWeekly: avgWeekly, target12: target12, desc: mergedDesc.get(s.sku) || '',
-      stock: stock, found: found, needOrder: needOrder,
+      stock: stock, wip: wip, found: found, needOrder: needOrder,
       orderQty: orderQty
     };
   });
@@ -932,7 +1100,9 @@ document.getElementById('processBtn').addEventListener('click', function() {
     const usable = state.fileEntries.filter(function(e) { return e.parsed && e.recognized > 0; });
     if (usable.length === 0) throw new Error('ไม่มีไฟล์ที่อ่านค่าได้');
     const m = mergeEntries(usable);
-    const result = computeRowsForCompany(state.selectedCompany, m.merged, m.mergedDesc, m.diag);
+    const usableWip = state.wipEntries.filter(function(e) { return e.parsed && e.recognized > 0; });
+    const wipMap = mergeWipEntries(usableWip);
+    const result = computeRowsForCompany(state.selectedCompany, m.merged, m.mergedDesc, m.diag, wipMap);
     state.companyResults = {};
     state.companyResults[state.selectedCompany] = result.rows;
     state.diag = m.diag;
@@ -940,7 +1110,9 @@ document.getElementById('processBtn').addEventListener('click', function() {
     statusEl.textContent = 'เสร็จแล้ว: ' + state.selectedCompany + ' — ต้องสั่งเพิ่มรวม ' + totalNeed + ' รายการ';
     showToast('เช็คสต็อกเสร็จแล้ว: ' + state.selectedCompany);
     state.fileEntries = [];
+    state.wipEntries = [];
     renderFileList();
+    renderWipFileList();
     renderResults();
   } catch (err) {
     statusEl.textContent = '';
@@ -1182,8 +1354,8 @@ function buildMrpSheetXml(person, items, notItems) {
     cellStr('E7', '1-19', 5) +
     '</row>');
 
-  const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'จำนวนสั่ง (ชิ้น)', 'สถานะ', 'ระดับจำนวน'];
-  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+  const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'สถานะ', 'ระดับจำนวน'];
+  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
   rows.push('<row r="8">' + headerCols.map(function(col, i) { return cellStr(col + '8', headerCells[i], 1); }).join('') + '</row>');
 
   items.forEach(function(item, i) {
@@ -1197,17 +1369,18 @@ function buildMrpSheetXml(person, items, notItems) {
       cellNum('D' + r, item.avgWeekly, s) +
       cellNum('E' + r, item.target12, s) +
       cellNum('F' + r, item.stock, s) +
-      cellNum('G' + r, item.orderQty, s) +
-      cellStr('H' + r, 'ยังไม่สั่ง', s) +
-      cellStr('I' + r, tier.label, s) +
+      cellNum('G' + r, item.wip, s) +
+      cellNum('H' + r, item.orderQty, s) +
+      cellStr('I' + r, 'ยังไม่สั่ง', s) +
+      cellStr('J' + r, tier.label, s) +
       '</row>');
   });
 
   const totalRow = items.length + 10;
   rows.push('<row r="' + totalRow + '">' +
     cellStr('C' + totalRow, 'รวม', 1) +
-    cellNum('G' + totalRow, totalQty, 1) +
-    cellStr('H' + totalRow, 'ชิ้น', 1) +
+    cellNum('H' + totalRow, totalQty, 1) +
+    cellStr('I' + totalRow, 'ชิ้น', 1) +
     '</row>');
 
   let lastRow = totalRow;
@@ -1220,8 +1393,8 @@ function buildMrpSheetXml(person, items, notItems) {
       cellStr('C' + notHeaderRow, 'SKU', 1) +
       '</row>');
     const notColHeaderRow = notHeaderRow + 1;
-    const notHeaderCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล'];
-    rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E','F'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], 1); }).join('') + '</row>');
+    const notHeaderCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)'];
+    rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E','F','G'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], 1); }).join('') + '</row>');
     notList.forEach(function(item, i) {
       const r = notColHeaderRow + 1 + i;
       rows.push('<row r="' + r + '">' +
@@ -1231,22 +1404,23 @@ function buildMrpSheetXml(person, items, notItems) {
         cellNum('D' + r, item.avgWeekly) +
         cellNum('E' + r, item.target12) +
         cellNum('F' + r, item.stock) +
+        cellNum('G' + r, item.wip) +
         '</row>');
     });
     lastRow = notColHeaderRow + notList.length;
   }
 
-  const lastRef = 'I' + lastRow;
+  const lastRef = 'J' + lastRow;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<dimension ref="A1:' + lastRef + '"/>' +
     '<cols><col min="1" max="1" width="8.83" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/>' +
     '<col min="3" max="3" width="42" customWidth="1"/><col min="4" max="4" width="24" customWidth="1"/>' +
     '<col min="5" max="5" width="18" customWidth="1"/><col min="6" max="6" width="24" customWidth="1"/>' +
-    '<col min="7" max="7" width="16" customWidth="1"/><col min="8" max="8" width="12" customWidth="1"/>' +
-    '<col min="9" max="9" width="16" customWidth="1"/></cols>' +
+    '<col min="7" max="7" width="18" customWidth="1"/><col min="8" max="8" width="16" customWidth="1"/>' +
+    '<col min="9" max="9" width="12" customWidth="1"/><col min="10" max="10" width="16" customWidth="1"/></cols>' +
     '<sheetData>' + rows.join('') + '</sheetData>' +
-    '<mergeCells count="1"><mergeCell ref="A1:I1"/></mergeCells>' +
+    '<mergeCells count="1"><mergeCell ref="A1:J1"/></mergeCells>' +
     '</worksheet>';
 }
 
@@ -1285,8 +1459,8 @@ function buildAllSkuSheetXml(company, items, notItems) {
     cellStr('E7', '1-19', 5) +
     '</row>');
 
-  const headerCells = ['ลำดับ', 'SKU', 'ผู้รับผิดชอบ', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'จำนวนสั่ง (ชิ้น)', 'สถานะ', 'ระดับจำนวน'];
-  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+  const headerCells = ['ลำดับ', 'SKU', 'ผู้รับผิดชอบ', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'สถานะ', 'ระดับจำนวน'];
+  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
   rows.push('<row r="8">' + headerCols.map(function(col, i) { return cellStr(col + '8', headerCells[i], 1); }).join('') + '</row>');
 
   items.forEach(function(item, i) {
@@ -1301,17 +1475,18 @@ function buildAllSkuSheetXml(company, items, notItems) {
       cellNum('E' + r, item.avgWeekly, s) +
       cellNum('F' + r, item.target12, s) +
       cellNum('G' + r, item.stock, s) +
-      cellNum('H' + r, item.orderQty, s) +
-      cellStr('I' + r, 'ยังไม่สั่ง', s) +
-      cellStr('J' + r, tier.label, s) +
+      cellNum('H' + r, item.wip, s) +
+      cellNum('I' + r, item.orderQty, s) +
+      cellStr('J' + r, 'ยังไม่สั่ง', s) +
+      cellStr('K' + r, tier.label, s) +
       '</row>');
   });
 
   const totalRow = items.length + 10;
   rows.push('<row r="' + totalRow + '">' +
     cellStr('D' + totalRow, 'รวม', 1) +
-    cellNum('H' + totalRow, totalQty, 1) +
-    cellStr('I' + totalRow, 'ชิ้น', 1) +
+    cellNum('I' + totalRow, totalQty, 1) +
+    cellStr('J' + totalRow, 'ชิ้น', 1) +
     '</row>');
 
   let lastRow = totalRow;
@@ -1324,8 +1499,8 @@ function buildAllSkuSheetXml(company, items, notItems) {
       cellStr('C' + notHeaderRow, 'SKU', 1) +
       '</row>');
     const notColHeaderRow = notHeaderRow + 1;
-    const notHeaderCells = ['ลำดับ', 'SKU', 'ผู้รับผิดชอบ', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล'];
-    rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E','F','G'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], 1); }).join('') + '</row>');
+    const notHeaderCells = ['ลำดับ', 'SKU', 'ผู้รับผิดชอบ', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)'];
+    rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E','F','G','H'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], 1); }).join('') + '</row>');
     notList.forEach(function(item, i) {
       const r = notColHeaderRow + 1 + i;
       rows.push('<row r="' + r + '">' +
@@ -1336,22 +1511,24 @@ function buildAllSkuSheetXml(company, items, notItems) {
         cellNum('E' + r, item.avgWeekly) +
         cellNum('F' + r, item.target12) +
         cellNum('G' + r, item.stock) +
+        cellNum('H' + r, item.wip) +
         '</row>');
     });
     lastRow = notColHeaderRow + notList.length;
   }
 
-  const lastRef = 'J' + lastRow;
+  const lastRef = 'K' + lastRow;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<dimension ref="A1:' + lastRef + '"/>' +
     '<cols><col min="1" max="1" width="8.83" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/>' +
     '<col min="3" max="3" width="16" customWidth="1"/><col min="4" max="4" width="42" customWidth="1"/>' +
     '<col min="5" max="5" width="24" customWidth="1"/><col min="6" max="6" width="18" customWidth="1"/>' +
-    '<col min="7" max="7" width="24" customWidth="1"/><col min="8" max="8" width="16" customWidth="1"/>' +
-    '<col min="9" max="9" width="12" customWidth="1"/><col min="10" max="10" width="16" customWidth="1"/></cols>' +
+    '<col min="7" max="7" width="24" customWidth="1"/><col min="8" max="8" width="18" customWidth="1"/>' +
+    '<col min="9" max="9" width="16" customWidth="1"/><col min="10" max="10" width="12" customWidth="1"/>' +
+    '<col min="11" max="11" width="16" customWidth="1"/></cols>' +
     '<sheetData>' + rows.join('') + '</sheetData>' +
-    '<mergeCells count="1"><mergeCell ref="A1:J1"/></mergeCells>' +
+    '<mergeCells count="1"><mergeCell ref="A1:K1"/></mergeCells>' +
     '</worksheet>';
 }
 
@@ -1402,6 +1579,7 @@ function buildMrpPrintHtml(person, items, notItems) {
       '<td class="mrp-num">' + item.avgWeekly.toLocaleString('th-TH') + '</td>' +
       '<td class="mrp-num">' + item.target12.toLocaleString('th-TH') + '</td>' +
       '<td class="mrp-num">' + item.stock.toLocaleString('th-TH') + '</td>' +
+      '<td class="mrp-num">' + item.wip.toLocaleString('th-TH') + '</td>' +
       '<td class="mrp-num">' + item.orderQty.toLocaleString('th-TH') + '</td>' +
       '<td>ยังไม่สั่ง</td>' +
       '<td>' + tier.label + '</td>' +
@@ -1416,6 +1594,7 @@ function buildMrpPrintHtml(person, items, notItems) {
       '<td class="mrp-num">' + item.avgWeekly.toLocaleString('th-TH') + '</td>' +
       '<td class="mrp-num">' + item.target12.toLocaleString('th-TH') + '</td>' +
       '<td class="mrp-num">' + item.stock.toLocaleString('th-TH') + '</td>' +
+      '<td class="mrp-num">' + item.wip.toLocaleString('th-TH') + '</td>' +
       '</tr>';
   }).join('');
 
@@ -1424,7 +1603,7 @@ function buildMrpPrintHtml(person, items, notItems) {
     '<table>' +
     '<thead><tr>' +
     '<th>ลำดับ</th><th>SKU</th><th>ชื่อสินค้า</th>' +
-    '<th class="mrp-num">เฉลี่ย/สัปดาห์</th><th class="mrp-num">เป้าหมาย 12 วัน</th><th class="mrp-num">ยอดคงเหลือ</th>' +
+    '<th class="mrp-num">เฉลี่ย/สัปดาห์</th><th class="mrp-num">เป้าหมาย 12 วัน</th><th class="mrp-num">ยอดคงเหลือ</th><th class="mrp-num">WIP</th>' +
     '</tr></thead>' +
     '<tbody>' + notRowsHtml + '</tbody>' +
     '</table>'
@@ -1464,11 +1643,11 @@ function buildMrpPrintHtml(person, items, notItems) {
     '<table>' +
     '<thead><tr>' +
     '<th>ลำดับ</th><th>SKU</th><th>ชื่อสินค้า</th>' +
-    '<th class="mrp-num">เฉลี่ย/สัปดาห์</th><th class="mrp-num">เป้าหมาย 12 วัน</th><th class="mrp-num">ยอดคงเหลือ</th><th class="mrp-num">จำนวนสั่ง (ชิ้น)</th>' +
+    '<th class="mrp-num">เฉลี่ย/สัปดาห์</th><th class="mrp-num">เป้าหมาย 12 วัน</th><th class="mrp-num">ยอดคงเหลือ</th><th class="mrp-num">WIP</th><th class="mrp-num">จำนวนสั่ง (ชิ้น)</th>' +
     '<th>สถานะ</th><th>ระดับจำนวน</th>' +
     '</tr></thead>' +
     '<tbody>' + rowsHtml + '</tbody>' +
-    '<tfoot><tr><td colspan="6"></td><td class="mrp-num">' + totalQty.toLocaleString('th-TH') + '</td><td>ชิ้น</td><td></td></tr></tfoot>' +
+    '<tfoot><tr><td colspan="7"></td><td class="mrp-num">' + totalQty.toLocaleString('th-TH') + '</td><td>ชิ้น</td><td></td></tr></tfoot>' +
     '</table>' +
     notSectionHtml +
     '</div>';
@@ -1619,7 +1798,7 @@ function renderResults() {
     const table = document.createElement('table');
     table.className = 'order-table';
     table.innerHTML =
-      '<thead><tr><th>Prefix</th><th>SKU</th><th class="num">สต็อก</th><th class="num">เป้าหมาย 12 วัน</th><th class="num">สั่งเพิ่ม</th></tr></thead>';
+      '<thead><tr><th>Prefix</th><th>SKU</th><th class="num">สต็อก</th><th class="num">WIP</th><th class="num">เป้าหมาย 12 วัน</th><th class="num">สั่งเพิ่ม</th></tr></thead>';
     const tbody = document.createElement('tbody');
     items.forEach(function(r) {
       const tr = document.createElement('tr');
@@ -1630,6 +1809,7 @@ function renderResults() {
         '<td data-label="Prefix">' + r.prefix + '</td>' +
         '<td data-label="SKU">' + r.sku + noteDot + '</td>' +
         '<td data-label="สต็อก" class="num">' + r.stock.toLocaleString('th-TH') + ' <span class="status-pill ' + pillClass + '">' + pillLabel + '</span></td>' +
+        '<td data-label="WIP" class="num">' + r.wip.toLocaleString('th-TH') + '</td>' +
         '<td data-label="เป้าหมาย 12 วัน" class="num">' + r.target12.toLocaleString('th-TH') + '</td>' +
         '<td data-label="สั่งเพิ่ม" class="num">' + r.orderQty.toLocaleString('th-TH') + '</td>';
       tbody.appendChild(tr);
