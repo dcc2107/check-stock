@@ -622,7 +622,7 @@
     <div class="step-sub" style="margin-top:18px;">แนบไฟล์แผนผลิต/แผนส่งออก (WIP) — ไม่บังคับ อัปโหลดเพื่อแสดงยอดที่กำลังผลิตอยู่เป็นข้อมูลอ้างอิงเฉยๆ ไม่นำไปรวมคำนวณจำนวนสั่ง</div>
     <label class="dropzone" id="wipDropzone" for="wipFileInput">
       <div><strong>แตะเพื่อเลือกไฟล์ WIP</strong> หรือลากไฟล์มาวางที่นี่</div>
-      <div style="font-size:12.5px;margin-top:4px;">รองรับ .CSV ที่ save จากไฟล์แผนผลิต/แผนส่งออก (ต้องมีคอลัมน์ "รหัส", "จำนวน", "ลูกค้า")</div>
+      <div style="font-size:12.5px;margin-top:4px;">รองรับ .CSV ที่ save จากไฟล์แผนผลิต/แผนส่งออก (ต้องมีคอลัมน์ "PARTNAME", "จำนวน", "ลูกค้า")</div>
       <input type="file" id="wipFileInput" multiple accept=".csv,.CSV">
     </label>
     <ul class="file-list" id="wipFileList"></ul>
@@ -994,7 +994,7 @@ function parseStockText(text) {
 
 // ---------- parsing (ไฟล์แผนผลิต/แผนส่งออก, CSV ที่ save จาก Excel ด้วยเอ็นโค้ดเดียวกับ Express) ----------
 // ไม่ยึดตำแหน่งคอลัมน์ตายตัว (A/B/C/...) เพราะไฟล์รอบถัดไปคอลัมน์อาจสลับ/เปลี่ยนได้ —
-// หาตำแหน่งคอลัมน์จากชื่อหัวข้อ "รหัส"/"จำนวน"/"ลูกค้า" ในแถวหัวตารางแทน
+// หาตำแหน่งคอลัมน์จากชื่อหัวข้อ "PARTNAME"/"จำนวน"/"ลูกค้า" ในแถวหัวตารางแทน
 const WIP_EXCLUDED_CUSTOMERS = new Set(['tatar', 'eg trading']);
 
 function splitCsvLine(line) {
@@ -1029,7 +1029,9 @@ function parseWipCsv(text) {
   let headerIdx = -1, skuCol = -1, qtyCol = -1, customerCol = -1;
   for (let i = 0; i < Math.min(lines.length, 10); i++) {
     const cells = splitCsvLine(lines[i]);
-    const sc = cells.indexOf('รหัส');
+    // ใช้คอลัมน์ PARTNAME แทนคอลัมน์ "รหัส" เดิม (ข้อมูลจากคอลัมน์รหัสไม่ขึ้น/เพี้ยน per user 2026-09-04)
+    // เทียบแบบตัดช่องว่าง+ไม่สนตัวพิมพ์เล็กใหญ่ กันพลาดกรณีหัวตารางสะกดเว้นวรรค/ตัวพิมพ์ต่างกันเล็กน้อย
+    const sc = cells.findIndex(function(c) { return c.replace(/\s+/g, '').toUpperCase() === 'PARTNAME'; });
     const qc = cells.indexOf('จำนวน');
     const cc = cells.indexOf('ลูกค้า');
     if (sc !== -1 && qc !== -1) {
