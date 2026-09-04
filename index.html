@@ -1348,13 +1348,21 @@ const XLSX_STATIC = {
     '</fills>' +
     '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
     '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
-    '<cellXfs count="6">' +
+    '<cellXfs count="12">' +
     '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
     '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
     '<xf numFmtId="0" fontId="0" fillId="2" borderId="0" xfId="0" applyFill="1"/>' +
     '<xf numFmtId="0" fontId="0" fillId="3" borderId="0" xfId="0" applyFill="1"/>' +
     '<xf numFmtId="0" fontId="0" fillId="4" borderId="0" xfId="0" applyFill="1"/>' +
     '<xf numFmtId="0" fontId="0" fillId="5" borderId="0" xfId="0" applyFill="1"/>' +
+    // ชุด style 6-11: จัดกึ่งกลาง ใช้เฉพาะคอลัมน์ "ลำดับ" (per user 2026-09-04) — คอลัมน์นี้กว้างพอสำหรับหัวข้อ
+    // "ลำดับ" แต่ข้อมูลจริงมีแค่เลข 1-2 หลัก พอปล่อย default (หัวข้อชิดซ้าย/ตัวเลขชิดขวา) แล้วดูเบี้ยวไม่สมมาตร
+    '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center"/></xf>' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf>' +
+    '<xf numFmtId="0" fontId="0" fillId="2" borderId="0" xfId="0" applyFill="1" applyAlignment="1"><alignment horizontal="center"/></xf>' +
+    '<xf numFmtId="0" fontId="0" fillId="3" borderId="0" xfId="0" applyFill="1" applyAlignment="1"><alignment horizontal="center"/></xf>' +
+    '<xf numFmtId="0" fontId="0" fillId="4" borderId="0" xfId="0" applyFill="1" applyAlignment="1"><alignment horizontal="center"/></xf>' +
+    '<xf numFmtId="0" fontId="0" fillId="5" borderId="0" xfId="0" applyFill="1" applyAlignment="1"><alignment horizontal="center"/></xf>' +
     '</cellXfs>' +
     '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'
 };
@@ -1365,6 +1373,13 @@ function tierFor(qty) {
   if (qty >= 20) return { label: '20-49', style: 4 };
   return { label: '1-19', style: 5 };
 }
+
+// สไตล์กึ่งกลางสำหรับคอลัมน์ "ลำดับ" โดยเฉพาะ (per user 2026-09-04) — คอลัมน์นี้กว้างพอสำหรับหัวข้อ "ลำดับ"
+// แต่ข้อมูลจริงมีแค่เลข 1-2 หลัก ปล่อย default (หัวข้อชิดซ้าย/ตัวเลขชิดขวา) แล้วดูเบี้ยว เลยจัดกึ่งกลางแทน
+// style 6 = หัวข้อ (ตัวหนา), style 7 = แถวไม่มีสีพื้น (เช่นรายการไม่เข้าเกณฑ์), 8-11 = คู่กับ tier.style 2-5
+const HEADER_CENTER_STYLE = 6;
+const TIER_CENTER_STYLE = { 0: 7, 2: 8, 3: 9, 4: 10, 5: 11 };
+function centerStyleFor(tierStyle) { return TIER_CENTER_STYLE[tierStyle || 0] || 7; }
 
 const THAI_MONTHS_ABBR = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
@@ -1432,7 +1447,7 @@ function buildMrpSheetXml(person, items, notItems) {
 
   function pushColumnHeaderRow() {
     const rr = nextRow();
-    rows.push('<row r="' + rr + '">' + headerCols.map(function(col, i) { return cellStr(col + rr, headerCells[i], 1); }).join('') + '</row>');
+    rows.push('<row r="' + rr + '">' + headerCols.map(function(col, i) { return cellStr(col + rr, headerCells[i], col === 'A' ? HEADER_CENTER_STYLE : 1); }).join('') + '</row>');
   }
   function pushItemRows(list) {
     list.forEach(function(item, i) {
@@ -1440,7 +1455,7 @@ function buildMrpSheetXml(person, items, notItems) {
       const tier = tierFor(item.orderQty);
       const s = tier.style;
       rows.push('<row r="' + rr + '">' +
-        cellNum('A' + rr, i + 1, s) +
+        cellNum('A' + rr, i + 1, centerStyleFor(s)) +
         cellStr('B' + rr, item.sku, s) +
         cellStr('C' + rr, item.desc || '-', s) +
         cellNum('D' + rr, item.avgWeekly, s) +
@@ -1501,11 +1516,11 @@ function buildMrpSheetXml(person, items, notItems) {
       '</row>');
     const notColHeaderRow = nextRow();
     const notHeaderCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)'];
-    rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E','F','G'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], 1); }).join('') + '</row>');
+    rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E','F','G'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], col === 'A' ? HEADER_CENTER_STYLE : 1); }).join('') + '</row>');
     notList.forEach(function(item, i) {
       const rr = nextRow();
       rows.push('<row r="' + rr + '">' +
-        cellNum('A' + rr, i + 1) +
+        cellNum('A' + rr, i + 1, TIER_CENTER_STYLE[0]) +
         cellStr('B' + rr, item.sku) +
         cellStr('C' + rr, item.desc || '-') +
         cellNum('D' + rr, item.avgWeekly) +
@@ -1592,7 +1607,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
 
   function pushColumnHeaderRow() {
     const rr = nextRow();
-    rows.push('<row r="' + rr + '">' + headerCols.map(function(col, i) { return cellStr(col + rr, headerCells[i], 1); }).join('') + '</row>');
+    rows.push('<row r="' + rr + '">' + headerCols.map(function(col, i) { return cellStr(col + rr, headerCells[i], col === 'A' ? HEADER_CENTER_STYLE : 1); }).join('') + '</row>');
   }
   function pushItemRows(list) {
     list.forEach(function(item, i) {
@@ -1600,7 +1615,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
       const tier = tierFor(item.orderQty);
       const s = tier.style;
       rows.push('<row r="' + rr + '">' +
-        cellNum('A' + rr, i + 1, s) +
+        cellNum('A' + rr, i + 1, centerStyleFor(s)) +
         cellStr('B' + rr, item.sku, s) +
         cellStr('C' + rr, item.person, s) +
         cellStr('D' + rr, item.desc || '-', s) +
@@ -1662,11 +1677,11 @@ function buildAllSkuSheetXml(company, items, notItems) {
       '</row>');
     const notColHeaderRow = nextRow();
     const notHeaderCells = ['ลำดับ', 'SKU', 'ผู้รับผิดชอบ', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)'];
-    rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E','F','G','H'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], 1); }).join('') + '</row>');
+    rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E','F','G','H'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], col === 'A' ? HEADER_CENTER_STYLE : 1); }).join('') + '</row>');
     notList.forEach(function(item, i) {
       const rr = nextRow();
       rows.push('<row r="' + rr + '">' +
-        cellNum('A' + rr, i + 1) +
+        cellNum('A' + rr, i + 1, TIER_CENTER_STYLE[0]) +
         cellStr('B' + rr, item.sku) +
         cellStr('C' + rr, item.person) +
         cellStr('D' + rr, item.desc || '-') +
@@ -1739,7 +1754,7 @@ function buildMrpPrintHtml(person, items, notItems) {
       const tier = tierFor(item.orderQty);
       const bg = tierColorHex(tier.style);
       return '<tr style="background:' + bg + '">' +
-        '<td class="mrp-num">' + (i + 1) + '</td>' +
+        '<td class="mrp-idx">' + (i + 1) + '</td>' +
         '<td>' + xmlEscape(item.sku) + '</td>' +
         '<td>' + xmlEscape(item.desc || '-') + '</td>' +
         '<td class="mrp-num">' + item.avgWeekly.toLocaleString('th-TH') + '</td>' +
@@ -1765,7 +1780,7 @@ function buildMrpPrintHtml(person, items, notItems) {
     return '<h2 class="mrp-subhead">' + title + ' <span class="mrp-subcount">' + list.length + ' SKU</span></h2>' +
       '<table>' +
       '<thead><tr>' +
-      '<th>ลำดับ</th><th>SKU</th><th>ชื่อสินค้า</th>' +
+      '<th class="mrp-idx">ลำดับ</th><th>SKU</th><th>ชื่อสินค้า</th>' +
       '<th class="mrp-num">เฉลี่ย/สัปดาห์</th><th class="mrp-num">เป้าหมาย 12 วัน</th><th class="mrp-num">ยอดคงเหลือ</th><th class="mrp-num">WIP</th><th class="mrp-num">จำนวนสั่ง (ชิ้น)</th>' +
       '<th>สถานะ</th><th>หมายเหตุ</th><th>ระดับจำนวน</th>' +
       '</tr></thead>' +
@@ -1793,7 +1808,7 @@ function buildMrpPrintHtml(person, items, notItems) {
     '<h2 class="mrp-subhead">รายการไม่เข้าเกณฑ์สั่งซื้อ <span class="mrp-subcount">' + notList.length + ' SKU</span></h2>' +
     '<table>' +
     '<thead><tr>' +
-    '<th>ลำดับ</th><th>SKU</th><th>ชื่อสินค้า</th>' +
+    '<th class="mrp-idx">ลำดับ</th><th>SKU</th><th>ชื่อสินค้า</th>' +
     '<th class="mrp-num">เฉลี่ย/สัปดาห์</th><th class="mrp-num">เป้าหมาย 12 วัน</th><th class="mrp-num">ยอดคงเหลือ</th><th class="mrp-num">WIP</th>' +
     '</tr></thead>' +
     '<tbody>' + notRowsHtml + '</tbody>' +
@@ -1817,6 +1832,7 @@ function buildMrpPrintHtml(person, items, notItems) {
     '.mrp-print th { background: #17222A; color: #fff; text-align: left; padding: 6px 8px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .03em; }' +
     '.mrp-print td { padding: 5px 8px; border-bottom: 1px solid #D9E0E2; font-variant-numeric: tabular-nums; }' +
     '.mrp-print td.mrp-num, .mrp-print th.mrp-num { text-align: right; }' +
+    '.mrp-print td.mrp-idx, .mrp-print th.mrp-idx { text-align: center; }' +
     '.mrp-print tfoot td { font-weight: 700; border-top: 2px solid #17222A; }' +
     '@page { size: A4 landscape; margin: 12mm; }' +
     '</style>' +
