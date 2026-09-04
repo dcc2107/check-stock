@@ -1366,21 +1366,25 @@ function buildMrpSheetXml(person, items, notItems) {
   rows.push('<row r="3">' + cellStr('A3', 'วันที่สร้าง') + cellStr('B3', thaiShortDate(now)) + '</row>');
   rows.push('<row r="4">' + cellStr('A4', 'สถานะแผน') + cellStr('B4', 'ยังไม่สั่ง') + '</row>');
   rows.push('<row r="5">' + cellStr('A5', 'จำนวนรายการ') + cellNum('B5', items.length) + cellStr('C5', 'SKU') + '</row>');
-  rows.push('<row r="6">' + cellStr('A6', 'จำนวนรวม') + cellNum('B6', totalQty) + cellStr('C6', 'ชิ้น') + '</row>');
-  rows.push('<row r="7">' +
-    cellStr('A7', 'เกณฑ์สี (ตามสีพื้นหลังแถว)') +
-    cellStr('B7', '100 ขึ้นไป', 2) +
-    cellStr('C7', '50-99', 3) +
-    cellStr('D7', '20-49', 4) +
-    cellStr('E7', '1-19', 5) +
+  const orderedCount = items.filter(function(it) { return it.orderStatus === 'สั่งแล้ว'; }).length;
+  const notOrderedCount = items.length - orderedCount;
+  rows.push('<row r="6">' + cellStr('A6', 'จำนวนสั่งแล้ว') + cellNum('B6', orderedCount) + cellStr('C6', 'SKU') + '</row>');
+  rows.push('<row r="7">' + cellStr('A7', 'จำนวนยังไม่สั่ง') + cellNum('B7', notOrderedCount) + cellStr('C7', 'SKU') + '</row>');
+  rows.push('<row r="8">' + cellStr('A8', 'จำนวนรวม') + cellNum('B8', totalQty) + cellStr('C8', 'ชิ้น') + '</row>');
+  rows.push('<row r="9">' +
+    cellStr('A9', 'เกณฑ์สี (ตามสีพื้นหลังแถว)') +
+    cellStr('B9', '100 ขึ้นไป', 2) +
+    cellStr('C9', '50-99', 3) +
+    cellStr('D9', '20-49', 4) +
+    cellStr('E9', '1-19', 5) +
     '</row>');
 
   const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'สถานะ', 'หมายเหตุ', 'ระดับจำนวน'];
   const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
-  rows.push('<row r="8">' + headerCols.map(function(col, i) { return cellStr(col + '8', headerCells[i], 1); }).join('') + '</row>');
+  rows.push('<row r="10">' + headerCols.map(function(col, i) { return cellStr(col + '10', headerCells[i], 1); }).join('') + '</row>');
 
   items.forEach(function(item, i) {
-    const r = i + 9;
+    const r = i + 11;
     const tier = tierFor(item.orderQty);
     const s = tier.style;
     rows.push('<row r="' + r + '">' +
@@ -1398,7 +1402,7 @@ function buildMrpSheetXml(person, items, notItems) {
       '</row>');
   });
 
-  const totalRow = items.length + 10;
+  const totalRow = items.length + 12;
   rows.push('<row r="' + totalRow + '">' +
     cellStr('C' + totalRow, 'รวม', 1) +
     cellNum('H' + totalRow, totalQty, 1) +
@@ -1435,6 +1439,7 @@ function buildMrpSheetXml(person, items, notItems) {
   const lastRef = 'K' + lastRow;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+    '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
     '<dimension ref="A1:' + lastRef + '"/>' +
     '<cols><col min="1" max="1" width="8.83" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/>' +
     '<col min="3" max="3" width="42" customWidth="1"/><col min="4" max="4" width="24" customWidth="1"/>' +
@@ -1444,6 +1449,9 @@ function buildMrpSheetXml(person, items, notItems) {
     '<col min="11" max="11" width="16" customWidth="1"/></cols>' +
     '<sheetData>' + rows.join('') + '</sheetData>' +
     '<mergeCells count="1"><mergeCell ref="A1:K1"/></mergeCells>' +
+    '<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
+    '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0" scale="100"/>' +
+    (notList.length > 0 ? '<rowBreaks count="1" manualBreakCount="1"><brk id="' + totalRow + '" max="16383" man="1"/></rowBreaks>' : '') +
     '</worksheet>';
 }
 
@@ -1473,21 +1481,25 @@ function buildAllSkuSheetXml(company, items, notItems) {
   rows.push('<row r="3">' + cellStr('A3', 'วันที่สร้าง') + cellStr('B3', thaiShortDate(now)) + '</row>');
   rows.push('<row r="4">' + cellStr('A4', 'สถานะแผน') + cellStr('B4', 'ยังไม่สั่ง') + '</row>');
   rows.push('<row r="5">' + cellStr('A5', 'จำนวนรายการ') + cellNum('B5', items.length) + cellStr('C5', 'SKU') + '</row>');
-  rows.push('<row r="6">' + cellStr('A6', 'จำนวนรวม') + cellNum('B6', totalQty) + cellStr('C6', 'ชิ้น') + '</row>');
-  rows.push('<row r="7">' +
-    cellStr('A7', 'เกณฑ์สี (ตามสีพื้นหลังแถว)') +
-    cellStr('B7', '100 ขึ้นไป', 2) +
-    cellStr('C7', '50-99', 3) +
-    cellStr('D7', '20-49', 4) +
-    cellStr('E7', '1-19', 5) +
+  const orderedCount = items.filter(function(it) { return it.orderStatus === 'สั่งแล้ว'; }).length;
+  const notOrderedCount = items.length - orderedCount;
+  rows.push('<row r="6">' + cellStr('A6', 'จำนวนสั่งแล้ว') + cellNum('B6', orderedCount) + cellStr('C6', 'SKU') + '</row>');
+  rows.push('<row r="7">' + cellStr('A7', 'จำนวนยังไม่สั่ง') + cellNum('B7', notOrderedCount) + cellStr('C7', 'SKU') + '</row>');
+  rows.push('<row r="8">' + cellStr('A8', 'จำนวนรวม') + cellNum('B8', totalQty) + cellStr('C8', 'ชิ้น') + '</row>');
+  rows.push('<row r="9">' +
+    cellStr('A9', 'เกณฑ์สี (ตามสีพื้นหลังแถว)') +
+    cellStr('B9', '100 ขึ้นไป', 2) +
+    cellStr('C9', '50-99', 3) +
+    cellStr('D9', '20-49', 4) +
+    cellStr('E9', '1-19', 5) +
     '</row>');
 
   const headerCells = ['ลำดับ', 'SKU', 'ผู้รับผิดชอบ', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'สถานะ', 'หมายเหตุ', 'ระดับจำนวน'];
   const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
-  rows.push('<row r="8">' + headerCols.map(function(col, i) { return cellStr(col + '8', headerCells[i], 1); }).join('') + '</row>');
+  rows.push('<row r="10">' + headerCols.map(function(col, i) { return cellStr(col + '10', headerCells[i], 1); }).join('') + '</row>');
 
   items.forEach(function(item, i) {
-    const r = i + 9;
+    const r = i + 11;
     const tier = tierFor(item.orderQty);
     const s = tier.style;
     rows.push('<row r="' + r + '">' +
@@ -1506,7 +1518,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
       '</row>');
   });
 
-  const totalRow = items.length + 10;
+  const totalRow = items.length + 12;
   rows.push('<row r="' + totalRow + '">' +
     cellStr('D' + totalRow, 'รวม', 1) +
     cellNum('I' + totalRow, totalQty, 1) +
@@ -1544,6 +1556,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
   const lastRef = 'L' + lastRow;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+    '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
     '<dimension ref="A1:' + lastRef + '"/>' +
     '<cols><col min="1" max="1" width="8.83" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/>' +
     '<col min="3" max="3" width="16" customWidth="1"/><col min="4" max="4" width="42" customWidth="1"/>' +
@@ -1553,6 +1566,9 @@ function buildAllSkuSheetXml(company, items, notItems) {
     '<col min="11" max="11" width="26" customWidth="1"/><col min="12" max="12" width="16" customWidth="1"/></cols>' +
     '<sheetData>' + rows.join('') + '</sheetData>' +
     '<mergeCells count="1"><mergeCell ref="A1:L1"/></mergeCells>' +
+    '<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
+    '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0" scale="100"/>' +
+    (notList.length > 0 ? '<rowBreaks count="1" manualBreakCount="1"><brk id="' + totalRow + '" max="16383" man="1"/></rowBreaks>' : '') +
     '</worksheet>';
 }
 
