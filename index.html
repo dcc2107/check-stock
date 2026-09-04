@@ -1396,83 +1396,128 @@ function buildMrpSheetXml(person, items, notItems) {
   const totalQty = items.reduce(function(sum, r) { return sum + r.orderQty; }, 0);
   const company = (items[0] && items[0].company) || '';
   const rows = [];
+  // ใช้ตัวนับแถวแบบ running แทนเลขคงที่ เพราะตอนนี้แบ่งรายการ "ต้องสั่ง" เป็น 2 กลุ่มย่อยตามเฉลี่ยใช้ต่อสัปดาห์
+  // (ยาว/สั้นไม่แน่นอน) ทำให้ตำแหน่งแถวถัดๆ ไปขยับได้ คำนวณเป็นสูตรตายตัวจะเสี่ยงผิด
+  let r = 0;
+  function nextRow() { r += 1; return r; }
 
-  rows.push('<row r="1">' + cellStr('A1', 'AMADA XTREME - MRP ORDER REPORT (' + company + ' · ' + person + ')', 1) + '</row>');
-  rows.push('<row r="2">' + cellStr('A2', 'เลขที่แผน') + cellStr('B2', planNo) + '</row>');
-  rows.push('<row r="3">' + cellStr('A3', 'วันที่สร้าง') + cellStr('B3', thaiShortDate(now)) + '</row>');
-  rows.push('<row r="4">' + cellStr('A4', 'สถานะแผน') + cellStr('B4', 'ยังไม่สั่ง') + '</row>');
-  rows.push('<row r="5">' + cellStr('A5', 'จำนวนรายการ') + cellNum('B5', items.length) + cellStr('C5', 'SKU') + '</row>');
+  const r1 = nextRow();
+  rows.push('<row r="' + r1 + '">' + cellStr('A' + r1, 'AMADA XTREME - MRP ORDER REPORT (' + company + ' · ' + person + ')', 1) + '</row>');
+  const r2 = nextRow();
+  rows.push('<row r="' + r2 + '">' + cellStr('A' + r2, 'เลขที่แผน') + cellStr('B' + r2, planNo) + '</row>');
+  const r3 = nextRow();
+  rows.push('<row r="' + r3 + '">' + cellStr('A' + r3, 'วันที่สร้าง') + cellStr('B' + r3, thaiShortDate(now)) + '</row>');
+  const r4 = nextRow();
+  rows.push('<row r="' + r4 + '">' + cellStr('A' + r4, 'สถานะแผน') + cellStr('B' + r4, 'ยังไม่สั่ง') + '</row>');
+  const r5 = nextRow();
+  rows.push('<row r="' + r5 + '">' + cellStr('A' + r5, 'จำนวนรายการ') + cellNum('B' + r5, items.length) + cellStr('C' + r5, 'SKU') + '</row>');
   const orderedCount = items.filter(function(it) { return it.orderStatus === 'สั่งแล้ว'; }).length;
   const notOrderedCount = items.length - orderedCount;
-  rows.push('<row r="6">' + cellStr('A6', 'จำนวนสั่งแล้ว') + cellNum('B6', orderedCount) + cellStr('C6', 'SKU') + '</row>');
-  rows.push('<row r="7">' + cellStr('A7', 'จำนวนยังไม่สั่ง') + cellNum('B7', notOrderedCount) + cellStr('C7', 'SKU') + '</row>');
-  rows.push('<row r="8">' + cellStr('A8', 'จำนวนรวม') + cellNum('B8', totalQty) + cellStr('C8', 'ชิ้น') + '</row>');
-  rows.push('<row r="9">' +
-    cellStr('A9', 'เกณฑ์สี (ตามสีพื้นหลังแถว)') +
-    cellStr('B9', '100 ขึ้นไป', 2) +
-    cellStr('C9', '50-99', 3) +
-    cellStr('D9', '20-49', 4) +
-    cellStr('E9', '1-19', 5) +
+  const r6 = nextRow();
+  rows.push('<row r="' + r6 + '">' + cellStr('A' + r6, 'จำนวนสั่งแล้ว') + cellNum('B' + r6, orderedCount) + cellStr('C' + r6, 'SKU') + '</row>');
+  const r7 = nextRow();
+  rows.push('<row r="' + r7 + '">' + cellStr('A' + r7, 'จำนวนยังไม่สั่ง') + cellNum('B' + r7, notOrderedCount) + cellStr('C' + r7, 'SKU') + '</row>');
+  const r8 = nextRow();
+  rows.push('<row r="' + r8 + '">' + cellStr('A' + r8, 'จำนวนรวม') + cellNum('B' + r8, totalQty) + cellStr('C' + r8, 'ชิ้น') + '</row>');
+  const r9 = nextRow();
+  rows.push('<row r="' + r9 + '">' +
+    cellStr('A' + r9, 'เกณฑ์สี (ตามสีพื้นหลังแถว)') +
+    cellStr('B' + r9, '100 ขึ้นไป', 2) +
+    cellStr('C' + r9, '50-99', 3) +
+    cellStr('D' + r9, '20-49', 4) +
+    cellStr('E' + r9, '1-19', 5) +
     '</row>');
 
   const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'สถานะ', 'หมายเหตุ', 'ระดับจำนวน'];
   const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
-  rows.push('<row r="10">' + headerCols.map(function(col, i) { return cellStr(col + '10', headerCells[i], 1); }).join('') + '</row>');
 
-  items.forEach(function(item, i) {
-    const r = i + 11;
-    const tier = tierFor(item.orderQty);
-    const s = tier.style;
-    rows.push('<row r="' + r + '">' +
-      cellNum('A' + r, i + 1, s) +
-      cellStr('B' + r, item.sku, s) +
-      cellStr('C' + r, item.desc || '-', s) +
-      cellNum('D' + r, item.avgWeekly, s) +
-      cellNum('E' + r, item.target12, s) +
-      cellNum('F' + r, item.stock, s) +
-      cellNum('G' + r, item.wip, s) +
-      cellNum('H' + r, item.orderQty, s) +
-      cellStr('I' + r, item.orderStatus || 'ยังไม่สั่ง', s) +
-      cellStr('J' + r, item.orderRemark || '-', s) +
-      cellStr('K' + r, tier.label, s) +
+  function pushColumnHeaderRow() {
+    const rr = nextRow();
+    rows.push('<row r="' + rr + '">' + headerCols.map(function(col, i) { return cellStr(col + rr, headerCells[i], 1); }).join('') + '</row>');
+  }
+  function pushItemRows(list) {
+    list.forEach(function(item, i) {
+      const rr = nextRow();
+      const tier = tierFor(item.orderQty);
+      const s = tier.style;
+      rows.push('<row r="' + rr + '">' +
+        cellNum('A' + rr, i + 1, s) +
+        cellStr('B' + rr, item.sku, s) +
+        cellStr('C' + rr, item.desc || '-', s) +
+        cellNum('D' + rr, item.avgWeekly, s) +
+        cellNum('E' + rr, item.target12, s) +
+        cellNum('F' + rr, item.stock, s) +
+        cellNum('G' + rr, item.wip, s) +
+        cellNum('H' + rr, item.orderQty, s) +
+        cellStr('I' + rr, item.orderStatus || 'ยังไม่สั่ง', s) +
+        cellStr('J' + rr, item.orderRemark || '-', s) +
+        cellStr('K' + rr, tier.label, s) +
+        '</row>');
+    });
+  }
+
+  // แบ่งรายการ "ต้องสั่ง" เป็น 2 กลุ่มตามเฉลี่ยใช้ต่อสัปดาห์ (per user 2026-09-04)
+  // มากกว่า 10 ชิ้น/สัปดาห์ อยู่กลุ่มแรก, 10 ชิ้นหรือน้อยกว่าอยู่กลุ่มถัดมา — เกณฑ์ 10 พอดีถือว่าอยู่กลุ่มหลัง
+  const highList = items.filter(function(it) { return it.avgWeekly > 10; });
+  const lowList = items.filter(function(it) { return it.avgWeekly <= 10; });
+
+  if (highList.length > 0) {
+    const rr = nextRow();
+    rows.push('<row r="' + rr + '">' +
+      cellStr('A' + rr, 'รายการที่ต้องสั่ง — เฉลี่ยใช้ต่อสัปดาห์มากกว่า 10', 1) +
+      cellNum('B' + rr, highList.length, 1) +
+      cellStr('C' + rr, 'SKU', 1) +
       '</row>');
-  });
+    pushColumnHeaderRow();
+    pushItemRows(highList);
+  }
+  if (lowList.length > 0) {
+    if (highList.length > 0) nextRow(); // เว้น 1 แถวคั่นระหว่าง 2 กลุ่มย่อย
+    const rr = nextRow();
+    rows.push('<row r="' + rr + '">' +
+      cellStr('A' + rr, 'รายการที่ต้องสั่ง — เฉลี่ยใช้ต่อสัปดาห์ 10 หรือน้อยกว่า', 1) +
+      cellNum('B' + rr, lowList.length, 1) +
+      cellStr('C' + rr, 'SKU', 1) +
+      '</row>');
+    pushColumnHeaderRow();
+    pushItemRows(lowList);
+  }
 
-  const totalRow = items.length + 12;
+  nextRow(); // เว้น 1 แถวก่อนแถวรวมยอด
+  const totalRow = nextRow();
   rows.push('<row r="' + totalRow + '">' +
     cellStr('C' + totalRow, 'รวม', 1) +
     cellNum('H' + totalRow, totalQty, 1) +
     cellStr('I' + totalRow, 'ชิ้น', 1) +
     '</row>');
 
-  let lastRow = totalRow;
   const notList = notItems || [];
   if (notList.length > 0) {
-    const notHeaderRow = totalRow + 2;
+    nextRow(); // เว้น 1 แถวก่อนขึ้นหัวข้อ "ไม่เข้าเกณฑ์"
+    const notHeaderRow = nextRow();
     rows.push('<row r="' + notHeaderRow + '">' +
       cellStr('A' + notHeaderRow, 'รายการไม่เข้าเกณฑ์สั่งซื้อ', 1) +
       cellNum('B' + notHeaderRow, notList.length, 1) +
       cellStr('C' + notHeaderRow, 'SKU', 1) +
       '</row>');
-    const notColHeaderRow = notHeaderRow + 1;
+    const notColHeaderRow = nextRow();
     const notHeaderCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)'];
     rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E','F','G'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], 1); }).join('') + '</row>');
     notList.forEach(function(item, i) {
-      const r = notColHeaderRow + 1 + i;
-      rows.push('<row r="' + r + '">' +
-        cellNum('A' + r, i + 1) +
-        cellStr('B' + r, item.sku) +
-        cellStr('C' + r, item.desc || '-') +
-        cellNum('D' + r, item.avgWeekly) +
-        cellNum('E' + r, item.target12) +
-        cellNum('F' + r, item.stock) +
-        cellNum('G' + r, item.wip) +
+      const rr = nextRow();
+      rows.push('<row r="' + rr + '">' +
+        cellNum('A' + rr, i + 1) +
+        cellStr('B' + rr, item.sku) +
+        cellStr('C' + rr, item.desc || '-') +
+        cellNum('D' + rr, item.avgWeekly) +
+        cellNum('E' + rr, item.target12) +
+        cellNum('F' + rr, item.stock) +
+        cellNum('G' + rr, item.wip) +
         '</row>');
     });
-    lastRow = notColHeaderRow + notList.length;
   }
 
-  const lastRef = 'K' + lastRow;
+  const lastRef = 'K' + r;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
@@ -1511,85 +1556,130 @@ function buildAllSkuSheetXml(company, items, notItems) {
   const planNo = nextMrpPlanNumber(now);
   const totalQty = items.reduce(function(sum, r) { return sum + r.orderQty; }, 0);
   const rows = [];
+  // ใช้ตัวนับแถวแบบ running แทนเลขคงที่ เพราะตอนนี้แบ่งรายการ "ต้องสั่ง" เป็น 2 กลุ่มย่อยตามเฉลี่ยใช้ต่อสัปดาห์
+  // (ยาว/สั้นไม่แน่นอน) ทำให้ตำแหน่งแถวถัดๆ ไปขยับได้ คำนวณเป็นสูตรตายตัวจะเสี่ยงผิด
+  let r = 0;
+  function nextRow() { r += 1; return r; }
 
-  rows.push('<row r="1">' + cellStr('A1', 'AMADA XTREME - MRP ORDER REPORT (' + company + ' · รวมทุกคน)', 1) + '</row>');
-  rows.push('<row r="2">' + cellStr('A2', 'เลขที่แผน') + cellStr('B2', planNo) + '</row>');
-  rows.push('<row r="3">' + cellStr('A3', 'วันที่สร้าง') + cellStr('B3', thaiShortDate(now)) + '</row>');
-  rows.push('<row r="4">' + cellStr('A4', 'สถานะแผน') + cellStr('B4', 'ยังไม่สั่ง') + '</row>');
-  rows.push('<row r="5">' + cellStr('A5', 'จำนวนรายการ') + cellNum('B5', items.length) + cellStr('C5', 'SKU') + '</row>');
+  const r1 = nextRow();
+  rows.push('<row r="' + r1 + '">' + cellStr('A' + r1, 'AMADA XTREME - MRP ORDER REPORT (' + company + ' · รวมทุกคน)', 1) + '</row>');
+  const r2 = nextRow();
+  rows.push('<row r="' + r2 + '">' + cellStr('A' + r2, 'เลขที่แผน') + cellStr('B' + r2, planNo) + '</row>');
+  const r3 = nextRow();
+  rows.push('<row r="' + r3 + '">' + cellStr('A' + r3, 'วันที่สร้าง') + cellStr('B' + r3, thaiShortDate(now)) + '</row>');
+  const r4 = nextRow();
+  rows.push('<row r="' + r4 + '">' + cellStr('A' + r4, 'สถานะแผน') + cellStr('B' + r4, 'ยังไม่สั่ง') + '</row>');
+  const r5 = nextRow();
+  rows.push('<row r="' + r5 + '">' + cellStr('A' + r5, 'จำนวนรายการ') + cellNum('B' + r5, items.length) + cellStr('C' + r5, 'SKU') + '</row>');
   const orderedCount = items.filter(function(it) { return it.orderStatus === 'สั่งแล้ว'; }).length;
   const notOrderedCount = items.length - orderedCount;
-  rows.push('<row r="6">' + cellStr('A6', 'จำนวนสั่งแล้ว') + cellNum('B6', orderedCount) + cellStr('C6', 'SKU') + '</row>');
-  rows.push('<row r="7">' + cellStr('A7', 'จำนวนยังไม่สั่ง') + cellNum('B7', notOrderedCount) + cellStr('C7', 'SKU') + '</row>');
-  rows.push('<row r="8">' + cellStr('A8', 'จำนวนรวม') + cellNum('B8', totalQty) + cellStr('C8', 'ชิ้น') + '</row>');
-  rows.push('<row r="9">' +
-    cellStr('A9', 'เกณฑ์สี (ตามสีพื้นหลังแถว)') +
-    cellStr('B9', '100 ขึ้นไป', 2) +
-    cellStr('C9', '50-99', 3) +
-    cellStr('D9', '20-49', 4) +
-    cellStr('E9', '1-19', 5) +
+  const r6 = nextRow();
+  rows.push('<row r="' + r6 + '">' + cellStr('A' + r6, 'จำนวนสั่งแล้ว') + cellNum('B' + r6, orderedCount) + cellStr('C' + r6, 'SKU') + '</row>');
+  const r7 = nextRow();
+  rows.push('<row r="' + r7 + '">' + cellStr('A' + r7, 'จำนวนยังไม่สั่ง') + cellNum('B' + r7, notOrderedCount) + cellStr('C' + r7, 'SKU') + '</row>');
+  const r8 = nextRow();
+  rows.push('<row r="' + r8 + '">' + cellStr('A' + r8, 'จำนวนรวม') + cellNum('B' + r8, totalQty) + cellStr('C' + r8, 'ชิ้น') + '</row>');
+  const r9 = nextRow();
+  rows.push('<row r="' + r9 + '">' +
+    cellStr('A' + r9, 'เกณฑ์สี (ตามสีพื้นหลังแถว)') +
+    cellStr('B' + r9, '100 ขึ้นไป', 2) +
+    cellStr('C' + r9, '50-99', 3) +
+    cellStr('D' + r9, '20-49', 4) +
+    cellStr('E' + r9, '1-19', 5) +
     '</row>');
 
   const headerCells = ['ลำดับ', 'SKU', 'ผู้รับผิดชอบ', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'สถานะ', 'หมายเหตุ', 'ระดับจำนวน'];
   const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
-  rows.push('<row r="10">' + headerCols.map(function(col, i) { return cellStr(col + '10', headerCells[i], 1); }).join('') + '</row>');
 
-  items.forEach(function(item, i) {
-    const r = i + 11;
-    const tier = tierFor(item.orderQty);
-    const s = tier.style;
-    rows.push('<row r="' + r + '">' +
-      cellNum('A' + r, i + 1, s) +
-      cellStr('B' + r, item.sku, s) +
-      cellStr('C' + r, item.person, s) +
-      cellStr('D' + r, item.desc || '-', s) +
-      cellNum('E' + r, item.avgWeekly, s) +
-      cellNum('F' + r, item.target12, s) +
-      cellNum('G' + r, item.stock, s) +
-      cellNum('H' + r, item.wip, s) +
-      cellNum('I' + r, item.orderQty, s) +
-      cellStr('J' + r, item.orderStatus || 'ยังไม่สั่ง', s) +
-      cellStr('K' + r, item.orderRemark || '-', s) +
-      cellStr('L' + r, tier.label, s) +
+  function pushColumnHeaderRow() {
+    const rr = nextRow();
+    rows.push('<row r="' + rr + '">' + headerCols.map(function(col, i) { return cellStr(col + rr, headerCells[i], 1); }).join('') + '</row>');
+  }
+  function pushItemRows(list) {
+    list.forEach(function(item, i) {
+      const rr = nextRow();
+      const tier = tierFor(item.orderQty);
+      const s = tier.style;
+      rows.push('<row r="' + rr + '">' +
+        cellNum('A' + rr, i + 1, s) +
+        cellStr('B' + rr, item.sku, s) +
+        cellStr('C' + rr, item.person, s) +
+        cellStr('D' + rr, item.desc || '-', s) +
+        cellNum('E' + rr, item.avgWeekly, s) +
+        cellNum('F' + rr, item.target12, s) +
+        cellNum('G' + rr, item.stock, s) +
+        cellNum('H' + rr, item.wip, s) +
+        cellNum('I' + rr, item.orderQty, s) +
+        cellStr('J' + rr, item.orderStatus || 'ยังไม่สั่ง', s) +
+        cellStr('K' + rr, item.orderRemark || '-', s) +
+        cellStr('L' + rr, tier.label, s) +
+        '</row>');
+    });
+  }
+
+  // แบ่งรายการ "ต้องสั่ง" เป็น 2 กลุ่มตามเฉลี่ยใช้ต่อสัปดาห์ (per user 2026-09-04)
+  // มากกว่า 10 ชิ้น/สัปดาห์ อยู่กลุ่มแรก, 10 ชิ้นหรือน้อยกว่าอยู่กลุ่มถัดมา — เกณฑ์ 10 พอดีถือว่าอยู่กลุ่มหลัง
+  const highList = items.filter(function(it) { return it.avgWeekly > 10; });
+  const lowList = items.filter(function(it) { return it.avgWeekly <= 10; });
+
+  if (highList.length > 0) {
+    const rr = nextRow();
+    rows.push('<row r="' + rr + '">' +
+      cellStr('A' + rr, 'รายการที่ต้องสั่ง — เฉลี่ยใช้ต่อสัปดาห์มากกว่า 10', 1) +
+      cellNum('B' + rr, highList.length, 1) +
+      cellStr('C' + rr, 'SKU', 1) +
       '</row>');
-  });
+    pushColumnHeaderRow();
+    pushItemRows(highList);
+  }
+  if (lowList.length > 0) {
+    if (highList.length > 0) nextRow(); // เว้น 1 แถวคั่นระหว่าง 2 กลุ่มย่อย
+    const rr = nextRow();
+    rows.push('<row r="' + rr + '">' +
+      cellStr('A' + rr, 'รายการที่ต้องสั่ง — เฉลี่ยใช้ต่อสัปดาห์ 10 หรือน้อยกว่า', 1) +
+      cellNum('B' + rr, lowList.length, 1) +
+      cellStr('C' + rr, 'SKU', 1) +
+      '</row>');
+    pushColumnHeaderRow();
+    pushItemRows(lowList);
+  }
 
-  const totalRow = items.length + 12;
+  nextRow(); // เว้น 1 แถวก่อนแถวรวมยอด
+  const totalRow = nextRow();
   rows.push('<row r="' + totalRow + '">' +
     cellStr('D' + totalRow, 'รวม', 1) +
     cellNum('I' + totalRow, totalQty, 1) +
     cellStr('J' + totalRow, 'ชิ้น', 1) +
     '</row>');
 
-  let lastRow = totalRow;
   const notList = notItems || [];
   if (notList.length > 0) {
-    const notHeaderRow = totalRow + 2;
+    nextRow(); // เว้น 1 แถวก่อนขึ้นหัวข้อ "ไม่เข้าเกณฑ์"
+    const notHeaderRow = nextRow();
     rows.push('<row r="' + notHeaderRow + '">' +
       cellStr('A' + notHeaderRow, 'รายการไม่เข้าเกณฑ์สั่งซื้อ', 1) +
       cellNum('B' + notHeaderRow, notList.length, 1) +
       cellStr('C' + notHeaderRow, 'SKU', 1) +
       '</row>');
-    const notColHeaderRow = notHeaderRow + 1;
+    const notColHeaderRow = nextRow();
     const notHeaderCells = ['ลำดับ', 'SKU', 'ผู้รับผิดชอบ', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)'];
     rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E','F','G','H'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], 1); }).join('') + '</row>');
     notList.forEach(function(item, i) {
-      const r = notColHeaderRow + 1 + i;
-      rows.push('<row r="' + r + '">' +
-        cellNum('A' + r, i + 1) +
-        cellStr('B' + r, item.sku) +
-        cellStr('C' + r, item.person) +
-        cellStr('D' + r, item.desc || '-') +
-        cellNum('E' + r, item.avgWeekly) +
-        cellNum('F' + r, item.target12) +
-        cellNum('G' + r, item.stock) +
-        cellNum('H' + r, item.wip) +
+      const rr = nextRow();
+      rows.push('<row r="' + rr + '">' +
+        cellNum('A' + rr, i + 1) +
+        cellStr('B' + rr, item.sku) +
+        cellStr('C' + rr, item.person) +
+        cellStr('D' + rr, item.desc || '-') +
+        cellNum('E' + rr, item.avgWeekly) +
+        cellNum('F' + rr, item.target12) +
+        cellNum('G' + rr, item.stock) +
+        cellNum('H' + rr, item.wip) +
         '</row>');
     });
-    lastRow = notColHeaderRow + notList.length;
   }
 
-  const lastRef = 'L' + lastRow;
+  const lastRef = 'L' + r;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
@@ -1645,23 +1735,48 @@ function buildMrpPrintHtml(person, items, notItems) {
     return '<span class="mrp-swatch"><span class="mrp-swatch-color" style="background:' + t.color + '"></span>' + t.label + '</span>';
   }).join('');
 
-  const rowsHtml = items.map(function(item, i) {
-    const tier = tierFor(item.orderQty);
-    const bg = tierColorHex(tier.style);
-    return '<tr style="background:' + bg + '">' +
-      '<td class="mrp-num">' + (i + 1) + '</td>' +
-      '<td>' + xmlEscape(item.sku) + '</td>' +
-      '<td>' + xmlEscape(item.desc || '-') + '</td>' +
-      '<td class="mrp-num">' + item.avgWeekly.toLocaleString('th-TH') + '</td>' +
-      '<td class="mrp-num">' + item.target12.toLocaleString('th-TH') + '</td>' +
-      '<td class="mrp-num">' + item.stock.toLocaleString('th-TH') + '</td>' +
-      '<td class="mrp-num">' + item.wip.toLocaleString('th-TH') + '</td>' +
-      '<td class="mrp-num">' + item.orderQty.toLocaleString('th-TH') + '</td>' +
-      '<td>' + xmlEscape(item.orderStatus || 'ยังไม่สั่ง') + '</td>' +
-      '<td>' + xmlEscape(item.orderRemark || '-') + '</td>' +
-      '<td>' + tier.label + '</td>' +
-      '</tr>';
-  }).join('');
+  function buildRowsHtml(list) {
+    return list.map(function(item, i) {
+      const tier = tierFor(item.orderQty);
+      const bg = tierColorHex(tier.style);
+      return '<tr style="background:' + bg + '">' +
+        '<td class="mrp-num">' + (i + 1) + '</td>' +
+        '<td>' + xmlEscape(item.sku) + '</td>' +
+        '<td>' + xmlEscape(item.desc || '-') + '</td>' +
+        '<td class="mrp-num">' + item.avgWeekly.toLocaleString('th-TH') + '</td>' +
+        '<td class="mrp-num">' + item.target12.toLocaleString('th-TH') + '</td>' +
+        '<td class="mrp-num">' + item.stock.toLocaleString('th-TH') + '</td>' +
+        '<td class="mrp-num">' + item.wip.toLocaleString('th-TH') + '</td>' +
+        '<td class="mrp-num">' + item.orderQty.toLocaleString('th-TH') + '</td>' +
+        '<td>' + xmlEscape(item.orderStatus || 'ยังไม่สั่ง') + '</td>' +
+        '<td>' + xmlEscape(item.orderRemark || '-') + '</td>' +
+        '<td>' + tier.label + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  // แบ่งรายการ "ต้องสั่ง" เป็น 2 กลุ่มตามเฉลี่ยใช้ต่อสัปดาห์ (per user 2026-09-04)
+  // มากกว่า 10 ชิ้น/สัปดาห์ อยู่กลุ่มแรก, 10 ชิ้นหรือน้อยกว่าอยู่กลุ่มถัดมา — เกณฑ์ 10 พอดีถือว่าอยู่กลุ่มหลัง
+  const highList = items.filter(function(it) { return it.avgWeekly > 10; });
+  const lowList = items.filter(function(it) { return it.avgWeekly <= 10; });
+
+  function buildOrderSectionHtml(list, title) {
+    if (list.length === 0) return '';
+    const subQty = list.reduce(function(sum, r) { return sum + r.orderQty; }, 0);
+    return '<h2 class="mrp-subhead">' + title + ' <span class="mrp-subcount">' + list.length + ' SKU</span></h2>' +
+      '<table>' +
+      '<thead><tr>' +
+      '<th>ลำดับ</th><th>SKU</th><th>ชื่อสินค้า</th>' +
+      '<th class="mrp-num">เฉลี่ย/สัปดาห์</th><th class="mrp-num">เป้าหมาย 12 วัน</th><th class="mrp-num">ยอดคงเหลือ</th><th class="mrp-num">WIP</th><th class="mrp-num">จำนวนสั่ง (ชิ้น)</th>' +
+      '<th>สถานะ</th><th>หมายเหตุ</th><th>ระดับจำนวน</th>' +
+      '</tr></thead>' +
+      '<tbody>' + buildRowsHtml(list) + '</tbody>' +
+      '<tfoot><tr><td colspan="7"></td><td class="mrp-num">' + subQty.toLocaleString('th-TH') + '</td><td>ชิ้น</td><td></td><td></td></tr></tfoot>' +
+      '</table>';
+  }
+
+  const highSectionHtml = buildOrderSectionHtml(highList, 'รายการที่ต้องสั่ง — เฉลี่ยใช้ต่อสัปดาห์มากกว่า 10');
+  const lowSectionHtml = buildOrderSectionHtml(lowList, 'รายการที่ต้องสั่ง — เฉลี่ยใช้ต่อสัปดาห์ 10 หรือน้อยกว่า');
 
   const notRowsHtml = notList.map(function(item, i) {
     return '<tr>' +
@@ -1717,15 +1832,8 @@ function buildMrpPrintHtml(person, items, notItems) {
     '<div><span class="k">จำนวนรวม</span>' + totalQty.toLocaleString('th-TH') + ' ชิ้น</div>' +
     '</div>' +
     '<div class="mrp-legend">' + legendHtml + '</div>' +
-    '<table>' +
-    '<thead><tr>' +
-    '<th>ลำดับ</th><th>SKU</th><th>ชื่อสินค้า</th>' +
-    '<th class="mrp-num">เฉลี่ย/สัปดาห์</th><th class="mrp-num">เป้าหมาย 12 วัน</th><th class="mrp-num">ยอดคงเหลือ</th><th class="mrp-num">WIP</th><th class="mrp-num">จำนวนสั่ง (ชิ้น)</th>' +
-    '<th>สถานะ</th><th>หมายเหตุ</th><th>ระดับจำนวน</th>' +
-    '</tr></thead>' +
-    '<tbody>' + rowsHtml + '</tbody>' +
-    '<tfoot><tr><td colspan="7"></td><td class="mrp-num">' + totalQty.toLocaleString('th-TH') + '</td><td>ชิ้น</td><td></td><td></td></tr></tfoot>' +
-    '</table>' +
+    highSectionHtml +
+    lowSectionHtml +
     notSectionHtml +
     '</div>';
 }
