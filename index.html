@@ -425,6 +425,30 @@
   .order-status-select { min-width: 92px; }
   .order-remark-input { width: 160px; max-width: 100%; }
 
+  .bulk-status-bar {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+  .bulk-status-hint { font-size: 12.5px; color: var(--ink-muted); margin-bottom: 8px; }
+  .bulk-status-textarea {
+    width: 100%;
+    min-height: 60px;
+    font-family: "Noto Sans Thai", sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+  .bulk-status-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .bulk-status-result { font-size: 12.5px; color: var(--ink-muted); }
+
   @media (max-width: 640px) {
     table.order-table thead { display: none; }
     table.order-table, table.order-table tbody, table.order-table tr, table.order-table td {
@@ -625,7 +649,17 @@
       <summary><span>รายการที่ต้องสั่งเพิ่ม — รวมทุกคน</span>
         <span class="pmeta"><span class="count-badge" id="combinedCountBadge">0 รายการ</span><span class="chev">&#8250;</span></span>
       </summary>
-      <div class="person-body" id="combinedBody"></div>
+      <div class="person-body">
+        <div class="bulk-status-bar">
+          <div class="bulk-status-hint">พิมพ์/วางเฉพาะ SKU ที่ <b>ยังสั่งไม่ได้</b> (คั่นด้วย comma, เว้นวรรค หรือขึ้นบรรทัดใหม่) — ที่เหลือทั้งหมดในตารางนี้จะถูกตั้งเป็น "สั่งแล้ว" ให้อัตโนมัติ</div>
+          <textarea id="bulkNotOrderInput" class="bulk-status-textarea" placeholder="เช่น AA-17-680P, MA-17-518-XT"></textarea>
+          <div class="bulk-status-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="applyBulkStatusBtn">ตั้งค่าตามรายการที่พิมพ์</button>
+            <span class="bulk-status-result" id="bulkStatusResult"></span>
+          </div>
+        </div>
+        <div id="combinedBody"></div>
+      </div>
     </details>
     <details class="person-panel" id="diagnosticsPanel" style="margin-bottom:16px;">
       <summary><span>ตรวจสอบคุณภาพข้อมูล <span class="psub">(ไม่ใช่การรับประกันความถูกต้อง 100% — ใช้ดูจุดที่ควรเช็คมือ)</span></span>
@@ -1921,6 +1955,39 @@ if (gateForm) {
     }
   });
 }
+
+// ตั้งสถานะแบบพิมพ์รายการ: เอาไว้ใช้ตอนรายการ "ต้องสั่ง" เยอะกว่ารายการที่สั่งไม่ได้มาก ๆ
+// ผู้ใช้พิมพ์เฉพาะ SKU ส่วนน้อยที่ "ยังสั่งไม่ได้" แล้วระบบตั้งที่เหลือทั้งหมดเป็น "สั่งแล้ว" ให้เอง
+// ทำงานกับรายการ "ต้องสั่ง" ของบริษัทที่เลือกอยู่ทั้งหมด (ตรงกับขอบเขตตาราง "รวมทุกคน")
+function applyBulkNotOrderStatus() {
+  const input = document.getElementById('bulkNotOrderInput');
+  const resultEl = document.getElementById('bulkStatusResult');
+  if (!input) return;
+  const tokens = (input.value || '').split(/[\s,;，、]+/).map(function(s) { return s.trim().toUpperCase(); }).filter(Boolean);
+  const notOrderSet = new Set(tokens);
+  const needRows = allRows().filter(function(r) { return r.needOrder; });
+  const matchedTokens = new Set();
+  needRows.forEach(function(r) {
+    const key = r.sku.toUpperCase();
+    if (notOrderSet.has(key)) {
+      r.orderStatus = 'ยังไม่สั่ง';
+      matchedTokens.add(key);
+    } else {
+      r.orderStatus = 'สั่งแล้ว';
+    }
+  });
+  const unmatched = tokens.filter(function(t) { return !matchedTokens.has(t); });
+  renderResults();
+  if (resultEl) {
+    let msg = 'ตั้งค่าแล้ว: "ยังไม่สั่ง" ' + matchedTokens.size.toLocaleString('th-TH') + ' รายการ · "สั่งแล้ว" ' + (needRows.length - matchedTokens.size).toLocaleString('th-TH') + ' รายการ';
+    if (unmatched.length > 0) msg += ' — ไม่พบรหัสนี้ในรายการต้องสั่ง: ' + unmatched.join(', ');
+    resultEl.textContent = msg;
+  }
+}
+document.getElementById('applyBulkStatusBtn').addEventListener('click', function(e) {
+  e.preventDefault();
+  applyBulkNotOrderStatus();
+});
 
 document.getElementById('personFilter').addEventListener('change', function() {
   state.personFilter = this.value;
