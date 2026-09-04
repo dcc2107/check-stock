@@ -619,7 +619,7 @@
     </label>
     <ul class="file-list" id="fileList"></ul>
 
-    <div class="step-sub" style="margin-top:18px;">แนบไฟล์แผนผลิต/แผนส่งออก (WIP) — ไม่บังคับ อัปโหลดเพื่อแสดงยอดที่กำลังผลิตอยู่เป็นข้อมูลอ้างอิงเฉยๆ ไม่นำไปรวมคำนวณจำนวนสั่ง</div>
+    <div class="step-sub" style="margin-top:18px;">แนบไฟล์แผนผลิต/แผนส่งออก (WIP) — ไม่บังคับ อัปโหลดเพื่อเอายอดที่กำลังผลิตอยู่มาบวกกับคงเหลือตอนคำนวณจำนวนสั่ง</div>
     <label class="dropzone" id="wipDropzone" for="wipFileInput">
       <div><strong>แตะเพื่อเลือกไฟล์ WIP</strong> หรือลากไฟล์มาวางที่นี่</div>
       <div style="font-size:12.5px;margin-top:4px;">รองรับ .CSV ที่ save จากไฟล์แผนผลิต/แผนส่งออก (ต้องมีคอลัมน์ "PARTNAME", "จำนวน", "ลูกค้า")</div>
@@ -853,7 +853,7 @@ dropzone.addEventListener('drop', function(e) {
   if (e.dataTransfer && e.dataTransfer.files) addFiles(Array.from(e.dataTransfer.files));
 });
 
-// ---------- WIP file handling (ไฟล์แผนผลิต/แผนส่งออก — ไม่บังคับ, เอาไว้แสดงผลเฉยๆ ไม่เอาไปคำนวณจำนวนสั่ง) ----------
+// ---------- WIP file handling (ไฟล์แผนผลิต/แผนส่งออก — ไม่บังคับ, บวกเข้ากับคงเหลือตอนคำนวณจำนวนสั่ง per user 2026-09-04) ----------
 const wipFileInput = document.getElementById('wipFileInput');
 const wipDropzone = document.getElementById('wipDropzone');
 const wipFileListEl = document.getElementById('wipFileList');
@@ -1117,15 +1117,14 @@ function computeRowsForCompany(company, merged, mergedDesc, diag, wipMap) {
     // "เป้าหมาย 12 วัน" reorder policy (แทนสูตร Min/Max เดิม ทั้งหมด, per spec 2026-09-01):
     // เป้าหมาย 12 วัน = MAX(1, avg ÷ 4 ÷ 7 × 12) = MAX(1, avg × 3 ÷ 7) — avg = เฉลี่ยต่อเดือนจาก Standard
     // Position ตามสเปกเต็ม = คงเหลือ + WIP + Confirmed − Reserved แต่ตอนนี้ยังไม่มีข้อมูล Confirmed/Reserved
-    // ในระบบ เลยใช้ "คงเหลือ" (stock) แทน Position ไปก่อน — เหมือนที่ไฟล์ MRP ของหัวหน้าใช้จริง
+    // ในระบบ เลยใช้ "คงเหลือ + WIP" แทน Position (per user 2026-09-04 — เปลี่ยนจากเดิมที่ใช้คงเหลือเฉยๆ
+    // ไม่บวก WIP เพราะกลัวกระทบยอดสั่งจริง ตอนนี้ตัดสินใจเอา WIP มาบวกด้วยแล้ว)
     // เงื่อนไขสั่ง: Position < เป้าหมาย 12 วัน (ใช้ < ไม่ใช่ ≤)
     // จำนวนสั่ง: ปัดขึ้นหลัก 10, อย่างน้อย 10 — ไม่แตะ Standard Min/Max เลย
-    // WIP (ถ้ามีไฟล์แผนผลิตแนบมา) แสดงเป็นข้อมูลอ้างอิงในรีพอร์ตเฉยๆ (per user 2026-09-02) — ไม่เอาไปรวมกับ
-    // คงเหลือ/ไม่มีผลต่อ needOrder หรือ orderQty เลย
     const wip = (wipMap && wipMap.has(s.sku)) ? wipMap.get(s.sku) : 0;
     const avgWeekly = Math.round((s.avg / 4) * 100) / 100;
     const target12 = Math.max(1, Math.round((s.avg * 3 / 7) * 100) / 100);
-    const position = stock;
+    const position = stock + wip;
     const needOrder = position < target12;
     let orderQty = 0;
     if (needOrder) {
