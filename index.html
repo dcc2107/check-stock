@@ -658,6 +658,14 @@
             <span class="bulk-status-result" id="bulkStatusResult"></span>
           </div>
         </div>
+        <div class="bulk-status-bar">
+          <div class="bulk-status-hint">หรือพิมพ์/วางรายการ SKU ที่ <b>คอนเฟิร์มแล้วว่าจะสั่ง</b> (เช่น ลิสต์ที่แกะจากรูปที่หัวหน้าส่งมา) — รหัสที่พิมพ์จะถูกตั้งเป็น "สั่งแล้ว" ส่วนที่เหลือในตารางนี้จะถูกตั้งเป็น "ยังไม่สั่ง" ให้อัตโนมัติ</div>
+          <textarea id="bulkConfirmOrderInput" class="bulk-status-textarea" placeholder="เช่น AIF-20-506N, AIF-21-506N"></textarea>
+          <div class="bulk-status-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="applyBulkConfirmBtn">ตั้งค่าตามรายการที่คอนเฟิร์ม</button>
+            <span class="bulk-status-result" id="bulkConfirmResult"></span>
+          </div>
+        </div>
         <div id="combinedBody"></div>
       </div>
     </details>
@@ -2879,6 +2887,39 @@ function applyBulkNotOrderStatus() {
 document.getElementById('applyBulkStatusBtn').addEventListener('click', function(e) {
   e.preventDefault();
   applyBulkNotOrderStatus();
+});
+
+// ตั้งสถานะแบบพิมพ์รายการ "คอนเฟิร์มแล้วว่าจะสั่ง": ตรงข้ามกับ applyBulkNotOrderStatus ด้านบน
+// ใช้ตอนได้ลิสต์ SKU ที่คอนเฟิร์มมาแล้วโดยตรง (เช่น หัวหน้าส่งรูปตารางที่อนุมัติมา แล้วแกะรหัสออกมาเป็นลิสต์)
+// SKU ที่พิมพ์ = ตั้งเป็น "สั่งแล้ว", ที่เหลือในรายการ "ต้องสั่ง" ทั้งหมด = ตั้งเป็น "ยังไม่สั่ง"
+function applyBulkConfirmOrderStatus() {
+  const input = document.getElementById('bulkConfirmOrderInput');
+  const resultEl = document.getElementById('bulkConfirmResult');
+  if (!input) return;
+  const tokens = (input.value || '').split(/[\s,;，、]+/).map(function(s) { return s.trim().toUpperCase(); }).filter(Boolean);
+  const confirmSet = new Set(tokens);
+  const needRows = allRows().filter(function(r) { return r.needOrder; });
+  const matchedTokens = new Set();
+  needRows.forEach(function(r) {
+    const key = r.sku.toUpperCase();
+    if (confirmSet.has(key)) {
+      r.orderStatus = 'สั่งแล้ว';
+      matchedTokens.add(key);
+    } else {
+      r.orderStatus = 'ยังไม่สั่ง';
+    }
+  });
+  const unmatched = tokens.filter(function(t) { return !matchedTokens.has(t); });
+  renderResults();
+  if (resultEl) {
+    let msg = 'ตั้งค่าแล้ว: "สั่งแล้ว" ' + matchedTokens.size.toLocaleString('th-TH') + ' รายการ · "ยังไม่สั่ง" ' + (needRows.length - matchedTokens.size).toLocaleString('th-TH') + ' รายการ';
+    if (unmatched.length > 0) msg += ' — ไม่พบรหัสนี้ในรายการต้องสั่ง: ' + unmatched.join(', ');
+    resultEl.textContent = msg;
+  }
+}
+document.getElementById('applyBulkConfirmBtn').addEventListener('click', function(e) {
+  e.preventDefault();
+  applyBulkConfirmOrderStatus();
 });
 
 document.getElementById('personFilter').addEventListener('change', function() {
