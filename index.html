@@ -740,82 +740,10 @@
     * { transition: none !important; }
   }
 
-  .password-gate {
-    position: fixed;
-    inset: 0;
-    z-index: 999;
-    background: var(--bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  .password-gate .gate-card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 28px 24px;
-    max-width: 340px;
-    width: 100%;
-    text-align: center;
-  }
-  .password-gate h2 {
-    font-family: "Kanit", sans-serif;
-    font-size: 19px;
-    margin: 6px 0 6px;
-  }
-  .password-gate p {
-    color: var(--ink-muted);
-    font-size: 13px;
-    margin: 0 0 16px;
-  }
-  .password-gate input[type="password"] {
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1.5px solid var(--line);
-    background: var(--surface-2);
-    color: var(--ink);
-    font-size: 15px;
-    margin-bottom: 10px;
-    font-family: "Noto Sans Thai", sans-serif;
-  }
-  .password-gate input[type="password"]:focus {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-    border-color: var(--accent);
-  }
-  .password-gate .gate-error {
-    color: var(--critical);
-    font-size: 12.5px;
-    min-height: 16px;
-    margin-bottom: 6px;
-  }
+  /* หน้ารหัสผ่าน (.password-gate ฯลฯ) เอาออกแล้ว (per user 2026-09-08) — แชร์เว็บให้ทีมใช้แบบเปิดเลย ไม่ต้องล็อกอิน */
 </style>
 
-<div id="passwordGate" class="password-gate">
-  <div class="gate-card">
-    <span class="eyebrow">เครืออามาด้า เอ็กซ์ตรีม</span>
-    <h2>ใส่รหัสผ่านเพื่อเข้าใช้งาน</h2>
-    <p>เครื่องมือเช็คสต็อกโช้ค — สำหรับทีมงานภายในเท่านั้น</p>
-    <form id="gateForm">
-      <input type="password" id="gatePassword" placeholder="รหัสผ่าน" autocomplete="off" autofocus>
-      <div class="gate-error" id="gateError"></div>
-      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">เข้าใช้งาน</button>
-    </form>
-  </div>
-</div>
-<script>
-  (function() {
-    try {
-      if (localStorage.getItem('stockToolAuth') === 'ok') {
-        var g = document.getElementById('passwordGate');
-        if (g) g.style.display = 'none';
-      }
-    } catch (e) {}
-  })();
-</script>
+<!-- หน้ารหัสผ่านเอาออกแล้ว (per user 2026-09-08) — แชร์เว็บให้ทีมใช้งานแบบเปิดเลยแล้ว ไม่ต้องล็อกอิน/ใส่รหัสอีก -->
 
 <header class="topbar"><div class="topbar-inner">
   <span class="eyebrow">เครืออามาด้า เอ็กซ์ตรีม · Lean Min-Max</span>
@@ -3194,24 +3122,6 @@ function renderResults() {
     body.appendChild(tableScroll);
     details.appendChild(body);
     panels.appendChild(details);
-  });
-}
-
-const GATE_PASSWORD = 'stock';
-const gateForm = document.getElementById('gateForm');
-if (gateForm) {
-  gateForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    const input = document.getElementById('gatePassword');
-    const errorEl = document.getElementById('gateError');
-    if (input.value === GATE_PASSWORD) {
-      try { localStorage.setItem('stockToolAuth', 'ok'); } catch (err) {}
-      document.getElementById('passwordGate').style.display = 'none';
-    } else {
-      errorEl.textContent = 'รหัสผ่านไม่ถูกต้อง ลองใหม่อีกครั้ง';
-      input.value = '';
-      input.focus();
-    }
   });
 }
 
