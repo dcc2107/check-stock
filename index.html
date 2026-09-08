@@ -1,4 +1,6 @@
-﻿<title>เช็คสต็อกโช้ค</title>
+<title>เช็คสต็อกโช้ค</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -107,6 +109,177 @@
     max-width: 60ch;
   }
 
+  /* ---------- app shell: topbar + tab panels + bottom nav ---------- */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 18px;
+  }
+  .topbar-inner { max-width: 920px; margin: 0 auto; }
+  .topbar .eyebrow { margin-bottom: 2px; }
+  .topbar h1 { font-size: 20px; }
+
+  .tab-content { max-width: 920px; margin: 0 auto; padding: 20px 18px calc(84px + env(safe-area-inset-bottom, 0px)); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .tab-panel > .lede { margin-bottom: 20px; }
+
+  .bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+  .nav-btn {
+    flex: 1 1 0;
+    max-width: 110px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    padding: 6px 4px;
+    border-radius: 10px;
+    font-family: "Noto Sans Thai", sans-serif;
+    font-size: 11px;
+    color: var(--ink-muted);
+    cursor: pointer;
+  }
+  .nav-btn:hover { background: var(--surface-2); }
+  .nav-btn .nav-icon { font-size: 18px; line-height: 1; }
+  .nav-btn.active { color: var(--accent); font-weight: 600; }
+  .nav-btn.nav-center .nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 18px;
+  }
+  .nav-btn.nav-center.active .nav-icon { background: var(--accent-strong); }
+
+  .home-today-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-top: 4px;
+  }
+  .home-today-bar strong { display: block; font-family: "Kanit", sans-serif; font-size: 17px; margin-top: 2px; }
+  .home-today-label { font-size: 12px; opacity: 0.85; }
+  .home-lean-badge {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    background: rgba(255,255,255,0.18);
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .home-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin: 18px 0;
+  }
+  .home-shortcuts { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+  .home-shortcut {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--ink);
+  }
+  .home-shortcut:hover { border-color: var(--accent); }
+  .home-shortcut .shortcut-icon {
+    display: flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--accent-soft); color: var(--accent);
+    font-size: 18px; flex-shrink: 0;
+  }
+  .home-shortcut strong { display: block; font-size: 14.5px; }
+  .home-shortcut small { color: var(--ink-muted); font-size: 12.5px; }
+  .home-shortcut b { margin-left: auto; color: var(--ink-muted); font-weight: 400; }
+
+  .standard-toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .standard-toolbar input[type="text"], .standard-toolbar select {
+    font-family: "Noto Sans Thai", sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+  .standard-toolbar input[type="text"] { flex: 1 1 200px; }
+  .standard-toolbar label.standard-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-muted); }
+  .standard-table-wrap { max-height: 60vh; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; }
+  .standard-table-wrap table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .standard-table-wrap th {
+    position: sticky; top: 0;
+    background: var(--surface-2); text-align: left; padding: 8px 10px;
+    font-size: 12px; color: var(--ink-muted); border-bottom: 1px solid var(--line);
+  }
+  .standard-table-wrap td { padding: 7px 10px; border-bottom: 1px solid var(--line); }
+  .standard-table-wrap td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .standard-form {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .standard-form h4 { margin: 0 0 12px; font-family: "Kanit", sans-serif; font-size: 15px; }
+  .standard-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 14px; margin-bottom: 12px; }
+  .standard-form-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--ink-muted); }
+  .standard-form-grid label.standard-check-label { flex-direction: row; align-items: center; gap: 8px; }
+  .standard-form-grid input, .standard-form-grid select {
+    font-family: "Noto Sans Thai", sans-serif;
+    font-size: 13.5px;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 7px 10px;
+  }
+  .standard-form-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .bom-placeholder {
+    text-align: center;
+    color: var(--ink-muted);
+    padding: 50px 20px;
+    border: 1.5px dashed var(--line);
+    border-radius: 12px;
+  }
+  .bom-placeholder .bom-icon { font-size: 32px; display: block; margin-bottom: 10px; }
+
   section.card {
     background: var(--surface);
     border: 1px solid var(--line);
@@ -208,6 +381,7 @@
   }
 
   .dropzone {
+    display: block;
     border: 1.5px dashed var(--line);
     border-radius: 12px;
     padding: 26px 16px;
@@ -281,6 +455,9 @@
   }
   .btn-ghost:hover { background: var(--line); }
   .btn-sm { padding: 7px 13px; font-size: 13px; }
+  .btn-danger { background: var(--critical-soft); color: var(--critical); }
+  .btn-danger:hover { background: var(--critical); color: var(--accent-ink); }
+  .btn-danger:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .row-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; align-items: center; }
 
@@ -300,6 +477,9 @@
     padding: 14px 16px;
     box-shadow: var(--shadow);
   }
+  .stat-tile-link { cursor: pointer; transition: border-color 0.15s ease, transform 0.05s ease; }
+  .stat-tile-link:hover { border-color: var(--accent); }
+  .stat-tile-link:active { transform: translateY(1px); }
   .stat-tile .stat-label {
     font-size: 12.5px;
     color: var(--ink-muted);
@@ -313,6 +493,7 @@
   }
   .stat-tile.warn .stat-value { color: var(--warn); }
   .stat-tile.critical .stat-value { color: var(--critical); }
+  .stat-tile.ok .stat-value { color: var(--ok); }
 
   .pending-note {
     font-size: 13px;
@@ -434,6 +615,7 @@
     margin-bottom: 14px;
   }
   .bulk-status-hint { font-size: 12.5px; color: var(--ink-muted); margin-bottom: 8px; }
+  .bulk-status-note { font-size: 12px; color: var(--ink-muted); font-style: italic; margin: -4px 0 8px; }
   .bulk-status-textarea {
     width: 100%;
     min-height: 60px;
@@ -485,6 +667,49 @@
     font-size: 14px;
   }
 
+  .history-card {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    margin-bottom: 8px;
+    padding: 12px 14px;
+  }
+  .history-card-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .history-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .history-card-title { font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 14px; }
+  .history-card-meta { font-size: 12.5px; color: var(--ink-muted); margin: 2px 0 6px; }
+  .history-card-noterow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; font-size: 12.5px; color: var(--ink-muted); }
+  .history-card-note-text { flex: 1 1 auto; }
+  .history-note-input {
+    font-family: "Noto Sans Thai", sans-serif;
+    font-size: 12.5px;
+    color: var(--ink);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 10px;
+    min-width: 220px;
+    max-width: 100%;
+    flex: 1 1 220px;
+  }
+  .history-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+  .history-badge.pending { background: var(--warn-soft); color: var(--warn); }
+  .history-badge.partial { background: var(--accent-soft); color: var(--accent); }
+  .history-badge.ok { background: var(--ok-soft); color: var(--ok); }
+  .history-badge.cancelled { background: var(--critical-soft); color: var(--critical); }
+  .history-card-detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .history-qty-cell { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .history-qty-cell .history-item-qty { width: 56px; text-align: center; font-variant-numeric: tabular-nums;
+    font-family: "Noto Sans Thai", sans-serif; font-size: 12.5px; color: var(--ink);
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 4px 2px; }
+  .history-qty-cell button { padding: 4px 9px; }
+
   .toast {
     position: fixed;
     bottom: 20px;
@@ -513,12 +738,6 @@
 
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
-  }
-
-  #printRoot { display: none; }
-  @media print {
-    body > *:not(#printRoot) { display: none !important; }
-    #printRoot { display: block !important; }
   }
 
   .password-gate {
@@ -598,13 +817,120 @@
   })();
 </script>
 
-<div class="wrap">
-  <header class="page-head">
-    <span class="eyebrow">เครืออามาด้า เอ็กซ์ตรีม · Lean Min-Max</span>
-    <h1>เช็คสต็อกโช้ค</h1>
-    <p class="lede">อัปโหลดไฟล์สต็อกคงเหลือจาก Express แล้วระบบจะเทียบกับมาตรฐาน Min/Max ให้อัตโนมัติ พร้อมแยกรายการที่ต้องสั่งเพิ่มตามคนรับผิดชอบ</p>
-  </header>
+<header class="topbar"><div class="topbar-inner">
+  <span class="eyebrow">เครืออามาด้า เอ็กซ์ตรีม · Lean Min-Max</span>
+  <h1>เช็คสต็อกโช้ค</h1>
+</div></header>
 
+<main class="tab-content">
+
+  <section class="tab-panel active" id="tab-home">
+    <div id="homeMainView">
+      <p class="lede">อัปโหลดไฟล์สต็อกคงเหลือจาก Express แล้วระบบจะเทียบกับมาตรฐาน Min/Max ให้อัตโนมัติ พร้อมแยกรายการที่ต้องสั่งเพิ่มตามรหัสสินค้า</p>
+      <div class="home-today-bar">
+        <div><span class="home-today-label">ภาพรวมวันนี้</span><strong id="homeTodayDate">—</strong></div>
+        <span class="home-lean-badge">&bull; LEAN</span>
+      </div>
+      <div class="home-kpi-grid" id="homeKpiGrid"></div>
+      <div class="home-shortcuts">
+        <button type="button" class="home-shortcut" id="homeGoPlanBtn">
+          <span class="shortcut-icon">⇧</span>
+          <span><strong>เช็คสต็อก / สร้างแผนสั่งซื้อ</strong><small>อัปโหลดไฟล์ Express + WIP แล้วให้ระบบคำนวณให้</small></span>
+          <b>&#8250;</b>
+        </button>
+        <button type="button" class="home-shortcut" id="homeGoStandardBtn">
+          <span class="shortcut-icon">⚙</span>
+          <span><strong>ดู Standard สินค้า</strong><small id="homeStandardCount">— SKU</small></span>
+          <b>&#8250;</b>
+        </button>
+        <button type="button" class="home-shortcut" id="homeGoBomBtn">
+          <span class="shortcut-icon">▦</span>
+          <span><strong>BOM สินค้า</strong><small>กำลังพัฒนา</small></span>
+          <b>&#8250;</b>
+        </button>
+        <button type="button" class="home-shortcut" id="homeGoHistoryBtn">
+          <span class="shortcut-icon">▤</span>
+          <span><strong>ประวัติแผน MRP</strong><small>ดูแผนที่เคยบันทึกไว้ย้อนหลัง</small></span>
+          <b>&#8250;</b>
+        </button>
+        <button type="button" class="home-shortcut" id="homeGoDataHistoryBtn">
+          <span class="shortcut-icon">▣</span>
+          <span><strong>ข้อมูลและประวัติ</strong><small id="homeDataHistorySummary">ตรวจสอบพื้นที่และลบข้อมูลเก่า</small></span>
+          <b>&#8250;</b>
+        </button>
+      </div>
+      <p class="bulk-status-note" style="margin-top:20px;">ประมวลผลทั้งหมดในเบราว์เซอร์ของคุณ ไม่มีการส่งไฟล์สต็อกออกไปที่ไหน (ยกเว้นตอนกด "บันทึกแผนนี้ลงประวัติ MRP" ซึ่งจะส่งแค่สรุปยอดของแผนนั้นไปเก็บไว้ ไม่ส่งไฟล์สต็อกทั้งไฟล์)</p>
+    </div>
+    <div id="homeDataHistoryView" style="display:none;">
+      <button type="button" class="btn btn-ghost btn-sm" id="homeDataHistoryBackBtn">&#8249; กลับ</button>
+      <div class="step-head" style="margin-top:10px;"><span class="step-title">ข้อมูลและประวัติ</span></div>
+      <p class="lede">ตรวจสอบพื้นที่และลบข้อมูลเก่าตามช่วงวันที่ (ใช้ได้เฉพาะตอนเปิดผ่านลิงก์ Claude เท่านั้น)</p>
+      <div class="home-kpi-grid" id="dataHistoryStatsGrid"></div>
+      <div class="standard-form" style="background:var(--ok-soft);">
+        <strong>นโยบายแนะนำ</strong>
+        <p style="margin:6px 0 0;font-size:12.5px;color:var(--ink);">สต็อกเก็บ 12 เดือน &middot; แผน MRP เก็บ 2 ปี &middot; Standard ไม่ลบ ใช้สถานะเลิกใช้งานแทน</p>
+      </div>
+      <div class="standard-form">
+        <h4>ลบข้อมูลย้อนหลัง</h4>
+        <div class="standard-form-grid">
+          <label>ตั้งแต่ <input type="date" id="dataHistoryFromDate"></label>
+          <label>ถึง <input type="date" id="dataHistoryToDate"></label>
+          <label class="standard-check-label"><input type="checkbox" id="dataHistoryDelStock" checked> ประวัติการอัปโหลดสต็อก</label>
+          <label class="standard-check-label"><input type="checkbox" id="dataHistoryDelPlans"> แผน MRP และรายการในแผน</label>
+        </div>
+        <div class="standard-form-actions">
+          <button type="button" class="btn btn-primary btn-sm" id="dataHistoryCheckBtn">ตรวจจำนวนก่อนลบ</button>
+          <span class="bulk-status-result" id="dataHistoryCheckResult"></span>
+        </div>
+        <div id="dataHistoryDeleteRow" style="display:none;margin-top:10px;">
+          <button type="button" class="btn btn-danger btn-sm" id="dataHistoryDeleteBtn">ลบข้อมูลที่เลือก</button>
+          <span class="bulk-status-result" id="dataHistoryDeleteResult"></span>
+        </div>
+      </div>
+    </div>
+    <div id="homeUnmatchedView" style="display:none;">
+      <button type="button" class="btn btn-ghost btn-sm" id="homeUnmatchedBackBtn">&#8249; กลับ</button>
+      <div class="step-head" style="margin-top:10px;"><span class="step-title">SKU ที่ไม่มี Standard</span></div>
+      <p class="lede" id="homeUnmatchedNote">รหัสสินค้าที่เจอในไฟล์สต็อก แต่ยังไม่มีมาตรฐาน Min-Max ในระบบ — กดเพิ่มเป็น Standard ได้ทันทีจากตารางนี้</p>
+      <div id="homeUnmatchedTableWrap"></div>
+    </div>
+  </section>
+
+  <section class="tab-panel" id="tab-standard">
+    <div class="step-head"><span class="step-title">Standard สินค้า</span></div>
+    <p class="lede">ดู/ค้นหามาตรฐาน Min-Max ที่ใช้คำนวณอยู่ตอนนี้ แก้ไข/เพิ่ม/ปิดใช้งานได้เลย (บันทึกผ่านฐานข้อมูล — ใช้ได้เฉพาะตอนเปิดผ่านลิงก์ Claude เท่านั้น เปิดผ่านไฟล์ในเครื่อง/GitHub จะดูได้อย่างเดียว แก้ไม่ได้)</p>
+    <div class="standard-form" id="standardEditForm" style="display:none;">
+      <h4 id="standardFormSkuLabel">เพิ่ม SKU ใหม่</h4>
+      <div class="standard-form-grid">
+        <label>SKU <input type="text" id="standardFormSku" placeholder="เช่น AIF-20-506N"></label>
+        <label>Prefix <input type="text" id="standardFormPrefix"></label>
+        <label>บริษัท <select id="standardFormCompany"></select></label>
+        <label>ผู้รับผิดชอบ <input type="text" id="standardFormPerson"></label>
+        <label>Min <input type="number" id="standardFormMin" step="1"></label>
+        <label>Max <input type="number" id="standardFormMax" step="1"></label>
+        <label>Lot <input type="number" id="standardFormLot" step="1"></label>
+        <label>เฉลี่ยใช้/เดือน (avg) <input type="number" id="standardFormAvg" step="0.01"></label>
+        <label class="standard-check-label"><input type="checkbox" id="standardFormActive" checked> ใช้งานอยู่ (ไม่ติ๊ก = ปิดใช้งาน)</label>
+      </div>
+      <div class="standard-form-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="standardFormSaveBtn">บันทึก</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="standardFormCancelBtn">ยกเลิก</button>
+        <span class="bulk-status-result" id="standardFormResult"></span>
+      </div>
+    </div>
+    <div class="standard-toolbar">
+      <select id="standardCompanyFilter">
+        <option value="">ทุกบริษัท</option>
+      </select>
+      <input type="text" id="standardSearchInput" placeholder="ค้นหา SKU หรือ Prefix">
+      <label class="standard-check"><input type="checkbox" id="standardShowInactive"> แสดงที่ปิดใช้งานด้วย</label>
+      <button type="button" class="btn btn-primary btn-sm" id="standardAddNewBtn">+ เพิ่ม SKU ใหม่</button>
+    </div>
+    <div class="bulk-status-result" id="standardResultCount" style="margin-bottom:10px;display:block;"></div>
+    <div id="standardTableWrap"></div>
+  </section>
+
+  <section class="tab-panel" id="tab-plan">
   <section class="card">
     <div class="step-head"><span class="step-num">1</span><span class="step-title">เลือกบริษัท</span></div>
     <div class="company-grid" id="companyGrid"></div>
@@ -639,24 +965,33 @@
     <div class="stat-strip" id="statStrip"></div>
     <div class="pending-note" id="pendingNote"></div>
     <div class="row-actions" style="margin-top:0;margin-bottom:16px;flex-wrap:wrap;">
-      <label style="font-size:13px;color:var(--ink-muted);display:inline-flex;align-items:center;gap:6px;">ดูเฉพาะคนนี้
-        <select id="personFilter" style="font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);">
+      <label style="font-size:13px;color:var(--ink-muted);display:inline-flex;align-items:center;gap:6px;">ดูเฉพาะรหัสนี้
+        <select id="prefixFilter" style="font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);">
           <option value="">ทั้งหมด</option>
         </select>
       </label>
-      <button type="button" class="btn btn-ghost btn-sm" id="downloadAllXlsxBtn">สร้างรีพอร์ตรวมทุกคน (.xlsx)</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="downloadAllXlsxBtn">สร้างรีพอร์ตรวมทุกรหัส (.xlsx)</button>
       <button type="button" class="btn btn-ghost btn-sm" id="saveStatusBtn">บันทึกสถานะเป็นไฟล์ (.json)</button>
       <button type="button" class="btn btn-ghost btn-sm" id="loadStatusBtn">โหลดสถานะจากไฟล์</button>
       <input type="file" id="loadStatusInput" accept=".json,.JSON" style="display:none;">
       <span class="bulk-status-result" id="loadStatusResult"></span>
+      <div class="bulk-status-actions" id="notePresetRow" style="margin-top:0;">
+        <button type="button" class="btn btn-ghost btn-sm note-preset-btn" data-note="ข้อมูลจาก Express และ WIP จากทางลาว ยังไม่ได้ตัดตัวที่ไม่ต้องการสั่งออก">ยังไม่ตัดตัวที่ไม่ต้องการสั่งออก</button>
+        <button type="button" class="btn btn-ghost btn-sm note-preset-btn" data-note="รอทางไทยคอนเฟิร์มว่าจะให้ทางลาวผลิตตัวไหนบ้าง">รอไทยคอนเฟิร์ม</button>
+        <button type="button" class="btn btn-ghost btn-sm note-preset-btn" data-note="ทางไทยคอนเฟิร์มแล้ว ส่งให้ทางลาวพิจารณาว่าผลิตได้หรือไม่">ไทยคอนเฟิร์มแล้ว ส่งลาวพิจารณา</button>
+      </div>
+      <input type="text" id="saveHistoryNoteInput" class="history-note-input" placeholder='หมายเหตุแผนนี้ (ถ้ามี) เช่น "รอคอนเฟิร์มว่าจะให้ลาวผลิตตัวไหนบ้าง"'>
+      <button type="button" class="btn btn-ghost btn-sm" id="saveHistoryBtn">บันทึกแผนนี้ลงประวัติ MRP</button>
+      <span class="bulk-status-result" id="saveHistoryResult"></span>
     </div>
     <details class="person-panel" id="combinedPanel" open style="margin-bottom:16px;">
-      <summary><span>รายการที่ต้องสั่งเพิ่ม — รวมทุกคน</span>
+      <summary><span>รายการที่ต้องสั่งเพิ่ม — รวมทุกรหัส</span>
         <span class="pmeta"><span class="count-badge" id="combinedCountBadge">0 รายการ</span><span class="chev">&#8250;</span></span>
       </summary>
       <div class="person-body">
         <div class="bulk-status-bar">
           <div class="bulk-status-hint">พิมพ์/วางเฉพาะ SKU ที่ <b>ยังสั่งไม่ได้</b> (คั่นด้วย comma, เว้นวรรค หรือขึ้นบรรทัดใหม่) — ที่เหลือทั้งหมดในตารางนี้จะถูกตั้งเป็น "สั่งแล้ว" ให้อัตโนมัติ</div>
+          <div class="bulk-status-note">หมายถึง: รหัสที่กรอกในช่องนี้ยังอยู่ในขั้น "ก่อนส่งให้ลาวผลิต" — ยังไม่ได้ส่งคำสั่งไปให้ลาว</div>
           <textarea id="bulkNotOrderInput" class="bulk-status-textarea" placeholder="เช่น AA-17-680P, MA-17-518-XT"></textarea>
           <div class="bulk-status-actions">
             <button type="button" class="btn btn-primary btn-sm" id="applyBulkStatusBtn">ตั้งค่าตามรายการที่พิมพ์</button>
@@ -665,6 +1000,7 @@
         </div>
         <div class="bulk-status-bar">
           <div class="bulk-status-hint">หรือพิมพ์/วางรายการ SKU ที่ <b>คอนเฟิร์มแล้วว่าจะสั่ง</b> (เช่น ลิสต์ที่แกะจากรูปที่หัวหน้าส่งมา) — รหัสที่พิมพ์จะถูกตั้งเป็น "สั่งแล้ว" ส่วนที่เหลือในตารางนี้จะถูกตั้งเป็น "ยังไม่สั่ง" ให้อัตโนมัติ</div>
+          <div class="bulk-status-note">หมายถึง: รหัสที่กรอกในช่องนี้ส่งให้ลาวผลิตแน่นอนแล้ว แต่ยังไม่รู้ว่าลาวทำได้ไหม/ทำได้เท่าไหร่ — พอลาวตอบมาแล้วค่อยกรอกจำนวนจริงในช่อง "ลาวรับจริง" ของแต่ละแถวทีหลัง</div>
           <textarea id="bulkConfirmOrderInput" class="bulk-status-textarea" placeholder="เช่น AIF-20-506N, AIF-21-506N"></textarea>
           <div class="bulk-status-actions">
             <button type="button" class="btn btn-primary btn-sm" id="applyBulkConfirmBtn">ตั้งค่าตามรายการที่คอนเฟิร์ม</button>
@@ -683,10 +1019,44 @@
     <div id="personPanels"></div>
   </section>
 
-  <footer class="foot">ประมวลผลทั้งหมดในเบราว์เซอร์ของคุณ ไม่มีการส่งไฟล์สต็อกออกไปที่ไหน</footer>
-</div>
+  </section>
 
-<div id="printRoot"></div>
+  <section class="tab-panel" id="tab-bom">
+    <div class="step-head"><span class="step-title">BOM สินค้า</span></div>
+    <div class="bom-placeholder">
+      <span class="bom-icon">▦</span>
+      กำลังพัฒนา — บอก Claude ได้เลยว่าอยากให้ BOM เก็บข้อมูลอะไรบ้าง<br>(เช่น รหัสสินค้าหลัก, รายชื่อชิ้นส่วนประกอบ, จำนวนต่อชิ้น)
+    </div>
+  </section>
+
+  <section class="tab-panel" id="tab-history">
+  <section class="card" id="historySection">
+    <div class="step-head"><span class="step-title">ประวัติแผน MRP</span></div>
+    <p class="lede" style="margin-top:-6px;">ดูแผนที่เคยบันทึกไว้ย้อนหลัง (ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น — เปิดผ่านไฟล์ในเครื่อง/GitHub จะไม่มีประวัติให้ดู)</p>
+    <p class="bulk-status-note" style="margin-top:-6px;">หมายถึง: สถานะ "ยังไม่สั่ง" ในรายการ = ตอนบันทึกยังไม่ได้ส่งให้ลาวผลิต, "สั่งแล้ว" = ส่งให้ลาวผลิตแน่นอนแล้ว ณ ตอนที่บันทึก (ไม่ได้แปลว่าลาวทำได้ครบ — ดูจำนวนที่ลาวรับจริงในตารางรายละเอียดของแต่ละแผนแทน)</p>
+    <div class="row-actions" style="margin-top:0;margin-bottom:14px;flex-wrap:wrap;">
+      <label style="font-size:13px;color:var(--ink-muted);display:inline-flex;align-items:center;gap:6px;">บริษัท
+        <select id="historyCompanySelect" style="font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);">
+          <option value="">— เลือกบริษัท —</option>
+        </select>
+      </label>
+      <button type="button" class="btn btn-ghost btn-sm" id="exportHistoryBtn">ส่งออกประวัติเป็น Excel</button>
+      <span class="bulk-status-result" id="exportHistoryResult"></span>
+    </div>
+    <div class="stat-strip" id="historyStatStrip"></div>
+    <div id="historyList" style="margin-top:14px;"></div>
+  </section>
+  </section>
+
+</main>
+
+<nav class="bottom-nav">
+  <button type="button" class="nav-btn active" id="nav-home" data-tab="home"><span class="nav-icon">⌂</span>หน้าหลัก</button>
+  <button type="button" class="nav-btn" id="nav-standard" data-tab="standard"><span class="nav-icon">⚙</span>Standard</button>
+  <button type="button" class="nav-btn nav-center" id="nav-plan" data-tab="plan"><span class="nav-icon">＋</span>สร้างแผน</button>
+  <button type="button" class="nav-btn" id="nav-bom" data-tab="bom"><span class="nav-icon">▦</span>BOM</button>
+  <button type="button" class="nav-btn" id="nav-history" data-tab="history"><span class="nav-icon">▤</span>แผน MRP</button>
+</nav>
 
 <div class="toast" id="toast"></div>
 
@@ -1456,10 +1826,14 @@ const state = {
   wipEntries: [], // { file, parsed:{wip:Map<sku,qty>,rowCount,excludedCount}|null, recognized: number|null, error: string|null } — ไฟล์แผนผลิต (WIP) ไม่บังคับ
   companyResults: {}, // company -> array of computed rows (มีอยู่แค่ 1 คีย์เสมอ คือบริษัทที่เลือกไว้)
   diag: null, // parsing diagnostics for the last processed batch
-  personFilter: '', // '' = ทั้งหมด
+  prefixFilter: '', // '' = ทั้งหมด
   downloadsApi: null,
   downloadsChecked: false,
-  mrpCounter: 0
+  mrpCounter: 0,
+  dbApi: null,
+  dbChecked: false,
+  standardOverrides: new Map(), // sku -> doc data ที่แก้ไข/เพิ่ม/ปิดใช้งานผ่าน db (คีย์ทับ STANDARDS ที่ฝังในโค้ด)
+  homeLatestPlan: null // { company, planNo } ของแผนล่าสุดที่ใช้โชว์ KPI หน้าหลัก — ไว้ใช้ตอนกดเข้าไปดูแหล่งที่มา
 };
 
 // ---------- downloads capability ----------
@@ -1475,6 +1849,59 @@ const state = {
     state.downloadsChecked = true;
   }
 })();
+
+// ---------- db capability (ใช้เก็บ "ประวัติแผน MRP" + "Standard ที่แก้ไข/เพิ่ม" — ใช้ได้เฉพาะตอนเปิดผ่านลิงก์ claude.ai เท่านั้น) ----------
+(function initDb() {
+  if (window.claude && typeof window.claude.use === 'function') {
+    window.claude.use('db').then(function(api) {
+      state.dbApi = api;
+      state.dbChecked = true;
+      loadStandardOverrides();
+    }).catch(function() {
+      state.dbChecked = true;
+    });
+  } else {
+    state.dbChecked = true;
+  }
+})();
+
+// โหลดรายการ Standard ที่เคยแก้ไข/เพิ่ม/ปิดใช้งานไว้ผ่านฐานข้อมูล มา merge ทับ STANDARDS ที่ฝังในโค้ด
+// เรียกครั้งเดียวตอน db พร้อม แล้ว cache ไว้ใน state.standardOverrides จนกว่าจะมีการบันทึกใหม่ (per user 2026-09-07)
+function loadStandardOverrides() {
+  if (!state.dbApi) return Promise.resolve();
+  return state.dbApi.collection('standards').limit(1000).get().then(function(snap) {
+    const map = new Map();
+    snap.docs.forEach(function(d) {
+      const data = d.data();
+      if (data && data.sku) map.set(data.sku, data);
+    });
+    state.standardOverrides = map;
+    renderHomeTab();
+    renderStandardTable();
+  }).catch(function() {
+    // โหลดไม่สำเร็จ (เช่น ยังไม่มี collection นี้เลย) — ใช้ STANDARDS ที่ฝังในโค้ดตรงๆ ต่อไป ไม่ต้องแจ้งเตือนอะไร
+  });
+}
+
+// รวม STANDARDS (seed ที่ฝังในโค้ด) เข้ากับของที่แก้ไข/เพิ่ม/ปิดใช้งานผ่าน db (ถ้ามี)
+// ถ้าไม่มี db เลย (เช่นเปิดผ่าน GitHub/ไฟล์ในเครื่อง) จะได้ค่า STANDARDS เดิมเป๊ะๆ ไม่กระทบอะไรเลย (per user 2026-09-07)
+function computeAllStandardsIncludingInactive() {
+  const bySku = new Map();
+  STANDARDS.forEach(function(s) { bySku.set(s.sku, Object.assign({ active: true }, s)); });
+  state.standardOverrides.forEach(function(doc, sku) {
+    const base = bySku.get(sku) || {};
+    bySku.set(sku, Object.assign({ active: true }, base, doc, { sku: sku }));
+  });
+  return Array.from(bySku.values());
+}
+function computeEffectiveStandards() {
+  return computeAllStandardsIncludingInactive().filter(function(s) { return s.active !== false; });
+}
+// sku อาจมีอักขระที่ path ของฐานข้อมูลไม่รับ (เช่น "/") — แทนด้วย "_" เฉพาะตอนใช้เป็น doc id เท่านั้น
+// ค่า sku จริงยังเก็บแยกไว้ในตัวเอกสารเสมอ ไม่ได้อิงจาก doc id ตอนอ่านกลับมา
+function standardDocId(sku) {
+  return String(sku).replace(/[^A-Za-z0-9_.~:@+-]/g, '_');
+}
 
 // ---------- company selection ----------
 const companyGrid = document.getElementById('companyGrid');
@@ -1866,7 +2293,9 @@ function mergeEntries(entries) {
 }
 
 function computeRowsForCompany(company, merged, mergedDesc, diag, wipMap) {
-  const relevant = STANDARDS.filter(function(s) { return s.company === company; });
+  // ใช้ computeEffectiveStandards() แทน STANDARDS ตรงๆ เพื่อให้ Standard ที่แก้ไข/เพิ่ม/ปิดใช้งาน
+  // ผ่านแท็บ Standard (บันทึกลง db) มีผลกับการคำนวณจริงด้วย ไม่ใช่แค่โชว์ในหน้า Standard เฉยๆ (per user 2026-09-07)
+  const relevant = computeEffectiveStandards().filter(function(s) { return s.company === company; });
   const rows = relevant.map(function(s) {
     const found = merged.has(s.sku);
     const stock = found ? merged.get(s.sku) : 0;
@@ -1901,6 +2330,21 @@ function computeRowsForCompany(company, merged, mergedDesc, diag, wipMap) {
       confirmedQty: ''
     };
   });
+  // นับ SKU ในไฟล์สต็อกที่ไม่ตรงกับ Standard ตัวไหนเลย (ทุกบริษัท ไม่ใช่แค่บริษัทที่เลือก) — ใช้โชว์เป็น
+  // KPI "ไม่มี Standard" ในหน้าหลัก เหมือนของหัวหน้า (per user 2026-09-07)
+  const allEffectiveSkus = new Set(computeEffectiveStandards().map(function(s) { return s.sku; }));
+  let unmatchedStandardCount = 0;
+  // เก็บลิสต์จริงของ SKU ที่ไม่มี Standard ไว้ด้วย (ไม่ใช่แค่นับจำนวน) เพื่อให้กดจาก KPI "ไม่มี Standard"
+  // หน้าหลักแล้วดูรายชื่อจริงๆ ได้เลย ไม่ต้องไล่หาเองจากไฟล์สต็อก (per user 2026-09-08)
+  const unmatchedSkus = [];
+  merged.forEach(function(qty, sku) {
+    if (!allEffectiveSkus.has(sku)) {
+      unmatchedStandardCount++;
+      unmatchedSkus.push({ sku: sku, qty: qty });
+    }
+  });
+  diag.unmatchedStandardCount = unmatchedStandardCount;
+  diag.unmatchedSkus = unmatchedSkus;
   return { rows: rows, diag: diag };
 }
 
@@ -1924,6 +2368,7 @@ document.getElementById('processBtn').addEventListener('click', function() {
     const totalNeed = result.rows.filter(function(r){return r.needOrder;}).length;
     statusEl.textContent = 'เสร็จแล้ว: ' + state.selectedCompany + ' — ต้องสั่งเพิ่มรวม ' + totalNeed + ' รายการ';
     showToast('เช็คสต็อกเสร็จแล้ว: ' + state.selectedCompany);
+    logStockCheck(state.selectedCompany);
     state.fileEntries = [];
     state.wipEntries = [];
     renderFileList();
@@ -1946,11 +2391,13 @@ function allRows() {
   return out;
 }
 
-function groupByPerson(rows) {
+// เดิมแยกตามชื่อคนรับผิดชอบ (person) เปลี่ยนมาแยกตามรหัส/Prefix แทน เพราะตอนนี้ใช้เว็บนี้คนเดียว
+// ไม่ต้องแยกดูตามคนแล้ว (per user 2026-09-07)
+function groupByPrefix(rows) {
   const map = new Map();
   rows.forEach(function(r) {
-    if (!map.has(r.person)) map.set(r.person, []);
-    map.get(r.person).push(r);
+    if (!map.has(r.prefix)) map.set(r.prefix, []);
+    map.get(r.prefix).push(r);
   });
   return map;
 }
@@ -2163,6 +2610,12 @@ const TABLE_TIER_STYLE = { 0: 14, 2: 15, 3: 16, 4: 17, 5: 18 };
 function tableStyleFor(tierStyle) { return TABLE_TIER_STYLE[tierStyle || 0] || 14; }
 
 const THAI_MONTHS_ABBR = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const THAI_WEEKDAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+// วันที่เต็มแบบ "พุธ 26 ส.ค. 2569" (วัน + วันที่ + เดือนย่อ + ปี พ.ศ. เต็ม 4 หลัก) ใช้กับแถบทักทายหน้าหลัก
+function thaiFullDate(d) {
+  const beYear = d.getFullYear() + 543;
+  return THAI_WEEKDAYS[d.getDay()] + ' ' + d.getDate() + ' ' + THAI_MONTHS_ABBR[d.getMonth()] + ' ' + beYear;
+}
 
 function thaiShortDate(d) {
   const beYear = (d.getFullYear() + 543) % 100;
@@ -2346,8 +2799,8 @@ function buildMrpWorkbook(person, items, notItems) {
   return buildZip(zipFiles);
 }
 
-// รีพอร์ตรวมทุกคนของบริษัทเดียว (ไม่แยกชื่อคนรับผิดชอบเป็นไฟล์ต่างหาก แต่ใส่คอลัมน์
-// "ผู้รับผิดชอบ" ไว้แทน ให้เห็นทุกรหัส SKU ของบริษัทนั้นในไฟล์เดียว)
+// รีพอร์ตรวมทุกรหัสของบริษัทเดียว (ไม่แยกไฟล์ต่างหากตามรหัส ใส่ทุก SKU ที่ต้องสั่งของบริษัทนั้นไว้ในไฟล์เดียว)
+// เดิมมีคอลัมน์ "ผู้รับผิดชอบ" ตัดออกแล้ว เพราะตอนนี้ใช้เว็บนี้คนเดียว ไม่ต้องแยกดูตามคน (per user 2026-09-07)
 function buildAllSkuSheetXml(company, items, notItems) {
   const now = new Date();
   const planNo = nextMrpPlanNumber(now);
@@ -2359,7 +2812,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
   function nextRow() { r += 1; return r; }
 
   const r1 = nextRow();
-  rows.push('<row r="' + r1 + '">' + cellStr('A' + r1, 'AMADA XTREME - MRP ORDER REPORT (' + company + ' · รวมทุกคน)', 1) + '</row>');
+  rows.push('<row r="' + r1 + '">' + cellStr('A' + r1, 'AMADA XTREME - MRP ORDER REPORT (' + company + ' · รวมทุกรหัส)', 1) + '</row>');
   const r2 = nextRow();
   rows.push('<row r="' + r2 + '">' + cellStr('A' + r2, 'เลขที่แผน') + cellStr('B' + r2, planNo) + '</row>');
   const r3 = nextRow();
@@ -2385,8 +2838,8 @@ function buildAllSkuSheetXml(company, items, notItems) {
     cellStr('E' + r9, '1-19', 5) +
     '</row>');
 
-  const headerCells = ['ลำดับ', 'SKU', 'ผู้รับผิดชอบ', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'จำนวนที่ลาวรับจริง', 'สถานะ', 'หมายเหตุ', 'ระดับจำนวน'];
-  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
+  const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'จำนวนที่ลาวรับจริง', 'สถานะ', 'หมายเหตุ', 'ระดับจำนวน'];
+  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
   function pushColumnHeaderRow() {
     const rr = nextRow();
@@ -2401,17 +2854,16 @@ function buildAllSkuSheetXml(company, items, notItems) {
       rows.push('<row r="' + rr + '">' +
         cellNum('A' + rr, i + 1, centerStyleFor(s)) +
         cellStr('B' + rr, item.sku, ts) +
-        cellStr('C' + rr, item.person, ts) +
-        cellStr('D' + rr, item.desc || '-', ts) +
-        cellNum('E' + rr, item.avgWeekly, ts) +
-        cellNum('F' + rr, item.target12, ts) +
-        cellNum('G' + rr, item.stock, ts) +
-        cellNum('H' + rr, item.wip, ts) +
-        cellNum('I' + rr, item.orderQty, ts) +
-        cellStr('J' + rr, (item.confirmedQty !== undefined && item.confirmedQty !== null && item.confirmedQty !== '') ? item.confirmedQty : '-', ts) +
-        cellStr('K' + rr, item.orderStatus || 'ยังไม่สั่ง', ts) +
-        cellStr('L' + rr, item.orderRemark || '-', ts) +
-        cellStr('M' + rr, tier.label, ts) +
+        cellStr('C' + rr, item.desc || '-', ts) +
+        cellNum('D' + rr, item.avgWeekly, ts) +
+        cellNum('E' + rr, item.target12, ts) +
+        cellNum('F' + rr, item.stock, ts) +
+        cellNum('G' + rr, item.wip, ts) +
+        cellNum('H' + rr, item.orderQty, ts) +
+        cellStr('I' + rr, (item.confirmedQty !== undefined && item.confirmedQty !== null && item.confirmedQty !== '') ? item.confirmedQty : '-', ts) +
+        cellStr('J' + rr, item.orderStatus || 'ยังไม่สั่ง', ts) +
+        cellStr('K' + rr, item.orderRemark || '-', ts) +
+        cellStr('L' + rr, tier.label, ts) +
         '</row>');
     });
   }
@@ -2446,9 +2898,9 @@ function buildAllSkuSheetXml(company, items, notItems) {
   nextRow(); // เว้น 1 แถวก่อนแถวรวมยอด
   const totalRow = nextRow();
   rows.push('<row r="' + totalRow + '">' +
-    cellStr('D' + totalRow, 'รวม', 1) +
-    cellNum('I' + totalRow, totalQty, 1) +
-    cellStr('J' + totalRow, 'ชิ้น', 1) +
+    cellStr('C' + totalRow, 'รวม', 1) +
+    cellNum('H' + totalRow, totalQty, 1) +
+    cellStr('I' + totalRow, 'ชิ้น', 1) +
     '</row>');
 
   const notList = notItems || [];
@@ -2461,37 +2913,35 @@ function buildAllSkuSheetXml(company, items, notItems) {
       cellStr('C' + notHeaderRow, 'SKU', 1) +
       '</row>');
     const notColHeaderRow = nextRow();
-    const notHeaderCells = ['ลำดับ', 'SKU', 'ผู้รับผิดชอบ', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)'];
-    rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E','F','G','H'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], col === 'A' ? HEADER_CENTER_STYLE : TABLE_HEADER_STYLE); }).join('') + '</row>');
+    const notHeaderCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)'];
+    rows.push('<row r="' + notColHeaderRow + '">' + ['A','B','C','D','E','F','G'].map(function(col, i) { return cellStr(col + notColHeaderRow, notHeaderCells[i], col === 'A' ? HEADER_CENTER_STYLE : TABLE_HEADER_STYLE); }).join('') + '</row>');
     notList.forEach(function(item, i) {
       const rr = nextRow();
       rows.push('<row r="' + rr + '">' +
         cellNum('A' + rr, i + 1, TIER_CENTER_STYLE[0]) +
         cellStr('B' + rr, item.sku, TABLE_TIER_STYLE[0]) +
-        cellStr('C' + rr, item.person, TABLE_TIER_STYLE[0]) +
-        cellStr('D' + rr, item.desc || '-', TABLE_TIER_STYLE[0]) +
-        cellNum('E' + rr, item.avgWeekly, TABLE_TIER_STYLE[0]) +
-        cellNum('F' + rr, item.target12, TABLE_TIER_STYLE[0]) +
-        cellNum('G' + rr, item.stock, TABLE_TIER_STYLE[0]) +
-        cellNum('H' + rr, item.wip, TABLE_TIER_STYLE[0]) +
+        cellStr('C' + rr, item.desc || '-', TABLE_TIER_STYLE[0]) +
+        cellNum('D' + rr, item.avgWeekly, TABLE_TIER_STYLE[0]) +
+        cellNum('E' + rr, item.target12, TABLE_TIER_STYLE[0]) +
+        cellNum('F' + rr, item.stock, TABLE_TIER_STYLE[0]) +
+        cellNum('G' + rr, item.wip, TABLE_TIER_STYLE[0]) +
         '</row>');
     });
   }
 
-  const lastRef = 'M' + r;
+  const lastRef = 'L' + r;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
     '<dimension ref="A1:' + lastRef + '"/>' +
     '<cols><col min="1" max="1" width="8.83" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/>' +
-    '<col min="3" max="3" width="16" customWidth="1"/><col min="4" max="4" width="42" customWidth="1"/>' +
-    '<col min="5" max="5" width="24" customWidth="1"/><col min="6" max="6" width="18" customWidth="1"/>' +
-    '<col min="7" max="7" width="24" customWidth="1"/><col min="8" max="8" width="18" customWidth="1"/>' +
-    '<col min="9" max="9" width="16" customWidth="1"/><col min="10" max="10" width="18" customWidth="1"/>' +
-    '<col min="11" max="11" width="12" customWidth="1"/><col min="12" max="12" width="26" customWidth="1"/>' +
-    '<col min="13" max="13" width="16" customWidth="1"/></cols>' +
+    '<col min="3" max="3" width="42" customWidth="1"/><col min="4" max="4" width="24" customWidth="1"/>' +
+    '<col min="5" max="5" width="18" customWidth="1"/><col min="6" max="6" width="24" customWidth="1"/>' +
+    '<col min="7" max="7" width="18" customWidth="1"/><col min="8" max="8" width="16" customWidth="1"/>' +
+    '<col min="9" max="9" width="18" customWidth="1"/><col min="10" max="10" width="12" customWidth="1"/>' +
+    '<col min="11" max="11" width="26" customWidth="1"/><col min="12" max="12" width="16" customWidth="1"/></cols>' +
     '<sheetData>' + rows.join('') + '</sheetData>' +
-    '<mergeCells count="1"><mergeCell ref="A1:M1"/></mergeCells>' +
+    '<mergeCells count="1"><mergeCell ref="A1:L1"/></mergeCells>' +
     '<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
     '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0" scale="100"/>' +
     (notList.length > 0 ? '<rowBreaks count="1" manualBreakCount="1"><brk id="' + totalRow + '" max="16383" man="1"/></rowBreaks>' : '') +
@@ -2517,127 +2967,6 @@ function tierColorHex(styleIdx) {
   if (styleIdx === 4) return '#FFF2A8';
   if (styleIdx === 5) return '#FCD5B4';
   return '#FFFFFF';
-}
-
-function buildMrpPrintHtml(person, items, notItems) {
-  const now = new Date();
-  const planNo = nextMrpPlanNumber(now);
-  const totalQty = items.reduce(function(sum, r) { return sum + r.orderQty; }, 0);
-  const company = (items[0] && items[0].company) || '';
-  const notList = notItems || [];
-
-  const legendHtml = [
-    { label: '100 ขึ้นไป', color: tierColorHex(2) },
-    { label: '50-99', color: tierColorHex(3) },
-    { label: '20-49', color: tierColorHex(4) },
-    { label: '1-19', color: tierColorHex(5) }
-  ].map(function(t) {
-    return '<span class="mrp-swatch"><span class="mrp-swatch-color" style="background:' + t.color + '"></span>' + t.label + '</span>';
-  }).join('');
-
-  function buildRowsHtml(list) {
-    return list.map(function(item, i) {
-      const tier = tierFor(item.orderQty);
-      const bg = tierColorHex(tier.style);
-      return '<tr style="background:' + bg + '">' +
-        '<td class="mrp-idx">' + (i + 1) + '</td>' +
-        '<td>' + xmlEscape(item.sku) + '</td>' +
-        '<td>' + xmlEscape(item.desc || '-') + '</td>' +
-        '<td class="mrp-num">' + item.avgWeekly.toLocaleString('th-TH') + '</td>' +
-        '<td class="mrp-num">' + item.target12.toLocaleString('th-TH') + '</td>' +
-        '<td class="mrp-num">' + item.stock.toLocaleString('th-TH') + '</td>' +
-        '<td class="mrp-num">' + item.wip.toLocaleString('th-TH') + '</td>' +
-        '<td class="mrp-num">' + item.orderQty.toLocaleString('th-TH') + '</td>' +
-        '<td>' + xmlEscape((item.confirmedQty !== undefined && item.confirmedQty !== null && item.confirmedQty !== '') ? String(item.confirmedQty) : '-') + '</td>' +
-        '<td>' + xmlEscape(item.orderStatus || 'ยังไม่สั่ง') + '</td>' +
-        '<td>' + xmlEscape(item.orderRemark || '-') + '</td>' +
-        '<td>' + tier.label + '</td>' +
-        '</tr>';
-    }).join('');
-  }
-
-  // แบ่งรายการ "ต้องสั่ง" เป็น 2 กลุ่มตามเฉลี่ยใช้ต่อสัปดาห์ (per user 2026-09-04)
-  // มากกว่า 10 ชิ้น/สัปดาห์ อยู่กลุ่มแรก, 10 ชิ้นหรือน้อยกว่าอยู่กลุ่มถัดมา — เกณฑ์ 10 พอดีถือว่าอยู่กลุ่มหลัง
-  const highList = items.filter(function(it) { return it.avgWeekly > 10; });
-  const lowList = items.filter(function(it) { return it.avgWeekly <= 10; });
-
-  function buildOrderSectionHtml(list, title) {
-    if (list.length === 0) return '';
-    const subQty = list.reduce(function(sum, r) { return sum + r.orderQty; }, 0);
-    return '<h2 class="mrp-subhead">' + title + ' <span class="mrp-subcount">' + list.length + ' SKU</span></h2>' +
-      '<table>' +
-      '<thead><tr>' +
-      '<th class="mrp-idx">ลำดับ</th><th>SKU</th><th>ชื่อสินค้า</th>' +
-      '<th class="mrp-num">เฉลี่ย/สัปดาห์</th><th class="mrp-num">เป้าหมาย 12 วัน</th><th class="mrp-num">ยอดคงเหลือ</th><th class="mrp-num">WIP</th><th class="mrp-num">จำนวนสั่ง (ชิ้น)</th>' +
-      '<th>จำนวนที่ลาวรับจริง</th><th>สถานะ</th><th>หมายเหตุ</th><th>ระดับจำนวน</th>' +
-      '</tr></thead>' +
-      '<tbody>' + buildRowsHtml(list) + '</tbody>' +
-      '<tfoot><tr><td colspan="7"></td><td class="mrp-num">' + subQty.toLocaleString('th-TH') + '</td><td></td><td>ชิ้น</td><td></td><td></td></tr></tfoot>' +
-      '</table>';
-  }
-
-  const highSectionHtml = buildOrderSectionHtml(highList, 'รายการที่ต้องสั่ง — เฉลี่ยใช้ต่อสัปดาห์มากกว่า 10');
-  const lowSectionHtml = buildOrderSectionHtml(lowList, 'รายการที่ต้องสั่ง — เฉลี่ยใช้ต่อสัปดาห์ 10 หรือน้อยกว่า');
-
-  const notRowsHtml = notList.map(function(item, i) {
-    return '<tr>' +
-      '<td class="mrp-num">' + (i + 1) + '</td>' +
-      '<td>' + xmlEscape(item.sku) + '</td>' +
-      '<td>' + xmlEscape(item.desc || '-') + '</td>' +
-      '<td class="mrp-num">' + item.avgWeekly.toLocaleString('th-TH') + '</td>' +
-      '<td class="mrp-num">' + item.target12.toLocaleString('th-TH') + '</td>' +
-      '<td class="mrp-num">' + item.stock.toLocaleString('th-TH') + '</td>' +
-      '<td class="mrp-num">' + item.wip.toLocaleString('th-TH') + '</td>' +
-      '</tr>';
-  }).join('');
-
-  const notSectionHtml = notList.length > 0 ? (
-    '<h2 class="mrp-subhead">รายการไม่เข้าเกณฑ์สั่งซื้อ <span class="mrp-subcount">' + notList.length + ' SKU</span></h2>' +
-    '<table>' +
-    '<thead><tr>' +
-    '<th class="mrp-idx">ลำดับ</th><th>SKU</th><th>ชื่อสินค้า</th>' +
-    '<th class="mrp-num">เฉลี่ย/สัปดาห์</th><th class="mrp-num">เป้าหมาย 12 วัน</th><th class="mrp-num">ยอดคงเหลือ</th><th class="mrp-num">WIP</th>' +
-    '</tr></thead>' +
-    '<tbody>' + notRowsHtml + '</tbody>' +
-    '</table>'
-  ) : '';
-
-  return '<style>' +
-    '.mrp-print, .mrp-print * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }' +
-    '.mrp-print { font-family: "Noto Sans Thai", "Segoe UI", sans-serif; color: #17222A; padding: 10mm; background: #fff; }' +
-    '.mrp-print .mrp-eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #0B6E7F; }' +
-    '.mrp-print h1 { font-family: "Kanit", sans-serif; font-size: 22px; margin: 2px 0 10px; }' +
-    '.mrp-print .mrp-subhead { font-family: "Kanit", sans-serif; font-size: 15px; margin: 22px 0 8px; padding-top: 14px; border-top: 2px solid #17222A; display: flex; align-items: baseline; gap: 10px; }' +
-    '.mrp-print .mrp-subcount { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 400; color: #57686F; }' +
-    '.mrp-print .mrp-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 20px; font-size: 12.5px; margin-bottom: 12px; }' +
-    '.mrp-print .mrp-meta span.k { color: #57686F; margin-right: 6px; }' +
-    '.mrp-print .mrp-legend { display: flex; gap: 14px; margin-bottom: 14px; font-size: 12px; }' +
-    '.mrp-swatch { display: inline-flex; align-items: center; gap: 6px; }' +
-    '.mrp-swatch-color { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0,0,0,.15); display: inline-block; }' +
-    '.mrp-print table { width: 100%; border-collapse: collapse; font-size: 11px; }' +
-    '.mrp-print thead { display: table-header-group; }' +
-    '.mrp-print th { background: #17222A; color: #fff; text-align: left; padding: 6px 8px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .03em; }' +
-    '.mrp-print td { padding: 5px 8px; border-bottom: 1px solid #D9E0E2; font-variant-numeric: tabular-nums; }' +
-    '.mrp-print td.mrp-num, .mrp-print th.mrp-num { text-align: right; }' +
-    '.mrp-print td.mrp-idx, .mrp-print th.mrp-idx { text-align: center; }' +
-    '.mrp-print tfoot td { font-weight: 700; border-top: 2px solid #17222A; }' +
-    '@page { size: A4 landscape; margin: 12mm; }' +
-    '</style>' +
-    '<div class="mrp-print">' +
-    '<div class="mrp-eyebrow">AMADA XTREME &middot; MRP ORDER REPORT &middot; ' + xmlEscape(company) + '</div>' +
-    '<h1>รายการสั่งซื้อของ ' + xmlEscape(person) + '</h1>' +
-    '<div class="mrp-meta">' +
-    '<div><span class="k">เลขที่แผน</span>' + planNo + '</div>' +
-    '<div><span class="k">วันที่สร้าง</span>' + thaiShortDate(now) + '</div>' +
-    '<div><span class="k">สถานะแผน</span>ยังไม่สั่ง</div>' +
-    '<div><span class="k">จำนวนรายการ</span>' + items.length + ' SKU</div>' +
-    '<div><span class="k">จำนวนรวม</span>' + totalQty.toLocaleString('th-TH') + ' ชิ้น</div>' +
-    '</div>' +
-    '<div class="mrp-legend">' + legendHtml + '</div>' +
-    highSectionHtml +
-    lowSectionHtml +
-    notSectionHtml +
-    '</div>';
 }
 
 function renderDiagnostics(rows) {
@@ -2684,18 +3013,16 @@ function renderDiagnostics(rows) {
 }
 
 // สร้างแถวตาราง "ต้องสั่งเพิ่ม" 1 แถว พร้อม dropdown สถานะ + ช่องหมายเหตุ ที่ผูกกับ row object ตัวเดิม
-// (ใช้ร่วมกันทั้งตาราง "รวมทุกคน" และตารางแยกรายบุคคล เพื่อให้แก้ที่ไหนก็ sync กันเพราะเป็น object เดียวกัน)
-// showPerson = true จะมีคอลัมน์ "ผู้รับผิดชอบ" เพิ่ม (ใช้ตอนแสดงรวมทุกคน)
-function buildOrderRowTr(r, showPerson) {
+// (ใช้ร่วมกันทั้งตาราง "รวมทุกรหัส" และตารางแยกตามรหัส เพื่อให้แก้ที่ไหนก็ sync กันเพราะเป็น object เดียวกัน)
+// ตัดคอลัมน์ "ผู้รับผิดชอบ" ออกจากทุกตารางแล้ว เพราะตอนนี้ใช้เว็บนี้คนเดียว (per user 2026-09-07)
+function buildOrderRowTr(r) {
   const tr = document.createElement('tr');
   const pillClass = r.stock <= 0 ? 'zero' : 'low';
   const pillLabel = r.stock <= 0 ? 'หมด' : 'ต่ำ';
   const noteDot = !r.found ? '<span class="note-dot" title="ไม่พบในไฟล์สต็อก ถือว่าคงเหลือ = 0"></span>' : '';
-  const personCell = showPerson ? ('<td data-label="ผู้รับผิดชอบ">' + r.person + '</td>') : '';
   tr.innerHTML =
     '<td data-label="Prefix">' + r.prefix + '</td>' +
     '<td data-label="SKU">' + r.sku + noteDot + '</td>' +
-    personCell +
     '<td data-label="สต็อก" class="num">' + r.stock.toLocaleString('th-TH') + ' <span class="status-pill ' + pillClass + '">' + pillLabel + '</span></td>' +
     '<td data-label="WIP" class="num">' + r.wip.toLocaleString('th-TH') + '</td>' +
     '<td data-label="เป้าหมาย 12 วัน" class="num">' + r.target12.toLocaleString('th-TH') + '</td>' +
@@ -2716,6 +3043,7 @@ function buildOrderRowTr(r, showPerson) {
 }
 
 function renderResults() {
+  renderHomeTab(); // อัปเดต KPI หน้าหลักให้ตรงกับข้อมูลล่าสุดทุกครั้งที่ผลลัพธ์เปลี่ยน (per user 2026-09-07)
   const rows = allRows();
   const section = document.getElementById('resultsSection');
   if (rows.length === 0) { section.style.display = 'none'; return; }
@@ -2735,10 +3063,11 @@ function renderResults() {
 
   renderDiagnostics(rows);
 
-  // ตาราง "รวมทุกคน" — แสดงทุกรหัสที่ต้องสั่งของทุกคนในบริษัทนี้รวมกันเป็นตารางเดียว (ไม่แยกพาแนลตามคน)
-  // เรียงตามชื่อคนรับผิดชอบ (ตัวอักษรไทย) เหมือนไฟล์ Excel "รวมทุกคน" ที่ดาวน์โหลดได้ เพื่อให้ตรงกัน
-  // แถวที่นี่ผูกกับ row object ตัวเดียวกับตารางแยกรายบุคคลด้านล่าง ติ๊กสถานะ/พิมพ์หมายเหตุที่ไหนก็ sync กันหมด
-  const combinedItems = needRows.slice().sort(function(a, b) { return a.person.localeCompare(b.person, 'th'); });
+  // ตาราง "รวมทุกรหัส" — แสดงทุก SKU ที่ต้องสั่งของบริษัทนี้รวมกันเป็นตารางเดียว (ไม่แยกพาแนลตามรหัส)
+  // ไม่มีคอลัมน์ผู้รับผิดชอบแล้ว เพราะตอนนี้ใช้เว็บนี้คนเดียว ไม่ต้องแยกดูตามคน (per user 2026-09-07)
+  // เรียงตาม SKU (ตัวอักษร) แทน — แถวที่นี่ผูกกับ row object ตัวเดียวกับตารางแยกตามรหัสด้านล่าง
+  // ติ๊กสถานะ/พิมพ์หมายเหตุที่ไหนก็ sync กันหมด
+  const combinedItems = needRows.slice().sort(function(a, b) { return a.sku.localeCompare(b.sku, 'th'); });
   const combinedCountBadge = document.getElementById('combinedCountBadge');
   if (combinedCountBadge) combinedCountBadge.textContent = combinedItems.length.toLocaleString('th-TH') + ' รายการ';
   const combinedBody = document.getElementById('combinedBody');
@@ -2752,56 +3081,57 @@ function renderResults() {
       const table = document.createElement('table');
       table.className = 'order-table';
       table.innerHTML =
-        '<thead><tr><th>Prefix</th><th>SKU</th><th>ผู้รับผิดชอบ</th><th class="num">สต็อก</th><th class="num">WIP</th><th class="num">เป้าหมาย 12 วัน</th><th class="num">สั่งเพิ่ม</th><th>ลาวรับจริง</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>';
+        '<thead><tr><th>Prefix</th><th>SKU</th><th class="num">สต็อก</th><th class="num">WIP</th><th class="num">เป้าหมาย 12 วัน</th><th class="num">สั่งเพิ่ม</th><th>ลาวรับจริง</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>';
       const tbody = document.createElement('tbody');
-      combinedItems.forEach(function(r) { tbody.appendChild(buildOrderRowTr(r, true)); });
+      combinedItems.forEach(function(r) { tbody.appendChild(buildOrderRowTr(r)); });
       table.appendChild(tbody);
       tableScroll.appendChild(table);
       combinedBody.appendChild(tableScroll);
     }
   }
 
-  // dropdown "ดูเฉพาะคนนี้" — รายชื่อคนรับผิดชอบทั้งหมดของบริษัทนี้
-  const allPersons = Array.from(new Set(rows.map(function(r){ return r.person; }))).sort(function(a, b) { return a.localeCompare(b, 'th'); });
-  const personSelect = document.getElementById('personFilter');
-  const prevFilter = state.personFilter;
-  personSelect.innerHTML = '<option value="">ทั้งหมด</option>' + allPersons.map(function(p) { return '<option value="' + p + '">' + p + '</option>'; }).join('');
-  if (allPersons.indexOf(prevFilter) !== -1) {
-    personSelect.value = prevFilter;
+  // dropdown "ดูเฉพาะรหัสนี้" — รายชื่อ Prefix ทั้งหมดของบริษัทนี้ (เดิมแยกตามชื่อคนรับผิดชอบ
+  // เปลี่ยนมาแยกตามรหัส/Prefix แทน เพราะตอนนี้ใช้เว็บนี้คนเดียว per user 2026-09-07)
+  const allPrefixes = Array.from(new Set(rows.map(function(r){ return r.prefix; }))).sort(function(a, b) { return a.localeCompare(b, 'th'); });
+  const prefixSelect = document.getElementById('prefixFilter');
+  const prevFilter = state.prefixFilter;
+  prefixSelect.innerHTML = '<option value="">ทั้งหมด</option>' + allPrefixes.map(function(p) { return '<option value="' + p + '">' + p + '</option>'; }).join('');
+  if (allPrefixes.indexOf(prevFilter) !== -1) {
+    prefixSelect.value = prevFilter;
   } else {
-    state.personFilter = '';
-    personSelect.value = '';
+    state.prefixFilter = '';
+    prefixSelect.value = '';
   }
 
   const company = state.selectedCompany;
   const panels = document.getElementById('personPanels');
   panels.innerHTML = '';
-  const grouped = groupByPerson(rows.filter(function(r){return r.needOrder;}));
-  const notGrouped = groupByPerson(rows.filter(function(r){return !r.needOrder;}));
-  let people = Array.from(grouped.keys()).sort(function(a, b) {
+  const grouped = groupByPrefix(rows.filter(function(r){return r.needOrder;}));
+  const notGrouped = groupByPrefix(rows.filter(function(r){return !r.needOrder;}));
+  let prefixes = Array.from(grouped.keys()).sort(function(a, b) {
     return grouped.get(b).length - grouped.get(a).length;
   });
-  if (state.personFilter) {
-    people = people.filter(function(p) { return p === state.personFilter; });
+  if (state.prefixFilter) {
+    prefixes = prefixes.filter(function(p) { return p === state.prefixFilter; });
   }
 
-  if (people.length === 0) {
-    panels.innerHTML = '<div class="empty-state">' + (state.personFilter ? 'ไม่มีรายการที่ต้องสั่งเพิ่มของ ' + state.personFilter : 'ยังไม่มีรายการที่ต้องสั่งเพิ่มจากข้อมูลที่เช็คแล้ว') + '</div>';
+  if (prefixes.length === 0) {
+    panels.innerHTML = '<div class="empty-state">' + (state.prefixFilter ? 'ไม่มีรายการที่ต้องสั่งเพิ่มของรหัส ' + state.prefixFilter : 'ยังไม่มีรายการที่ต้องสั่งเพิ่มจากข้อมูลที่เช็คแล้ว') + '</div>';
     return;
   }
 
-  people.forEach(function(person, i) {
+  prefixes.forEach(function(prefix, i) {
     // เรียงตามลำดับใน Standard PDF เดิม (อันดับขายดีของแต่ละตระกูล) ไม่ใช่ตามจำนวนสั่งหรือตัวอักษร —
     // ตัวที่ต้องสั่งไล่เลข 1,2,3,... ตามลำดับนี้ ส่วนตัวที่ไม่เข้าเกณฑ์ก็ไล่เลข 1,2,3,... แยกฝั่งเดียวกัน
-    const items = grouped.get(person).slice();
-    const notItems = (notGrouped.get(person) || []).slice();
+    const items = grouped.get(prefix).slice();
+    const notItems = (notGrouped.get(prefix) || []).slice();
     const details = document.createElement('details');
     details.className = 'person-panel';
     if (i === 0) details.setAttribute('open', '');
 
     const summary = document.createElement('summary');
     summary.innerHTML =
-      '<span>' + person + '</span>' +
+      '<span>' + prefix + '</span>' +
       '<span class="pmeta"><span class="count-badge">' + items.length + ' รายการ</span><span class="chev">&#8250;</span></span>';
     details.appendChild(summary);
 
@@ -2819,23 +3149,9 @@ function renderResults() {
     mrpBtn.textContent = 'สร้างรีพอร์ต MRP (.xlsx)';
     mrpBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      const blob = buildMrpWorkbook(person, items, notItems);
-      offerBinaryDownload('MRP_' + company + '_' + person + '.xlsx', blob);
+      const blob = buildMrpWorkbook(prefix, items, notItems);
+      offerBinaryDownload('MRP_' + company + '_' + prefix + '.xlsx', blob);
     });
-    btnRow.appendChild(mrpBtn);
-
-    const pdfBtn = document.createElement('button');
-    pdfBtn.className = 'btn btn-ghost btn-sm';
-    pdfBtn.textContent = 'พิมพ์ / บันทึกเป็น PDF';
-    pdfBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      const printRoot = document.getElementById('printRoot');
-      printRoot.innerHTML = buildMrpPrintHtml(person, items, notItems);
-      showToast('ถ้าสีไม่ขึ้นในตัวอย่าง ให้เปิด "ตัวเลือกเพิ่มเติม" แล้วติ๊ก "พิมพ์พื้นหลัง / Background graphics"');
-      setTimeout(function() { window.print(); }, 300);
-    });
-    btnRow.appendChild(pdfBtn);
-
     body.appendChild(btnRow);
 
     const tableScroll = document.createElement('div');
@@ -2845,7 +3161,7 @@ function renderResults() {
     table.innerHTML =
       '<thead><tr><th>Prefix</th><th>SKU</th><th class="num">สต็อก</th><th class="num">WIP</th><th class="num">เป้าหมาย 12 วัน</th><th class="num">สั่งเพิ่ม</th><th>ลาวรับจริง</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>';
     const tbody = document.createElement('tbody');
-    items.forEach(function(r) { tbody.appendChild(buildOrderRowTr(r, false)); });
+    items.forEach(function(r) { tbody.appendChild(buildOrderRowTr(r)); });
     table.appendChild(tbody);
     tableScroll.appendChild(table);
     body.appendChild(tableScroll);
@@ -2874,7 +3190,7 @@ if (gateForm) {
 
 // ตั้งสถานะแบบพิมพ์รายการ: เอาไว้ใช้ตอนรายการ "ต้องสั่ง" เยอะกว่ารายการที่สั่งไม่ได้มาก ๆ
 // ผู้ใช้พิมพ์เฉพาะ SKU ส่วนน้อยที่ "ยังสั่งไม่ได้" แล้วระบบตั้งที่เหลือทั้งหมดเป็น "สั่งแล้ว" ให้เอง
-// ทำงานกับรายการ "ต้องสั่ง" ของบริษัทที่เลือกอยู่ทั้งหมด (ตรงกับขอบเขตตาราง "รวมทุกคน")
+// ทำงานกับรายการ "ต้องสั่ง" ของบริษัทที่เลือกอยู่ทั้งหมด (ตรงกับขอบเขตตาราง "รวมทุกรหัส")
 function applyBulkNotOrderStatus() {
   const input = document.getElementById('bulkNotOrderInput');
   const resultEl = document.getElementById('bulkStatusResult');
@@ -2938,8 +3254,8 @@ document.getElementById('applyBulkConfirmBtn').addEventListener('click', functio
   applyBulkConfirmOrderStatus();
 });
 
-document.getElementById('personFilter').addEventListener('change', function() {
-  state.personFilter = this.value;
+document.getElementById('prefixFilter').addEventListener('change', function() {
+  state.prefixFilter = this.value;
   renderResults();
 });
 
@@ -2948,10 +3264,11 @@ document.getElementById('downloadAllXlsxBtn').addEventListener('click', function
   const rows = allRows();
   if (rows.length === 0) return;
   const company = state.selectedCompany;
-  const items = rows.filter(function(r){return r.needOrder;}).sort(function(a, b) { return a.person.localeCompare(b.person, 'th'); });
-  const notItems = rows.filter(function(r){return !r.needOrder;}).sort(function(a, b) { return a.person.localeCompare(b.person, 'th'); });
+  // เรียงตาม SKU แทนชื่อผู้รับผิดชอบ (ตัดคอลัมน์นี้ออกจากไฟล์แล้ว) per user 2026-09-07
+  const items = rows.filter(function(r){return r.needOrder;}).sort(function(a, b) { return a.sku.localeCompare(b.sku, 'th'); });
+  const notItems = rows.filter(function(r){return !r.needOrder;}).sort(function(a, b) { return a.sku.localeCompare(b.sku, 'th'); });
   const blob = buildMrpWorkbookAll(company, items, notItems);
-  offerBinaryDownload('MRP_' + company + '_รวมทุกคน.xlsx', blob);
+  offerBinaryDownload('MRP_' + company + '_รวมทุกรหัส.xlsx', blob);
 });
 
 // บันทึก/โหลดสถานะ "สั่งแล้ว/ยังไม่สั่ง" + หมายเหตุ เป็นไฟล์ .json แยกต่างหาก
@@ -3037,6 +3354,988 @@ document.getElementById('loadStatusInput').addEventListener('change', function(e
   };
   reader.readAsText(file, 'utf-8');
 });
+
+// ---------- ประวัติแผน MRP (เก็บผ่าน db capability ของ claude.ai — ใช้ได้เฉพาะตอนเปิดผ่านลิงก์ claude.ai) ----------
+// เก็บแค่ "สรุปยอด" ของแต่ละแผน (ไม่เก็บรายการ SKU ทีละตัว) เพื่อเลี่ยงเอกสารใหญ่เกินไปและการยิง write ทีละร้อยครั้ง
+// เลขที่แผนของประวัตินี้คำนวณแยกจาก nextMrpPlanNumber() ที่ใช้ตอนดาวน์โหลด Excel/PDF (อันนั้นเป็นตัวนับต่อเซสชัน
+// รีเซ็ตทุกครั้งที่เปิดหน้าใหม่ ใช้ซ้ำข้ามวันไม่ได้) — ของประวัตินี้ต้องไม่ชนกันข้ามวัน/เซสชัน เลยคำนวณจากเลขที่
+// มากสุดที่เคยบันทึกไว้จริงในฐานข้อมูลแทน — เป็นตัวนับเดียวรวมทุกบริษัท (ไม่แยกตามบริษัท) ให้ตรงกับพฤติกรรม
+// nextMrpPlanNumber() เดิมที่ก็เป็นตัวนับรวมทุกบริษัทเหมือนกัน (แก้ตามที่ user เจอบั๊ก 2026-09-07:
+// เดิมแยกตัวนับตามบริษัท ทำให้อามาด้ากับมิยาโมโตะบันทึกครั้งแรกได้เลข 001 ซ้ำกันทั้งคู่)
+async function nextHistoryPlanNo(db, company, now) {
+  const beYY = ((now.getFullYear() + 543) % 100);
+  const beYYStr = (beYY < 10 ? '0' + beYY : String(beYY));
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const prefix = 'MRP-' + beYYStr + mm + '-';
+  let maxSeq = 0;
+  try {
+    const snap = await db.collection('mrp_plans').orderBy('createdAt', 'desc').limit(50).get();
+    snap.docs.forEach(function(d) {
+      const data = d.data();
+      if (data && typeof data.planNo === 'string' && data.planNo.indexOf(prefix) === 0) {
+        const seq = parseInt(data.planNo.slice(prefix.length), 10);
+        if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+      }
+    });
+  } catch (err) {
+    // query พลาด (เช่น ยังไม่เคยมีเอกสารเลย) — เริ่มจาก 1 ไปก่อน
+  }
+  return prefix + String(maxSeq + 1).padStart(3, '0');
+}
+
+function computeHistoryStatus(orderedCount, itemCount, cancelled) {
+  if (cancelled) return 'ยกเลิก';
+  if (!itemCount || orderedCount === 0) return 'ยังไม่สั่ง';
+  if (orderedCount >= itemCount) return 'ครบแล้ว';
+  return 'สั่งบางส่วน';
+}
+
+function historyStatusBadgeClass(status) {
+  if (status === 'ครบแล้ว') return 'ok';
+  if (status === 'สั่งบางส่วน') return 'partial';
+  if (status === 'ยกเลิก') return 'cancelled';
+  return 'pending';
+}
+
+function thaiHistoryDate(iso) {
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso || '-';
+    return thaiShortDate(d);
+  } catch (err) {
+    return iso || '-';
+  }
+}
+
+// ตารางรายละเอียด SKU ของแผนประวัติ (แสดงเฉพาะฟิลด์ย่อที่บันทึกไว้ตอน "บันทึกแผนนี้ลงประวัติ MRP"
+// ไม่มีชื่อสินค้า/เฉลี่ยใช้/เป้าหมาย/คงเหลือ/WIP เพราะไม่ได้เก็บไว้ — ดูข้อมูลชุดนั้นแบบเต็มได้จากไฟล์ Excel/PDF)
+// ตัดคอลัมน์ผู้รับผิดชอบออกแล้วเช่นกัน เพราะตอนนี้ใช้เว็บนี้คนเดียว (per user 2026-09-07)
+// จำนวนสั่ง/สถานะ/ลาวรับจริง/หมายเหตุ แก้ไขได้จากตรงนี้เลย (เหมือนที่หัวหน้าติ๊ก+ปรับจำนวนในแผน MRP ของเขาได้)
+// จำนวนสั่งมีปุ่ม −/+ ปรับทีละ 10 ให้ด้วย (ตามธรรมเนียมปัดเลขหลัก 10 ของเว็บนี้) หรือพิมพ์เลขตรงๆ ก็ได้
+// แก้แล้วบันทึกกลับลงฐานข้อมูลทันที ไม่ต้องกดปุ่มบันทึกแยก (per user 2026-09-07)
+function buildHistoryDetailTable(items) {
+  if (!items || items.length === 0) return '<div class="empty-state" style="padding:14px;">ไม่มีรายละเอียด SKU เก็บไว้สำหรับแผนนี้</div>';
+  const rowsHtml = items.map(function(it, i) {
+    const cfVal = (it.cf !== undefined && it.cf !== null) ? String(it.cf) : '';
+    return '<tr data-idx="' + i + '">' +
+      '<td>' + xmlEscape(it.sku || '-') + '</td>' +
+      '<td class="history-qty-cell">' +
+        '<button type="button" class="btn btn-ghost btn-sm history-item-qty-minus" aria-label="ลดจำนวน">&minus;</button>' +
+        '<input type="number" class="history-item-qty" value="' + (Number(it.q) || 0) + '" min="0" step="10">' +
+        '<button type="button" class="btn btn-ghost btn-sm history-item-qty-plus" aria-label="เพิ่มจำนวน">+</button>' +
+      '</td>' +
+      '<td><input type="text" class="order-confirmed-input history-item-cf" value="' + xmlEscape(cfVal) + '" placeholder="เช่น 30"></td>' +
+      '<td><select class="order-status-select history-item-status">' +
+        '<option value="ยังไม่สั่ง"' + (it.st === 'สั่งแล้ว' ? '' : ' selected') + '>ยังไม่สั่ง</option>' +
+        '<option value="สั่งแล้ว"' + (it.st === 'สั่งแล้ว' ? ' selected' : '') + '>สั่งแล้ว</option>' +
+      '</select></td>' +
+      '<td><input type="text" class="order-remark-input history-item-rm" value="' + xmlEscape(it.rm || '') + '" placeholder="หมายเหตุ"></td>' +
+      '</tr>';
+  }).join('');
+  return '<div class="table-scroll"><table class="order-table">' +
+    '<thead><tr><th>SKU</th><th>จำนวนสั่ง</th><th>ลาวรับจริง</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>' +
+    '<tbody>' + rowsHtml + '</tbody>' +
+    '</table></div>';
+}
+
+// บันทึกรายการ SKU ที่แก้ไขในตารางรายละเอียดกลับลงเอกสารแผนในฐานข้อมูล พร้อมคำนวณ orderedCount และ
+// totalQty ใหม่ให้ตรงกับข้อมูลปัจจุบันเสมอ (ไม่งั้นป้ายสถานะ/ยอดรวมชิ้นบนการ์ดจะค้างค่าเดิมตอนแก้จำนวน)
+function saveHistoryItemsUpdate(planNo, items, onDone) {
+  if (!state.dbApi) {
+    showToast('ฟีเจอร์นี้ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น');
+    return;
+  }
+  const orderedCount = items.filter(function(it) { return it.st === 'สั่งแล้ว'; }).length;
+  const totalQty = items.reduce(function(sum, it) { return sum + (Number(it.q) || 0); }, 0);
+  state.dbApi.doc('mrp_plans/' + planNo).update({ items: items, orderedCount: orderedCount, totalQty: totalQty }).then(function() {
+    if (typeof onDone === 'function') onDone(orderedCount, totalQty);
+  }).catch(function(err) {
+    showToast('บันทึกไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ'));
+  });
+}
+
+// หมายเหตุกำกับแผน — พิมพ์ไว้ตอนบันทึกก็ได้ (ช่อง #saveHistoryNoteInput) หรือมาแก้/เพิ่มทีหลังก็ได้จากตรงนี้
+// เอาไว้บอกว่าเอกสารนี้คืออะไร ณ ตอนที่บันทึก เช่น "รอคอนเฟิร์มว่าจะให้ลาวผลิตตัวไหนบ้าง" (per user 2026-09-07)
+function buildNoteRowHtml(noteVal) {
+  return '<span class="history-card-note-text">' + (noteVal ? xmlEscape(noteVal) : 'ยังไม่มีหมายเหตุ') + '</span>' +
+    '<button type="button" class="btn btn-ghost btn-sm history-note-edit-btn">แก้ไขหมายเหตุ</button>';
+}
+
+// ---------- ส่งออกประวัติแผน MRP เป็น Excel (2 ชีต: สรุปแผน + รายละเอียด SKU) ----------
+// ใช้ static parts ชุดแยกจาก XLSX_STATIC เพราะไฟล์นี้มี 2 ชีต (XLSX_STATIC ทำไว้สำหรับไฟล์ชีตเดียวเท่านั้น)
+// สไตล์ (styles.xml) ยังใช้ตัวเดียวกับ XLSX_STATIC ได้เลยเพราะมีสไตล์ที่ต้องใช้ครบอยู่แล้ว (per user 2026-09-07)
+const HISTORY_XLSX_CONTENT_TYPES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+  '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+  '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+  '<Default Extension="xml" ContentType="application/xml"/>' +
+  '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+  '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+  '<Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+  '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+  '</Types>';
+const HISTORY_XLSX_WORKBOOK = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+  '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+  '<sheets><sheet name="สรุปแผน" sheetId="1" r:id="rId1"/><sheet name="รายละเอียด SKU" sheetId="2" r:id="rId2"/></sheets></workbook>';
+const HISTORY_XLSX_WORKBOOK_RELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+  '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+  '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+  '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>' +
+  '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+  '</Relationships>';
+
+function buildHistorySummarySheetXml(company, plans) {
+  const rows = [];
+  let r = 0;
+  function nextRow() { r += 1; return r; }
+  const r1 = nextRow();
+  rows.push('<row r="' + r1 + '">' + cellStr('A' + r1, 'AMADA XTREME - ประวัติแผน MRP (' + company + ')', 1) + '</row>');
+  const r2 = nextRow();
+  rows.push('<row r="' + r2 + '">' + cellStr('A' + r2, 'ส่งออกเมื่อ') + cellStr('B' + r2, thaiShortDate(new Date())) + '</row>');
+  const r3 = nextRow();
+  rows.push('<row r="' + r3 + '">' + cellStr('A' + r3, 'จำนวนแผนทั้งหมด') + cellNum('B' + r3, plans.length) + '</row>');
+  nextRow(); // เว้น 1 แถวก่อนหัวตาราง
+  const headerRow = nextRow();
+  const headerCells = ['ลำดับ', 'เลขที่แผน', 'วันที่บันทึก', 'จำนวน SKU', 'จำนวนรวม (ชิ้น)', 'สั่งแล้ว (SKU)', 'สถานะ', 'หมายเหตุ'];
+  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+  rows.push('<row r="' + headerRow + '">' + headerCols.map(function(col, i) { return cellStr(col + headerRow, headerCells[i], col === 'A' ? HEADER_CENTER_STYLE : TABLE_HEADER_STYLE); }).join('') + '</row>');
+  plans.forEach(function(p, i) {
+    const rr = nextRow();
+    const status = computeHistoryStatus(p.orderedCount || 0, p.itemCount || 0, !!p.cancelled);
+    const ts = TABLE_TIER_STYLE[0];
+    rows.push('<row r="' + rr + '">' +
+      cellNum('A' + rr, i + 1, centerStyleFor(0)) +
+      cellStr('B' + rr, p.planNo || '-', ts) +
+      cellStr('C' + rr, thaiHistoryDate(p.createdAt), ts) +
+      cellNum('D' + rr, p.itemCount || 0, ts) +
+      cellNum('E' + rr, p.totalQty || 0, ts) +
+      cellNum('F' + rr, p.orderedCount || 0, ts) +
+      cellStr('G' + rr, status, ts) +
+      cellStr('H' + rr, p.note || '-', ts) +
+      '</row>');
+  });
+  const lastRef = 'H' + r;
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+    '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
+    '<dimension ref="A1:' + lastRef + '"/>' +
+    '<cols><col min="1" max="1" width="8.83" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/>' +
+    '<col min="3" max="3" width="18" customWidth="1"/><col min="4" max="4" width="12" customWidth="1"/>' +
+    '<col min="5" max="5" width="16" customWidth="1"/><col min="6" max="6" width="16" customWidth="1"/>' +
+    '<col min="7" max="7" width="14" customWidth="1"/><col min="8" max="8" width="32" customWidth="1"/></cols>' +
+    '<sheetData>' + rows.join('') + '</sheetData>' +
+    '<mergeCells count="1"><mergeCell ref="A1:H1"/></mergeCells>' +
+    '<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
+    '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0" scale="100"/>' +
+    '</worksheet>';
+}
+
+function buildHistoryDetailSheetXml(company, plans) {
+  const rows = [];
+  let r = 0;
+  function nextRow() { r += 1; return r; }
+  const r1 = nextRow();
+  rows.push('<row r="' + r1 + '">' + cellStr('A' + r1, 'AMADA XTREME - ประวัติแผน MRP (' + company + ') · รายละเอียด SKU ทุกแผน', 1) + '</row>');
+  nextRow();
+  const headerRow = nextRow();
+  const headerCells = ['ลำดับ', 'เลขที่แผน', 'SKU', 'จำนวนสั่ง', 'ลาวรับจริง', 'สถานะ', 'หมายเหตุ'];
+  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+  rows.push('<row r="' + headerRow + '">' + headerCols.map(function(col, i) { return cellStr(col + headerRow, headerCells[i], col === 'A' ? HEADER_CENTER_STYLE : TABLE_HEADER_STYLE); }).join('') + '</row>');
+  let i = 0;
+  const ts = TABLE_TIER_STYLE[0];
+  plans.forEach(function(p) {
+    (p.items || []).forEach(function(it) {
+      i += 1;
+      const rr = nextRow();
+      rows.push('<row r="' + rr + '">' +
+        cellNum('A' + rr, i, centerStyleFor(0)) +
+        cellStr('B' + rr, p.planNo || '-', ts) +
+        cellStr('C' + rr, it.sku || '-', ts) +
+        cellNum('D' + rr, it.q || 0, ts) +
+        cellStr('E' + rr, (it.cf !== undefined && it.cf !== null && it.cf !== '') ? String(it.cf) : '-', ts) +
+        cellStr('F' + rr, it.st || 'ยังไม่สั่ง', ts) +
+        cellStr('G' + rr, it.rm || '-', ts) +
+        '</row>');
+    });
+  });
+  const lastRef = 'G' + r;
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+    '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
+    '<dimension ref="A1:' + lastRef + '"/>' +
+    '<cols><col min="1" max="1" width="8.83" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/>' +
+    '<col min="3" max="3" width="16" customWidth="1"/><col min="4" max="4" width="12" customWidth="1"/>' +
+    '<col min="5" max="5" width="14" customWidth="1"/><col min="6" max="6" width="12" customWidth="1"/>' +
+    '<col min="7" max="7" width="32" customWidth="1"/></cols>' +
+    '<sheetData>' + rows.join('') + '</sheetData>' +
+    '<mergeCells count="1"><mergeCell ref="A1:G1"/></mergeCells>' +
+    '<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
+    '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0" scale="100"/>' +
+    '</worksheet>';
+}
+
+function buildHistoryWorkbook(company, plans) {
+  const sheet1Xml = buildHistorySummarySheetXml(company, plans);
+  const sheet2Xml = buildHistoryDetailSheetXml(company, plans);
+  const zipFiles = [
+    { name: '[Content_Types].xml', content: HISTORY_XLSX_CONTENT_TYPES },
+    { name: '_rels/.rels', content: XLSX_STATIC.rootRels },
+    { name: 'xl/workbook.xml', content: HISTORY_XLSX_WORKBOOK },
+    { name: 'xl/_rels/workbook.xml.rels', content: HISTORY_XLSX_WORKBOOK_RELS },
+    { name: 'xl/styles.xml', content: XLSX_STATIC.styles },
+    { name: 'xl/worksheets/sheet1.xml', content: sheet1Xml },
+    { name: 'xl/worksheets/sheet2.xml', content: sheet2Xml }
+  ];
+  return buildZip(zipFiles);
+}
+
+// ปุ่มหมายเหตุสำเร็จรูป 3 แบบที่ใช้บ่อย กดแล้วกรอกให้เลยไม่ต้องพิมพ์เอง (per user 2026-09-08)
+document.getElementById('notePresetRow').addEventListener('click', function(e) {
+  const btn = e.target.closest ? e.target.closest('.note-preset-btn') : null;
+  if (!btn) return;
+  const noteInput = document.getElementById('saveHistoryNoteInput');
+  if (noteInput) noteInput.value = btn.getAttribute('data-note') || '';
+});
+
+document.getElementById('saveHistoryBtn').addEventListener('click', function(e) {
+  e.preventDefault();
+  const resultEl = document.getElementById('saveHistoryResult');
+  const rows = allRows();
+  if (rows.length === 0) return;
+  if (!state.dbApi) {
+    if (resultEl) resultEl.textContent = state.dbChecked ? 'ฟีเจอร์นี้ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น' : 'กำลังเช็คฟีเจอร์นี้ ลองใหม่อีกครั้งใน 2-3 วินาที';
+    return;
+  }
+  const needRows = rows.filter(function(r) { return r.needOrder; });
+  const orderedCount = needRows.filter(function(r) { return r.orderStatus === 'สั่งแล้ว'; }).length;
+  const totalQty = needRows.reduce(function(sum, r) { return sum + r.orderQty; }, 0);
+  const company = state.selectedCompany;
+  const now = new Date();
+  const db = state.dbApi;
+  // เก็บรายการแบบย่อ (ตัดชื่อสินค้า/เฉลี่ยใช้/เป้าหมาย/คงเหลือ/WIP ออก) เพื่อไม่ให้เอกสารใหญ่เกินลิมิต 256 KiB
+  // ต่อเอกสาร แม้บริษัทจะมีหลายร้อย SKU ก็ตาม — ต้องการดูรายละเอียดเต็มๆ ให้เปิดไฟล์ Excel/PDF ของแผนนั้นแทน
+  // ตัดชื่อผู้รับผิดชอบออกด้วยแล้ว เพราะตอนนี้ใช้เว็บนี้คนเดียว ไม่ต้องเก็บว่าใครดูแล (per user 2026-09-07)
+  const compactItems = needRows.map(function(r) {
+    return { sku: r.sku, q: r.orderQty, st: r.orderStatus || 'ยังไม่สั่ง', cf: r.confirmedQty || '', rm: r.orderRemark || '' };
+  });
+  const noteInput = document.getElementById('saveHistoryNoteInput');
+  const note = noteInput ? noteInput.value.trim() : '';
+  // เก็บ unmatchedStandardCount ไว้ในแผนด้วย เพื่อให้ KPI "ไม่มี Standard" หน้าหลักดึงจากแผนล่าสุดที่บันทึก
+  // ไว้ได้ (ถาวร ไม่หายตอนรีเฟรช) แทนค่าที่คำนวณสดของรอบนี้ที่อยู่แค่ในความจำ (per user 2026-09-07)
+  const unmatchedStandardCount = (state.diag && state.diag.unmatchedStandardCount) || 0;
+  // เก็บลิสต์ SKU ที่ไม่มี Standard ไว้ในแผนด้วย (ไม่ใช่แค่จำนวน) ให้ตรงกับ unmatchedStandardCount ด้านบน
+  // เพื่อให้กด KPI "ไม่มี Standard" หน้าหลักแล้วเห็นรายชื่อจริงจากแผนล่าสุดที่บันทึกไว้ (per user 2026-09-08)
+  const unmatchedSkus = (state.diag && Array.isArray(state.diag.unmatchedSkus)) ? state.diag.unmatchedSkus : [];
+  if (resultEl) resultEl.textContent = 'กำลังบันทึก...';
+  nextHistoryPlanNo(db, company, now).then(function(planNo) {
+    return db.doc('mrp_plans/' + planNo).set({
+      planNo: planNo,
+      company: company,
+      createdAt: now.toISOString(),
+      itemCount: needRows.length,
+      totalQty: totalQty,
+      orderedCount: orderedCount,
+      unmatchedStandardCount: unmatchedStandardCount,
+      unmatchedSkus: unmatchedSkus,
+      cancelled: false,
+      note: note,
+      items: compactItems
+    }).then(function() { return planNo; });
+  }).then(function(planNo) {
+    if (resultEl) resultEl.textContent = 'บันทึกลงประวัติแล้ว: ' + planNo;
+    if (noteInput) noteInput.value = '';
+    renderHomeTab();
+    const historySelect = document.getElementById('historyCompanySelect');
+    if (historySelect && historySelect.value === company) loadHistoryList(company);
+  }).catch(function(err) {
+    if (resultEl) resultEl.textContent = 'บันทึกไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ');
+  });
+});
+
+const historyCompanySelect = document.getElementById('historyCompanySelect');
+COMPANY_ORDER.forEach(function(c) {
+  const opt = document.createElement('option');
+  opt.value = c;
+  opt.textContent = c;
+  historyCompanySelect.appendChild(opt);
+});
+
+function renderHistoryList(company, docs) {
+  const listEl = document.getElementById('historyList');
+  const stripEl = document.getElementById('historyStatStrip');
+  const items = (docs || []).map(function(d) { return d.data(); }).filter(Boolean);
+  if (items.length === 0) {
+    stripEl.innerHTML = '';
+    listEl.innerHTML = '<div class="empty-state">ยังไม่มีประวัติแผน MRP ของ ' + company + '</div>';
+    return;
+  }
+  items.sort(function(a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); });
+  let pending = 0, partial = 0, done = 0, cancelled = 0;
+  items.forEach(function(it) {
+    const status = computeHistoryStatus(it.orderedCount || 0, it.itemCount || 0, !!it.cancelled);
+    if (status === 'ยกเลิก') cancelled++;
+    else if (status === 'ครบแล้ว') done++;
+    else if (status === 'สั่งบางส่วน') partial++;
+    else pending++;
+  });
+  stripEl.innerHTML =
+    '<div class="stat-tile warn"><div class="stat-label">ยังไม่สั่ง</div><div class="stat-value">' + pending + '</div></div>' +
+    '<div class="stat-tile"><div class="stat-label">บางส่วน</div><div class="stat-value">' + partial + '</div></div>' +
+    '<div class="stat-tile ok"><div class="stat-label">ครบแล้ว</div><div class="stat-value">' + done + '</div></div>' +
+    '<div class="stat-tile critical"><div class="stat-label">ยกเลิก</div><div class="stat-value">' + cancelled + '</div></div>';
+
+  listEl.innerHTML = '';
+  items.forEach(function(it) {
+    const status = computeHistoryStatus(it.orderedCount || 0, it.itemCount || 0, !!it.cancelled);
+    const card = document.createElement('div');
+    card.className = 'history-card';
+    card.innerHTML =
+      '<div class="history-card-row">' +
+        '<div class="history-card-main">' +
+          '<div class="history-card-title">' + xmlEscape(it.planNo || '-') + '</div>' +
+          '<div class="history-card-meta">' + thaiHistoryDate(it.createdAt) + ' · ' + (it.itemCount || 0).toLocaleString('th-TH') + ' SKU · ' + (it.totalQty || 0).toLocaleString('th-TH') + ' ชิ้น</div>' +
+          '<span class="history-badge ' + historyStatusBadgeClass(status) + '">' + status + '</span>' +
+        '</div>' +
+        '<div class="history-card-actions">' +
+          '<button type="button" class="btn btn-ghost btn-sm history-view-btn">ดูรายการ</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm history-download-btn">ดาวน์โหลด Excel</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm history-cancel-btn">' + (it.cancelled ? 'เลิกยกเลิก' : 'ยกเลิกแผนนี้') + '</button>' +
+          '<button type="button" class="btn btn-danger btn-sm history-delete-btn">ลบแผนนี้</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="history-card-noterow">' + buildNoteRowHtml(it.note) + '</div>' +
+      '<div class="history-card-detail" style="display:none;"></div>';
+    const noteRow = card.querySelector('.history-card-noterow');
+    function wireNoteDisplay() {
+      const editBtn = noteRow.querySelector('.history-note-edit-btn');
+      editBtn.addEventListener('click', function() {
+        noteRow.innerHTML =
+          '<input type="text" class="history-note-input" value="' + xmlEscape(it.note || '') + '">' +
+          '<button type="button" class="btn btn-primary btn-sm history-note-save-btn">บันทึก</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm history-note-cancel-btn">ยกเลิก</button>';
+        const input = noteRow.querySelector('.history-note-input');
+        const saveBtn = noteRow.querySelector('.history-note-save-btn');
+        const cancelNoteBtn = noteRow.querySelector('.history-note-cancel-btn');
+        saveBtn.addEventListener('click', function() {
+          const newNote = input.value.trim();
+          saveBtn.disabled = true;
+          state.dbApi.doc('mrp_plans/' + it.planNo).update({ note: newNote }).then(function() {
+            it.note = newNote;
+            loadHistoryList(company);
+          }).catch(function(err) {
+            saveBtn.disabled = false;
+            showToast('บันทึกหมายเหตุไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ'));
+          });
+        });
+        cancelNoteBtn.addEventListener('click', function() {
+          noteRow.innerHTML = buildNoteRowHtml(it.note);
+          wireNoteDisplay();
+        });
+      });
+    }
+    wireNoteDisplay();
+    // ดาวน์โหลด Excel เฉพาะแผนนี้แผนเดียว (ไม่รวมแผนอื่น) — ใช้ workbook builder ตัวเดียวกับปุ่ม
+    // "ส่งออกประวัติเป็น Excel" ที่ทำไปก่อนหน้านี้ แค่ส่ง array ที่มีแผนเดียวเข้าไป (per user 2026-09-07)
+    const downloadBtn = card.querySelector('.history-download-btn');
+    downloadBtn.addEventListener('click', function() {
+      const blob = buildHistoryWorkbook(company, [it]);
+      offerBinaryDownload('แผน MRP_' + it.planNo + '.xlsx', blob);
+    });
+    const viewBtn = card.querySelector('.history-view-btn');
+    const detailEl = card.querySelector('.history-card-detail');
+    let detailBuilt = false;
+    viewBtn.addEventListener('click', function() {
+      const showing = detailEl.style.display !== 'none';
+      if (showing) {
+        detailEl.style.display = 'none';
+        viewBtn.textContent = 'ดูรายการ';
+        return;
+      }
+      if (!detailBuilt) {
+        detailEl.innerHTML = buildHistoryDetailTable(it.items);
+        detailBuilt = true;
+        // แก้จำนวนสั่ง/สถานะ/ลาวรับจริง/หมายเหตุ ทีละแถวในตารางนี้ได้เลย (เหมือนที่หัวหน้าปรับจำนวน+ติ๊ก
+        // แผน MRP ของเขาได้) — ผูก listener แบบ delegation ไว้ที่ detailEl เพราะเนื้อหาข้างในไม่ถูกแทนที่
+        // อีกหลังจากนี้ (สร้างครั้งเดียวตอนเปิดดูรายการครั้งแรก ไม่ได้ rebuild ทุกครั้งที่กดเปิด/ปิด)
+        // commitItemChange: จุดรวมบันทึก + รีเฟรชป้ายสถานะ/บรรทัดสรุปบนหัวการ์ดให้ตรงข้อมูลล่าสุดเสมอ
+        function commitItemChange() {
+          saveHistoryItemsUpdate(it.planNo, it.items, function(orderedCount, totalQty) {
+            it.orderedCount = orderedCount;
+            it.totalQty = totalQty;
+            const newStatus = computeHistoryStatus(orderedCount, it.itemCount || 0, !!it.cancelled);
+            const badgeEl = card.querySelector('.history-badge');
+            if (badgeEl) {
+              badgeEl.className = 'history-badge ' + historyStatusBadgeClass(newStatus);
+              badgeEl.textContent = newStatus;
+            }
+            const metaEl = card.querySelector('.history-card-meta');
+            if (metaEl) {
+              metaEl.textContent = thaiHistoryDate(it.createdAt) + ' · ' + (it.itemCount || 0).toLocaleString('th-TH') + ' SKU · ' + totalQty.toLocaleString('th-TH') + ' ชิ้น';
+            }
+          });
+        }
+        detailEl.addEventListener('change', function(e) {
+          const el = e.target;
+          const isCf = el.classList && el.classList.contains('history-item-cf');
+          const isStatus = el.classList && el.classList.contains('history-item-status');
+          const isRm = el.classList && el.classList.contains('history-item-rm');
+          const isQty = el.classList && el.classList.contains('history-item-qty');
+          if (!isCf && !isStatus && !isRm && !isQty) return;
+          const tr = el.closest ? el.closest('tr') : null;
+          if (!tr) return;
+          const idx = Number(tr.getAttribute('data-idx'));
+          if (isNaN(idx) || !it.items[idx]) return;
+          if (isCf) it.items[idx].cf = el.value;
+          else if (isStatus) it.items[idx].st = el.value;
+          else if (isRm) it.items[idx].rm = el.value;
+          else if (isQty) {
+            let v = Math.round(Number(el.value));
+            if (isNaN(v) || v < 0) v = 0;
+            el.value = v;
+            it.items[idx].q = v;
+          }
+          commitItemChange();
+        });
+        // ปุ่ม −/+ ปรับจำนวนทีละ 10 (กันไม่ให้ติดลบ)
+        detailEl.addEventListener('click', function(e) {
+          const minusBtn = e.target.closest ? e.target.closest('.history-item-qty-minus') : null;
+          const plusBtn = e.target.closest ? e.target.closest('.history-item-qty-plus') : null;
+          if (!minusBtn && !plusBtn) return;
+          const tr = (minusBtn || plusBtn).closest('tr');
+          if (!tr) return;
+          const idx = Number(tr.getAttribute('data-idx'));
+          if (isNaN(idx) || !it.items[idx]) return;
+          const qtyInput = tr.querySelector('.history-item-qty');
+          if (!qtyInput) return;
+          let v = Number(qtyInput.value) || 0;
+          v = minusBtn ? Math.max(0, v - 10) : v + 10;
+          qtyInput.value = v;
+          it.items[idx].q = v;
+          commitItemChange();
+        });
+      }
+      detailEl.style.display = '';
+      viewBtn.textContent = 'ซ่อนรายการ';
+    });
+    const cancelBtn = card.querySelector('.history-cancel-btn');
+    cancelBtn.addEventListener('click', function() {
+      cancelBtn.disabled = true;
+      state.dbApi.doc('mrp_plans/' + it.planNo).update({ cancelled: !it.cancelled }).then(function() {
+        loadHistoryList(company);
+      }).catch(function(err) {
+        cancelBtn.disabled = false;
+        showToast('อัปเดตไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ'));
+      });
+    });
+    // ปุ่มลบ: ใช้แบบกดยืนยัน 2 ครั้ง (กันลบพลาด) แทน window.confirm() เพราะ dialog ของเบราว์เซอร์
+    // มักถูกบล็อกตอนรันในหน้าที่ฝังอยู่ใน iframe ของ claude.ai — กดครั้งแรกเปลี่ยนเป็น "ยืนยันลบ?"
+    // ค้างไว้ 4 วินาที ถ้าไม่กดซ้ำในช่วงนั้นจะเปลี่ยนกลับเป็นปุ่มปกติ ไม่มีอะไรเกิดขึ้น
+    const deleteBtn = card.querySelector('.history-delete-btn');
+    let deleteArmed = false;
+    let deleteArmTimer = null;
+    deleteBtn.addEventListener('click', function() {
+      if (!deleteArmed) {
+        deleteArmed = true;
+        deleteBtn.textContent = 'ยืนยันลบ?';
+        deleteArmTimer = setTimeout(function() {
+          deleteArmed = false;
+          deleteBtn.textContent = 'ลบแผนนี้';
+        }, 4000);
+        return;
+      }
+      clearTimeout(deleteArmTimer);
+      deleteBtn.disabled = true;
+      cancelBtn.disabled = true;
+      state.dbApi.doc('mrp_plans/' + it.planNo).delete().then(function() {
+        loadHistoryList(company);
+      }).catch(function(err) {
+        deleteBtn.disabled = false;
+        cancelBtn.disabled = false;
+        deleteArmed = false;
+        deleteBtn.textContent = 'ลบแผนนี้';
+        showToast('ลบไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ'));
+      });
+    });
+    listEl.appendChild(card);
+  });
+}
+
+function loadHistoryList(company) {
+  const listEl = document.getElementById('historyList');
+  const stripEl = document.getElementById('historyStatStrip');
+  if (!company) { listEl.innerHTML = ''; stripEl.innerHTML = ''; return; }
+  if (!state.dbApi) {
+    stripEl.innerHTML = '';
+    listEl.innerHTML = '<div class="empty-state">' + (state.dbChecked ? 'ฟีเจอร์นี้ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น' : 'กำลังเช็คฟีเจอร์นี้...') + '</div>';
+    return;
+  }
+  listEl.innerHTML = '<div class="empty-state">กำลังโหลด...</div>';
+  state.dbApi.collection('mrp_plans').where('company', '==', company).limit(200).get().then(function(snap) {
+    renderHistoryList(company, snap.docs);
+  }).catch(function(err) {
+    listEl.innerHTML = '<div class="empty-state">โหลดประวัติไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ') + '</div>';
+  });
+}
+
+historyCompanySelect.addEventListener('change', function() {
+  loadHistoryList(this.value);
+});
+
+document.getElementById('exportHistoryBtn').addEventListener('click', function(e) {
+  e.preventDefault();
+  const resultEl = document.getElementById('exportHistoryResult');
+  const company = historyCompanySelect.value;
+  if (!company) {
+    if (resultEl) resultEl.textContent = 'เลือกบริษัทก่อน';
+    return;
+  }
+  if (!state.dbApi) {
+    if (resultEl) resultEl.textContent = state.dbChecked ? 'ฟีเจอร์นี้ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น' : 'กำลังเช็คฟีเจอร์นี้ ลองใหม่อีกครั้งใน 2-3 วินาที';
+    return;
+  }
+  if (resultEl) resultEl.textContent = 'กำลังดึงข้อมูล...';
+  state.dbApi.collection('mrp_plans').where('company', '==', company).limit(200).get().then(function(snap) {
+    const plans = snap.docs.map(function(d) { return d.data(); }).filter(Boolean);
+    plans.sort(function(a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); });
+    if (plans.length === 0) {
+      if (resultEl) resultEl.textContent = 'ไม่มีประวัติของ ' + company + ' ให้ส่งออก';
+      return;
+    }
+    const blob = buildHistoryWorkbook(company, plans);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    offerBinaryDownload('ประวัติแผน MRP_' + company + '_' + dateStr + '.xlsx', blob);
+    if (resultEl) resultEl.textContent = 'ส่งออกแล้ว: ' + plans.length.toLocaleString('th-TH') + ' แผน';
+  }).catch(function(err) {
+    if (resultEl) resultEl.textContent = 'ส่งออกไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ');
+  });
+});
+
+// ---------- app shell: แท็บเนวิเกชัน 5 ปุ่ม (หน้าหลัก/Standard/สร้างแผน/BOM/แผน MRP) ----------
+// เดิมหน้านี้เป็นหน้าเดียวยาวๆ เปลี่ยนมาแบ่งเป็นแท็บให้ใช้งานคล้ายแอปมือถือ (per user 2026-09-07)
+// ทุก id ของ element เดิมยังอยู่ครบ แค่ย้ายไปอยู่ในกล่อง tab-panel เฉยๆ ตรรกะข้างในไม่ได้แก้อะไรเลย
+const TABS = ['home', 'standard', 'plan', 'bom', 'history'];
+function showTab(tab) {
+  // บั๊กเดิม: เคยตั้งแค่ panel.style.display ล้าง inline style เฉยๆ แต่ .tab-panel { display:none }
+  // เป็น class-level rule อยู่แล้ว การล้าง inline ไม่ได้ทำให้โผล่ขึ้นมา ต้องเติม/เอาคลาส "active" ออก
+  // ที่ตัว panel ด้วยเหมือนปุ่ม nav ถึงจะตรงกับ CSS .tab-panel.active { display:block } (แก้ 2026-09-07)
+  TABS.forEach(function(t) {
+    const panel = document.getElementById('tab-' + t);
+    const btn = document.getElementById('nav-' + t);
+    if (panel) { if (t === tab) panel.classList.add('active'); else panel.classList.remove('active'); }
+    if (btn) { if (t === tab) btn.classList.add('active'); else btn.classList.remove('active'); }
+  });
+  // กดปุ่ม "หน้าหลัก" ต้องพากลับไปหน้าหลักจริงๆ เสมอ แม้ตอนนั้นจะเปิดหน้าย่อย "ข้อมูลและประวัติ" ค้างอยู่
+  // (บั๊กเดิม: ถ้าอยู่ในหน้าย่อยนั้นแล้วกด "หน้าหลัก" จะไม่มีอะไรเกิดขึ้นเลย เพราะแท็บ home active อยู่แล้ว
+  // showTab('home') เลยไม่ได้ไปยุ่งกับ view ย่อยข้างในเลย ต้องรีเซ็ตมันด้วยตรงนี้ per user 2026-09-07)
+  if (tab === 'home') {
+    const mainView = document.getElementById('homeMainView');
+    const dataHistoryView = document.getElementById('homeDataHistoryView');
+    const unmatchedView = document.getElementById('homeUnmatchedView');
+    if (mainView) mainView.style.display = '';
+    if (dataHistoryView) dataHistoryView.style.display = 'none';
+    if (unmatchedView) unmatchedView.style.display = 'none';
+  }
+  window.scrollTo(0, 0);
+}
+TABS.forEach(function(t) {
+  const btn = document.getElementById('nav-' + t);
+  if (btn) btn.addEventListener('click', function() { showTab(t); });
+});
+
+// ---------- หน้าหลัก: สรุป KPI + ทางลัดไปแท็บอื่น ----------
+function setHomeTopKpis(needCount, recommendedQty, unmatchedCount) {
+  const a = document.getElementById('homeKpiNeedPlan');
+  const b = document.getElementById('homeKpiRecommendedQty');
+  const c = document.getElementById('homeKpiUnmatchedStandard');
+  if (a) a.textContent = (needCount || 0).toLocaleString('th-TH');
+  if (b) b.textContent = (recommendedQty || 0).toLocaleString('th-TH');
+  if (c) c.textContent = (unmatchedCount || 0).toLocaleString('th-TH');
+}
+
+function renderHomeTab() {
+  const grid = document.getElementById('homeKpiGrid');
+  if (!grid) return; // เผื่อเรียกก่อน DOM พร้อม (ไม่ควรเกิดขึ้นจริง แต่กันไว้)
+  const dateEl = document.getElementById('homeTodayDate');
+  if (dateEl) dateEl.textContent = thaiFullDate(new Date());
+  const totalStandard = computeEffectiveStandards().length;
+  const totalCompanies = COMPANY_ORDER.length;
+  const rows = allRows();
+  const needRows = rows.filter(function(r) { return r.needOrder; });
+  const liveNeedCount = needRows.length;
+  const liveRecommendedQty = needRows.reduce(function(sum, r) { return sum + (r.orderQty || 0); }, 0);
+  const liveUnmatchedCount = (state.diag && state.diag.unmatchedStandardCount) || 0;
+  grid.innerHTML =
+    '<div class="stat-tile warn stat-tile-link" data-target="history"><div class="stat-label">ต้องออกแผน</div><div class="stat-value" id="homeKpiNeedPlan">' + liveNeedCount.toLocaleString('th-TH') + '</div></div>' +
+    '<div class="stat-tile stat-tile-link" data-target="history"><div class="stat-label">จำนวนแนะนำ</div><div class="stat-value" id="homeKpiRecommendedQty">' + liveRecommendedQty.toLocaleString('th-TH') + '</div></div>' +
+    '<div class="stat-tile critical stat-tile-link" data-target="unmatched"><div class="stat-label">ไม่มี Standard</div><div class="stat-value" id="homeKpiUnmatchedStandard">' + liveUnmatchedCount.toLocaleString('th-TH') + '</div></div>' +
+    '<div class="stat-tile stat-tile-link" data-target="standard"><div class="stat-label">Standard ใช้งานอยู่</div><div class="stat-value">' + totalStandard.toLocaleString('th-TH') + '</div></div>' +
+    '<div class="stat-tile stat-tile-link" data-target="plan"><div class="stat-label">บริษัททั้งหมด</div><div class="stat-value">' + totalCompanies + '</div></div>';
+  const countLabel = document.getElementById('homeStandardCount');
+  if (countLabel) countLabel.textContent = totalStandard.toLocaleString('th-TH') + ' SKU · ' + totalCompanies + ' บริษัท';
+  // ช่อง "ต้องออกแผน"/"จำนวนแนะนำ"/"ไม่มี Standard" ดึงจาก "แผนล่าสุดที่เคยบันทึกไว้ในประวัติ" แทนค่าที่
+  // คำนวณสดของรอบนี้ (ซึ่งอยู่แค่ในความจำ หายตอนรีเฟรช) — เรียงตามวันที่บันทึกจริง (createdAt) เอาอันล่าสุด
+  // สุดจริงๆ มาโชว์ ไม่ว่าจะเป็นบริษัทไหนก็ตาม ถ้าโหลดจากฐานข้อมูลไม่ได้ (ไม่มี db/ยังไม่เคยบันทึกแผนเลย)
+  // จะใช้ค่าที่คำนวณสดของรอบนี้แทนไปก่อน (per user 2026-09-07)
+  if (state.dbApi) {
+    state.dbApi.collection('mrp_plans').orderBy('createdAt', 'desc').limit(1).get().then(function(snap) {
+      if (snap.docs.length === 0) return;
+      const latest = snap.docs[0].data();
+      setHomeTopKpis(latest.itemCount, latest.totalQty, latest.unmatchedStandardCount);
+      // จำไว้ว่าตัวเลขนี้มาจากแผน/บริษัทไหน เผื่อกด "ต้องออกแผน"/"จำนวนแนะนำ" แล้วอยากเปิดดูแผนนั้นในแท็บ
+      // ประวัติต่อ (กดเข้าไปแล้วไปหน้าแหล่งที่มาได้ per user 2026-09-07) — เก็บลิสต์ SKU ที่ไม่มี Standard
+      // ของแผนนี้ไว้ด้วย ใช้โชว์ตอนกดเข้าไปดูรายการจริง (per user 2026-09-08)
+      state.homeLatestPlan = { company: latest.company, planNo: latest.planNo, unmatchedSkus: Array.isArray(latest.unmatchedSkus) ? latest.unmatchedSkus : [], unmatchedCount: latest.unmatchedStandardCount || 0 };
+    }).catch(function() {
+      // โหลดไม่สำเร็จ — ปล่อยค่าที่คำนวณสดของรอบนี้ที่แสดงอยู่แล้วไว้เฉยๆ
+    });
+  }
+}
+// กด KPI แต่ละช่องแล้วพาไปแท็บ "แหล่งที่มา" ของตัวเลขนั้น — ผูก listener แบบ delegation ไว้ที่ตัว grid
+// (ไม่ใช่ทีละ tile) เพราะ grid.innerHTML ถูกสร้างใหม่ทุกครั้งที่ renderHomeTab() ทำงาน (per user 2026-09-07)
+document.getElementById('homeKpiGrid').addEventListener('click', function(e) {
+  const tile = e.target.closest ? e.target.closest('.stat-tile-link') : null;
+  if (!tile) return;
+  const target = tile.getAttribute('data-target');
+  if (!target) return;
+  // "ไม่มี Standard" ไม่ใช่แท็บจริง แต่เป็นหน้าย่อยในแท็บหน้าหลัก (เหมือนข้อมูลและประวัติ) เพราะอยากให้เห็น
+  // ลิสต์ SKU จริงๆ เลย ไม่ใช่แค่พาไปแท็บ Standard เฉยๆ แบบเดิม (per user 2026-09-08)
+  if (target === 'unmatched') {
+    showTab('home');
+    document.getElementById('homeMainView').style.display = 'none';
+    document.getElementById('homeUnmatchedView').style.display = '';
+    renderHomeUnmatchedList();
+    return;
+  }
+  showTab(target);
+  if (target === 'history' && state.homeLatestPlan) {
+    const sel = document.getElementById('historyCompanySelect');
+    if (sel) {
+      sel.value = state.homeLatestPlan.company;
+      loadHistoryList(state.homeLatestPlan.company);
+    }
+  }
+});
+document.getElementById('homeGoPlanBtn').addEventListener('click', function() { showTab('plan'); });
+document.getElementById('homeGoStandardBtn').addEventListener('click', function() { showTab('standard'); });
+document.getElementById('homeGoBomBtn').addEventListener('click', function() { showTab('bom'); });
+document.getElementById('homeGoHistoryBtn').addEventListener('click', function() { showTab('history'); });
+
+// ---------- หน้าย่อย "ไม่มี Standard": ลิสต์ SKU จริงที่ไม่ตรง Standard ตัวไหนเลย + เพิ่มเป็น Standard ได้เลย ----------
+// แหล่งข้อมูล: ถ้ามีแผนล่าสุดที่บันทึกไว้ใน db ใช้ลิสต์จากแผนนั้น (ตรงกับตัวเลข KPI ที่โชว์อยู่) ถ้ายังไม่เคย
+// บันทึกแผนเลย (หรือเปิดผ่าน GitHub/ไฟล์ในเครื่องที่ไม่มี db) ใช้ลิสต์สดจากการประมวลผลล่าสุดในเซสชันนี้แทน
+// (per user 2026-09-08)
+document.getElementById('homeUnmatchedBackBtn').addEventListener('click', function() {
+  document.getElementById('homeUnmatchedView').style.display = 'none';
+  document.getElementById('homeMainView').style.display = '';
+});
+function renderHomeUnmatchedList() {
+  const wrap = document.getElementById('homeUnmatchedTableWrap');
+  const noteEl = document.getElementById('homeUnmatchedNote');
+  if (!wrap) return;
+  let list = null;
+  let source = '';
+  if (state.homeLatestPlan && Array.isArray(state.homeLatestPlan.unmatchedSkus) && state.homeLatestPlan.unmatchedSkus.length > 0) {
+    list = state.homeLatestPlan.unmatchedSkus;
+    source = 'จากแผนล่าสุดที่บันทึกไว้: ' + state.homeLatestPlan.company + ' · ' + state.homeLatestPlan.planNo;
+  } else if (state.diag && Array.isArray(state.diag.unmatchedSkus) && state.diag.unmatchedSkus.length > 0) {
+    list = state.diag.unmatchedSkus;
+    source = 'จากการประมวลผลล่าสุดในเซสชันนี้ (ยังไม่ได้บันทึกแผน)';
+  }
+  if (noteEl) noteEl.textContent = source;
+  if (!list || list.length === 0) {
+    // เคยเจอเคสนี้จริง: แผนล่าสุดที่บันทึกไว้เก่ากว่าฟีเจอร์นี้ (มีแค่ unmatchedStandardCount ที่เพิ่มไว้คืนก่อน
+    // แต่ยังไม่มี unmatchedSkus ที่เพิ่งเพิ่มเข้ามาวันนี้) เลยโชว์ตัวเลขในช่อง KPI ว่ามี แต่พอกดเข้ามาดูลิสต์กลับ
+    // ว่างเปล่า ต้องบอกสาเหตุตรงๆ ไม่งั้นดูเหมือนบั๊ก/ไม่มีจริง ทั้งที่จริงมี (per user 2026-09-08)
+    if (state.homeLatestPlan && state.homeLatestPlan.unmatchedCount > 0) {
+      wrap.innerHTML = '<div class="empty-state">แผนล่าสุดที่บันทึกไว้ (' + xmlEscape(state.homeLatestPlan.planNo) + ') รู้แค่ "จำนวน" (' + state.homeLatestPlan.unmatchedCount.toLocaleString('th-TH') + ' รายการ) แต่ไม่ได้เก็บรายชื่อ SKU ไว้ เพราะบันทึกไว้ก่อนฟีเจอร์ดูรายชื่อนี้จะถูกเพิ่มเข้ามา<br><br>วิธีแก้: กด "ประมวลผล" ใหม่อีกครั้งที่แท็บสร้างแผน แล้วกด "บันทึกแผนนี้ลงประวัติ MRP" — ครั้งถัดไปจะเห็นรายชื่อจริงตรงนี้</div>';
+    } else {
+      wrap.innerHTML = '<div class="empty-state">ไม่พบ SKU ที่ไม่มี Standard' + (source ? '' : ' — ยังไม่มีข้อมูล ลองกด "ประมวลผล" หรือ "บันทึกแผนนี้ลงประวัติ MRP" ก่อน') + '</div>';
+    }
+    return;
+  }
+  const rowsHtml = list.map(function(it) {
+    return '<tr data-sku="' + xmlEscape(it.sku) + '">' +
+      '<td>' + xmlEscape(it.sku) + '</td>' +
+      '<td class="num">' + (Number(it.qty) || 0).toLocaleString('th-TH') + '</td>' +
+      '<td><button type="button" class="btn btn-ghost btn-sm home-unmatched-add-btn">&#10133; เพิ่มเป็น Standard</button></td>' +
+      '</tr>';
+  }).join('');
+  wrap.innerHTML = '<div class="standard-table-wrap"><table><thead><tr><th>SKU</th><th>คงเหลือในไฟล์สต็อก</th><th></th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
+}
+// กด "เพิ่มเป็น Standard" ต่อแถว -> ไปแท็บ Standard เปิดฟอร์มเพิ่มใหม่ พร้อมกรอก SKU ให้เลยอัตโนมัติ
+document.getElementById('homeUnmatchedTableWrap').addEventListener('click', function(e) {
+  const btn = e.target.closest ? e.target.closest('.home-unmatched-add-btn') : null;
+  if (!btn) return;
+  const tr = btn.closest('tr');
+  if (!tr) return;
+  const sku = tr.getAttribute('data-sku');
+  showTab('standard');
+  openStandardForm(null);
+  const skuInput = document.getElementById('standardFormSku');
+  if (skuInput) skuInput.value = sku;
+});
+
+// ---------- Standard: ดู/ค้นหา/แก้ไข/เพิ่ม/ปิดใช้งานมาตรฐาน Min-Max ----------
+// แก้ไข/เพิ่ม/ปิดใช้งานได้จริงผ่าน db (คอลเลกชัน "standards") — ใช้ได้เฉพาะตอนเปิดผ่านลิงก์ claude.ai
+// เปิดผ่าน GitHub/ไฟล์ในเครื่องจะดูได้แค่ค่าที่ฝังในโค้ด (STANDARDS) อย่างเดียว แก้ไม่ได้ (per user 2026-09-07)
+const standardCompanyFilter = document.getElementById('standardCompanyFilter');
+COMPANY_ORDER.forEach(function(c) {
+  const opt = document.createElement('option');
+  opt.value = c;
+  opt.textContent = c;
+  standardCompanyFilter.appendChild(opt);
+});
+const standardFormCompanySelect = document.getElementById('standardFormCompany');
+COMPANY_ORDER.forEach(function(c) {
+  const opt = document.createElement('option');
+  opt.value = c;
+  opt.textContent = c;
+  standardFormCompanySelect.appendChild(opt);
+});
+
+function renderStandardTable() {
+  const wrap = document.getElementById('standardTableWrap');
+  const countEl = document.getElementById('standardResultCount');
+  const company = standardCompanyFilter.value;
+  const q = (document.getElementById('standardSearchInput').value || '').trim().toUpperCase();
+  const showInactive = document.getElementById('standardShowInactive').checked;
+  const source = showInactive ? computeAllStandardsIncludingInactive() : computeEffectiveStandards();
+  if (!company && !q) {
+    wrap.innerHTML = '<div class="empty-state">เลือกบริษัท หรือพิมพ์คำค้น เพื่อดูรายการ (มีทั้งหมด ' + source.length.toLocaleString('th-TH') + ' SKU)</div>';
+    countEl.textContent = '';
+    return;
+  }
+  let matched = source;
+  if (company) matched = matched.filter(function(s) { return s.company === company; });
+  if (q) matched = matched.filter(function(s) { return s.sku.toUpperCase().indexOf(q) !== -1 || (s.prefix || '').toUpperCase().indexOf(q) !== -1; });
+  countEl.textContent = 'พบ ' + matched.length.toLocaleString('th-TH') + ' รายการ';
+  if (matched.length === 0) {
+    wrap.innerHTML = '<div class="empty-state">ไม่พบรายการที่ตรงกับคำค้น</div>';
+    return;
+  }
+  const rowsHtml = matched.map(function(s) {
+    const inactiveTag = s.active === false ? ' <span class="history-badge cancelled">ปิดใช้งาน</span>' : '';
+    return '<tr data-sku="' + xmlEscape(s.sku) + '">' +
+      '<td>' + xmlEscape(s.prefix || '-') + '</td>' +
+      '<td>' + xmlEscape(s.sku) + inactiveTag + '</td>' +
+      '<td>' + xmlEscape(s.company || '-') + '</td>' +
+      '<td class="num">' + (s.min || 0).toLocaleString('th-TH') + '</td>' +
+      '<td class="num">' + (s.max || 0).toLocaleString('th-TH') + '</td>' +
+      '<td class="num">' + (s.lot || 0).toLocaleString('th-TH') + '</td>' +
+      '<td class="num">' + (s.avg || 0).toLocaleString('th-TH') + '</td>' +
+      '<td><button type="button" class="btn btn-ghost btn-sm standard-edit-btn">แก้ไข</button></td>' +
+      '</tr>';
+  }).join('');
+  wrap.innerHTML = '<div class="standard-table-wrap"><table><thead><tr><th>Prefix</th><th>SKU</th><th>บริษัท</th><th>Min</th><th>Max</th><th>Lot</th><th>Avg</th><th></th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
+}
+standardCompanyFilter.addEventListener('change', renderStandardTable);
+document.getElementById('standardSearchInput').addEventListener('input', renderStandardTable);
+document.getElementById('standardShowInactive').addEventListener('change', renderStandardTable);
+// event delegation: ตาราง Standard ถูก re-render ทับ innerHTML ทั้งก้อนทุกครั้ง ปุ่ม "แก้ไข" ในแต่ละแถว
+// เลยต้องผูก listener ไว้ที่ container ที่ไม่เคยถูกแทนที่ (standardTableWrap) แทนการผูกทีละปุ่ม
+document.getElementById('standardTableWrap').addEventListener('click', function(e) {
+  const btn = e.target.closest ? e.target.closest('.standard-edit-btn') : null;
+  if (!btn) return;
+  const tr = btn.closest('tr');
+  if (!tr) return;
+  openStandardForm(tr.getAttribute('data-sku'));
+});
+
+// เปิดฟอร์มแก้ไข (ส่ง sku ที่มีอยู่แล้ว) หรือฟอร์มเพิ่มใหม่ (ไม่ส่ง argument / ส่ง null)
+function openStandardForm(existingSku) {
+  const form = document.getElementById('standardEditForm');
+  const skuInput = document.getElementById('standardFormSku');
+  if (existingSku) {
+    const s = computeAllStandardsIncludingInactive().filter(function(x) { return x.sku === existingSku; })[0];
+    if (!s) return;
+    skuInput.value = s.sku;
+    skuInput.readOnly = true;
+    document.getElementById('standardFormPrefix').value = s.prefix || '';
+    document.getElementById('standardFormCompany').value = s.company || COMPANY_ORDER[0];
+    document.getElementById('standardFormPerson').value = s.person || '';
+    document.getElementById('standardFormMin').value = s.min || 0;
+    document.getElementById('standardFormMax').value = s.max || 0;
+    document.getElementById('standardFormLot').value = s.lot || 0;
+    document.getElementById('standardFormAvg').value = s.avg || 0;
+    document.getElementById('standardFormActive').checked = s.active !== false;
+    document.getElementById('standardFormSkuLabel').textContent = 'แก้ไข: ' + s.sku;
+  } else {
+    skuInput.value = '';
+    skuInput.readOnly = false;
+    document.getElementById('standardFormPrefix').value = '';
+    document.getElementById('standardFormCompany').value = COMPANY_ORDER[0];
+    document.getElementById('standardFormPerson').value = '';
+    document.getElementById('standardFormMin').value = 0;
+    document.getElementById('standardFormMax').value = 0;
+    document.getElementById('standardFormLot').value = 0;
+    document.getElementById('standardFormAvg').value = 0;
+    document.getElementById('standardFormActive').checked = true;
+    document.getElementById('standardFormSkuLabel').textContent = 'เพิ่ม SKU ใหม่';
+  }
+  document.getElementById('standardFormResult').textContent = '';
+  form.style.display = '';
+}
+document.getElementById('standardAddNewBtn').addEventListener('click', function() { openStandardForm(null); });
+document.getElementById('standardFormCancelBtn').addEventListener('click', function() {
+  document.getElementById('standardEditForm').style.display = 'none';
+});
+document.getElementById('standardFormSaveBtn').addEventListener('click', function() {
+  const resultEl = document.getElementById('standardFormResult');
+  if (!state.dbApi) {
+    resultEl.textContent = state.dbChecked ? 'ฟีเจอร์นี้ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น' : 'กำลังเช็คฟีเจอร์นี้ ลองใหม่อีกครั้งใน 2-3 วินาที';
+    return;
+  }
+  const sku = document.getElementById('standardFormSku').value.trim().toUpperCase();
+  if (!sku) {
+    resultEl.textContent = 'กรุณากรอก SKU';
+    return;
+  }
+  const doc = {
+    sku: sku,
+    prefix: document.getElementById('standardFormPrefix').value.trim(),
+    company: document.getElementById('standardFormCompany').value,
+    person: document.getElementById('standardFormPerson').value.trim(),
+    min: Number(document.getElementById('standardFormMin').value) || 0,
+    max: Number(document.getElementById('standardFormMax').value) || 0,
+    lot: Number(document.getElementById('standardFormLot').value) || 0,
+    avg: Number(document.getElementById('standardFormAvg').value) || 0,
+    active: document.getElementById('standardFormActive').checked
+  };
+  resultEl.textContent = 'กำลังบันทึก...';
+  state.dbApi.doc('standards/' + standardDocId(sku)).set(doc).then(function() {
+    state.standardOverrides.set(sku, doc);
+    document.getElementById('standardEditForm').style.display = 'none';
+    renderHomeTab();
+    renderStandardTable();
+    logStandardEdit(sku);
+    showToast('บันทึก Standard แล้ว: ' + sku);
+  }).catch(function(err) {
+    resultEl.textContent = 'บันทึกไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ');
+  });
+});
+renderStandardTable();
+
+// ---------- log เบาๆ สำหรับหน้า "ข้อมูลและประวัติ" — เก็บแค่ "เกิดเหตุการณ์เมื่อไหร่/บริษัทไหน/sku ไหน"
+// ไม่เก็บเนื้อไฟล์หรือข้อมูลสต็อกจริงเลย เอาไว้แค่นับจำนวนรอบ + ลบตามช่วงวันที่ได้ (per user 2026-09-07)
+function logStockCheck(company) {
+  if (!state.dbApi) return;
+  state.dbApi.collection('stock_checks').add({ company: company, createdAt: new Date().toISOString() }).catch(function() {});
+}
+function logStandardEdit(sku) {
+  if (!state.dbApi) return;
+  state.dbApi.collection('standard_edits').add({ sku: sku, createdAt: new Date().toISOString() }).catch(function() {});
+}
+
+// ---------- หน้า "ข้อมูลและประวัติ" (สลับมุมมองภายในแท็บหน้าหลัก ไม่ใช่แท็บใหม่) ----------
+document.getElementById('homeGoDataHistoryBtn').addEventListener('click', function() {
+  document.getElementById('homeMainView').style.display = 'none';
+  document.getElementById('homeDataHistoryView').style.display = '';
+  renderDataHistoryStats();
+});
+document.getElementById('homeDataHistoryBackBtn').addEventListener('click', function() {
+  document.getElementById('homeDataHistoryView').style.display = 'none';
+  document.getElementById('homeMainView').style.display = '';
+});
+
+function renderDataHistoryStats() {
+  const grid = document.getElementById('dataHistoryStatsGrid');
+  if (!state.dbApi) {
+    grid.innerHTML = '<div class="empty-state">' + (state.dbChecked ? 'ฟีเจอร์นี้ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น' : 'กำลังเช็คฟีเจอร์นี้...') + '</div>';
+    return;
+  }
+  grid.innerHTML = '<div class="empty-state">กำลังโหลด...</div>';
+  Promise.all([
+    state.dbApi.collection('stock_checks').limit(1000).get(),
+    state.dbApi.collection('mrp_plans').limit(1000).get(),
+    state.dbApi.collection('standard_edits').limit(1000).get()
+  ]).then(function(results) {
+    const stockCount = results[0].docs.length;
+    const planCount = results[1].docs.length;
+    const editCount = results[2].docs.length;
+    grid.innerHTML =
+      '<div class="stat-tile"><div class="stat-label">สต็อกย้อนหลัง</div><div class="stat-value">' + stockCount.toLocaleString('th-TH') + '</div><div class="stat-label">รอบอัปโหลด</div></div>' +
+      '<div class="stat-tile"><div class="stat-label">แผน MRP</div><div class="stat-value">' + planCount.toLocaleString('th-TH') + '</div><div class="stat-label">แผนที่บันทึก</div></div>' +
+      '<div class="stat-tile"><div class="stat-label">ประวัติ Standard</div><div class="stat-value">' + editCount.toLocaleString('th-TH') + '</div><div class="stat-label">ครั้งที่แก้ไข</div></div>';
+    const summaryLabel = document.getElementById('homeDataHistorySummary');
+    if (summaryLabel) summaryLabel.textContent = 'สต็อก ' + stockCount.toLocaleString('th-TH') + ' รอบ · แผน ' + planCount.toLocaleString('th-TH') + ' แผน · แก้ Standard ' + editCount.toLocaleString('th-TH') + ' ครั้ง';
+  }).catch(function(err) {
+    grid.innerHTML = '<div class="empty-state">โหลดไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ') + '</div>';
+  });
+}
+
+// เก็บผลตรวจไว้ก่อนกดลบจริง (กันลบผิดชุดถ้ากดลบโดยไม่ได้กดตรวจซ้ำหลังแก้ช่วงวันที่)
+let dataHistoryPendingDelete = null;
+
+document.getElementById('dataHistoryCheckBtn').addEventListener('click', function() {
+  const resultEl = document.getElementById('dataHistoryCheckResult');
+  const deleteRow = document.getElementById('dataHistoryDeleteRow');
+  deleteRow.style.display = 'none';
+  dataHistoryPendingDelete = null;
+  if (!state.dbApi) {
+    resultEl.textContent = state.dbChecked ? 'ฟีเจอร์นี้ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น' : 'กำลังเช็คฟีเจอร์นี้ ลองใหม่อีกครั้ง';
+    return;
+  }
+  const fromVal = document.getElementById('dataHistoryFromDate').value;
+  const toVal = document.getElementById('dataHistoryToDate').value;
+  if (!fromVal || !toVal) { resultEl.textContent = 'กรุณาเลือกช่วงวันที่ให้ครบ'; return; }
+  const fromIso = fromVal + 'T00:00:00.000Z';
+  const toIso = toVal + 'T23:59:59.999Z';
+  const delStock = document.getElementById('dataHistoryDelStock').checked;
+  const delPlans = document.getElementById('dataHistoryDelPlans').checked;
+  if (!delStock && !delPlans) { resultEl.textContent = 'เลือกอย่างน้อย 1 ประเภทข้อมูล'; return; }
+  resultEl.textContent = 'กำลังตรวจสอบ...';
+  Promise.all([
+    delStock ? state.dbApi.collection('stock_checks').where('createdAt', '>=', fromIso).where('createdAt', '<=', toIso).limit(1000).get() : Promise.resolve(null),
+    delPlans ? state.dbApi.collection('mrp_plans').where('createdAt', '>=', fromIso).where('createdAt', '<=', toIso).limit(1000).get() : Promise.resolve(null)
+  ]).then(function(res) {
+    const stockDocs = res[0] ? res[0].docs : [];
+    const planDocs = res[1] ? res[1].docs : [];
+    dataHistoryPendingDelete = { stockDocs: stockDocs, planDocs: planDocs };
+    resultEl.textContent = 'พบ: สต็อก ' + stockDocs.length.toLocaleString('th-TH') + ' รอบ, แผน MRP ' + planDocs.length.toLocaleString('th-TH') + ' แผน';
+    if (stockDocs.length + planDocs.length > 0) deleteRow.style.display = '';
+  }).catch(function(err) {
+    resultEl.textContent = 'ตรวจสอบไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ');
+  });
+});
+
+// ปุ่มลบ: กดยืนยัน 2 ครั้งเหมือนปุ่มลบแผนในหน้าประวัติ (กันลบพลาด แทน window.confirm() ที่มักถูกบล็อกใน claude.ai)
+let dataHistoryDeleteArmed = false;
+let dataHistoryDeleteArmTimer = null;
+document.getElementById('dataHistoryDeleteBtn').addEventListener('click', function() {
+  const btn = this;
+  const resultEl = document.getElementById('dataHistoryDeleteResult');
+  if (!dataHistoryPendingDelete) return;
+  if (!dataHistoryDeleteArmed) {
+    dataHistoryDeleteArmed = true;
+    btn.textContent = 'ยืนยันลบ?';
+    dataHistoryDeleteArmTimer = setTimeout(function() {
+      dataHistoryDeleteArmed = false;
+      btn.textContent = 'ลบข้อมูลที่เลือก';
+    }, 4000);
+    return;
+  }
+  clearTimeout(dataHistoryDeleteArmTimer);
+  dataHistoryDeleteArmed = false;
+  btn.disabled = true;
+  const stockPaths = dataHistoryPendingDelete.stockDocs.map(function(d) { return 'stock_checks/' + d.id; });
+  const planPaths = dataHistoryPendingDelete.planDocs.map(function(d) { return 'mrp_plans/' + d.id; });
+  const allPaths = stockPaths.concat(planPaths);
+  resultEl.textContent = 'กำลังลบ...';
+  Promise.all(allPaths.map(function(p) { return state.dbApi.doc(p).delete(); })).then(function() {
+    resultEl.textContent = 'ลบแล้ว: ' + allPaths.length.toLocaleString('th-TH') + ' รายการ';
+    btn.disabled = false;
+    btn.textContent = 'ลบข้อมูลที่เลือก';
+    document.getElementById('dataHistoryDeleteRow').style.display = 'none';
+    dataHistoryPendingDelete = null;
+    renderDataHistoryStats();
+  }).catch(function(err) {
+    btn.disabled = false;
+    btn.textContent = 'ลบข้อมูลที่เลือก';
+    resultEl.textContent = 'ลบไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ');
+  });
+});
+
+showTab('home');
+renderHomeTab();
 
 renderFileList();
 updateUploadGate();
