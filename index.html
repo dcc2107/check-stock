@@ -864,7 +864,7 @@
     <div id="homeDataHistoryView" style="display:none;">
       <button type="button" class="btn btn-ghost btn-sm" id="homeDataHistoryBackBtn">&#8249; กลับ</button>
       <div class="step-head" style="margin-top:10px;"><span class="step-title">ข้อมูลและประวัติ</span></div>
-      <p class="lede">ตรวจสอบพื้นที่และลบข้อมูลเก่าตามช่วงวันที่ (ใช้ได้เฉพาะตอนเปิดผ่านลิงก์ Claude เท่านั้น)</p>
+      <p class="lede">ตรวจสอบพื้นที่และลบข้อมูลเก่าตามช่วงวันที่</p>
       <div class="home-kpi-grid" id="dataHistoryStatsGrid"></div>
       <div class="standard-form" style="background:var(--ok-soft);">
         <strong>นโยบายแนะนำ</strong>
@@ -898,7 +898,7 @@
 
   <section class="tab-panel" id="tab-standard">
     <div class="step-head"><span class="step-title">Standard สินค้า</span></div>
-    <p class="lede">ดู/ค้นหามาตรฐาน Min-Max ที่ใช้คำนวณอยู่ตอนนี้ แก้ไข/เพิ่ม/ปิดใช้งานได้เลย (บันทึกผ่านฐานข้อมูล — ใช้ได้เฉพาะตอนเปิดผ่านลิงก์ Claude เท่านั้น เปิดผ่านไฟล์ในเครื่อง/GitHub จะดูได้อย่างเดียว แก้ไม่ได้)</p>
+    <p class="lede">ดู/ค้นหามาตรฐาน Min-Max ที่ใช้คำนวณอยู่ตอนนี้ แก้ไข/เพิ่ม/ปิดใช้งานได้เลย (บันทึกผ่านฐานข้อมูลกลาง ทุกคนที่เปิดเว็บนี้เห็นข้อมูลชุดเดียวกัน)</p>
     <div class="standard-form" id="standardEditForm" style="display:none;">
       <h4 id="standardFormSkuLabel">เพิ่ม SKU ใหม่</h4>
       <div class="standard-form-grid">
@@ -1032,7 +1032,7 @@
   <section class="tab-panel" id="tab-history">
   <section class="card" id="historySection">
     <div class="step-head"><span class="step-title">ประวัติแผน MRP</span></div>
-    <p class="lede" style="margin-top:-6px;">ดูแผนที่เคยบันทึกไว้ย้อนหลัง (ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น — เปิดผ่านไฟล์ในเครื่อง/GitHub จะไม่มีประวัติให้ดู)</p>
+    <p class="lede" style="margin-top:-6px;">ดูแผนที่เคยบันทึกไว้ย้อนหลัง (ข้อมูลชุดเดียวกับที่ทุกคนที่เปิดเว็บนี้เห็น)</p>
     <p class="bulk-status-note" style="margin-top:-6px;">หมายถึง: สถานะ "ยังไม่สั่ง" ในรายการ = ตอนบันทึกยังไม่ได้ส่งให้ลาวผลิต, "สั่งแล้ว" = ส่งให้ลาวผลิตแน่นอนแล้ว ณ ตอนที่บันทึก (ไม่ได้แปลว่าลาวทำได้ครบ — ดูจำนวนที่ลาวรับจริงในตารางรายละเอียดของแต่ละแผนแทน)</p>
     <div class="row-actions" style="margin-top:0;margin-bottom:14px;flex-wrap:wrap;">
       <label style="font-size:13px;color:var(--ink-muted);display:inline-flex;align-items:center;gap:6px;">บริษัท
@@ -1059,6 +1059,13 @@
 </nav>
 
 <div class="toast" id="toast"></div>
+
+<!-- Firebase (Firestore) — ฐานข้อมูลจริงที่ใช้แชร์ Standard/ประวัติแผน MRP/ข้อมูลและประวัติให้ทุกคนเห็นชุดเดียวกัน
+     โหลดได้ปกติตอนเปิดผ่านลิงก์เว็บ GitHub Pages/ไฟล์ในเครื่อง แต่จะถูกบล็อกตอนเปิดผ่านหน้า Claude นี้ (นโยบาย
+     ความปลอดภัยของ Claude อนุญาตให้โหลดสคริปต์นอกจากโดเมนที่กำหนดไว้เท่านั้น ไม่รวม gstatic.com) — ตั้งใจแบบนี้
+     เพื่อให้ทุกคนแก้ไขข้อมูลชุดเดียวกันได้จริงโดยไม่ต้องมีบัญชี Claude (per user 2026-09-08) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
 
 <script>
 const STANDARDS = [
@@ -1850,17 +1857,37 @@ const state = {
   }
 })();
 
-// ---------- db capability (ใช้เก็บ "ประวัติแผน MRP" + "Standard ที่แก้ไข/เพิ่ม" — ใช้ได้เฉพาะตอนเปิดผ่านลิงก์ claude.ai เท่านั้น) ----------
+// ---------- db (Firestore) — ใช้เก็บ "ประวัติแผน MRP" + "Standard ที่แก้ไข/เพิ่ม" + "ข้อมูลและประวัติ" ----------
+// เปลี่ยนจาก db capability ของ Claude มาใช้ Firebase Firestore แทนแล้ว (per user 2026-09-08) เพื่อให้แชร์เว็บ
+// ให้เพื่อนร่วมงานใช้ข้อมูลชุดเดียวกันได้จริงผ่านลิงก์ GitHub Pages โดยไม่ต้องมีบัญชี Claude — ฐานข้อมูล Firestore
+// เปิดกฎแบบ read/write:true ไว้ (ไม่มีระบบล็อกอิน เหมือนเดิมตอนแชร์ลิงก์ Claude แบบแก้ไขได้ทุกคน)
+// อินเทอร์เฟซของ Firestore (compat SDK) .doc()/.collection()/.where()/.orderBy()/.limit()/.get()/.set()/
+// .update()/.delete()/.add() ตรงกับที่โค้ดทั้งไฟล์เรียกใช้อยู่แล้วเป๊ะ (ออกแบบตาม db capability ของ Claude
+// มาตั้งแต่แรก) เลยแค่เปลี่ยนตัวสร้าง state.dbApi ตรงนี้จุดเดียว ไม่ต้องแก้โค้ดฟีเจอร์อื่นเลยสักบรรทัด
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDbiZ48AKNaLwkhV2vnVpjWIrk6jplOeT8",
+  authDomain: "amada-stock-tool.firebaseapp.com",
+  projectId: "amada-stock-tool",
+  storageBucket: "amada-stock-tool.firebasestorage.app",
+  messagingSenderId: "60325219133",
+  appId: "1:60325219133:web:44f918932485f1e58c9354"
+};
+// ข้อความตอนต่อฐานข้อมูลไม่ได้ — ตอนนี้เกิดเฉพาะตอนเปิดผ่านหน้า Claude นี้เท่านั้น (Claude บล็อกสคริปต์จาก
+// gstatic.com ที่ Firebase ต้องใช้) เปิดผ่านลิงก์ GitHub Pages จะใช้งานได้ปกติ — สลับความหมายจากเดิมที่เคย
+// บอกว่า "ใช้ได้เฉพาะลิงก์ Claude" (ตอนนั้นยังใช้ db capability ของ Claude อยู่) (per user 2026-09-08)
+const DB_UNAVAILABLE_MSG = 'ฟีเจอร์นี้ต้องต่อฐานข้อมูลออนไลน์ — หน้า Claude นี้บล็อกการเชื่อมต่อไว้ กรุณาเปิดผ่านลิงก์เว็บ GitHub Pages แทน';
 (function initDb() {
-  if (window.claude && typeof window.claude.use === 'function') {
-    window.claude.use('db').then(function(api) {
-      state.dbApi = api;
+  try {
+    if (typeof firebase === 'undefined' || !firebase.apps) {
+      // สคริปต์ Firebase โหลดไม่สำเร็จ (มักเกิดตอนเปิดผ่านหน้า Claude ที่บล็อก gstatic.com ไว้)
       state.dbChecked = true;
-      loadStandardOverrides();
-    }).catch(function() {
-      state.dbChecked = true;
-    });
-  } else {
+      return;
+    }
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    state.dbApi = firebase.firestore();
+    state.dbChecked = true;
+    loadStandardOverrides();
+  } catch (err) {
     state.dbChecked = true;
   }
 })();
@@ -3355,7 +3382,7 @@ document.getElementById('loadStatusInput').addEventListener('change', function(e
   reader.readAsText(file, 'utf-8');
 });
 
-// ---------- ประวัติแผน MRP (เก็บผ่าน db capability ของ claude.ai — ใช้ได้เฉพาะตอนเปิดผ่านลิงก์ claude.ai) ----------
+// ---------- ประวัติแผน MRP (เก็บผ่าน Firestore — ใช้ได้ทุกที่ที่เปิดเว็บนี้ ยกเว้นหน้า Claude ที่บล็อก Firebase) ----------
 // เก็บแค่ "สรุปยอด" ของแต่ละแผน (ไม่เก็บรายการ SKU ทีละตัว) เพื่อเลี่ยงเอกสารใหญ่เกินไปและการยิง write ทีละร้อยครั้ง
 // เลขที่แผนของประวัตินี้คำนวณแยกจาก nextMrpPlanNumber() ที่ใช้ตอนดาวน์โหลด Excel/PDF (อันนั้นเป็นตัวนับต่อเซสชัน
 // รีเซ็ตทุกครั้งที่เปิดหน้าใหม่ ใช้ซ้ำข้ามวันไม่ได้) — ของประวัตินี้ต้องไม่ชนกันข้ามวัน/เซสชัน เลยคำนวณจากเลขที่
@@ -3442,7 +3469,7 @@ function buildHistoryDetailTable(items) {
 // totalQty ใหม่ให้ตรงกับข้อมูลปัจจุบันเสมอ (ไม่งั้นป้ายสถานะ/ยอดรวมชิ้นบนการ์ดจะค้างค่าเดิมตอนแก้จำนวน)
 function saveHistoryItemsUpdate(planNo, items, onDone) {
   if (!state.dbApi) {
-    showToast('ฟีเจอร์นี้ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น');
+    showToast(DB_UNAVAILABLE_MSG);
     return;
   }
   const orderedCount = items.filter(function(it) { return it.st === 'สั่งแล้ว'; }).length;
@@ -3602,7 +3629,7 @@ document.getElementById('saveHistoryBtn').addEventListener('click', function(e) 
   const rows = allRows();
   if (rows.length === 0) return;
   if (!state.dbApi) {
-    if (resultEl) resultEl.textContent = state.dbChecked ? 'ฟีเจอร์นี้ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น' : 'กำลังเช็คฟีเจอร์นี้ ลองใหม่อีกครั้งใน 2-3 วินาที';
+    if (resultEl) resultEl.textContent = state.dbChecked ? DB_UNAVAILABLE_MSG : 'กำลังเช็คฟีเจอร์นี้ ลองใหม่อีกครั้งใน 2-3 วินาที';
     return;
   }
   const needRows = rows.filter(function(r) { return r.needOrder; });
@@ -3865,7 +3892,7 @@ function loadHistoryList(company) {
   if (!company) { listEl.innerHTML = ''; stripEl.innerHTML = ''; return; }
   if (!state.dbApi) {
     stripEl.innerHTML = '';
-    listEl.innerHTML = '<div class="empty-state">' + (state.dbChecked ? 'ฟีเจอร์นี้ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น' : 'กำลังเช็คฟีเจอร์นี้...') + '</div>';
+    listEl.innerHTML = '<div class="empty-state">' + (state.dbChecked ? DB_UNAVAILABLE_MSG : 'กำลังเช็คฟีเจอร์นี้...') + '</div>';
     return;
   }
   listEl.innerHTML = '<div class="empty-state">กำลังโหลด...</div>';
@@ -3889,7 +3916,7 @@ document.getElementById('exportHistoryBtn').addEventListener('click', function(e
     return;
   }
   if (!state.dbApi) {
-    if (resultEl) resultEl.textContent = state.dbChecked ? 'ฟีเจอร์นี้ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น' : 'กำลังเช็คฟีเจอร์นี้ ลองใหม่อีกครั้งใน 2-3 วินาที';
+    if (resultEl) resultEl.textContent = state.dbChecked ? DB_UNAVAILABLE_MSG : 'กำลังเช็คฟีเจอร์นี้ ลองใหม่อีกครั้งใน 2-3 วินาที';
     return;
   }
   if (resultEl) resultEl.textContent = 'กำลังดึงข้อมูล...';
@@ -4075,8 +4102,8 @@ document.getElementById('homeUnmatchedTableWrap').addEventListener('click', func
 });
 
 // ---------- Standard: ดู/ค้นหา/แก้ไข/เพิ่ม/ปิดใช้งานมาตรฐาน Min-Max ----------
-// แก้ไข/เพิ่ม/ปิดใช้งานได้จริงผ่าน db (คอลเลกชัน "standards") — ใช้ได้เฉพาะตอนเปิดผ่านลิงก์ claude.ai
-// เปิดผ่าน GitHub/ไฟล์ในเครื่องจะดูได้แค่ค่าที่ฝังในโค้ด (STANDARDS) อย่างเดียว แก้ไม่ได้ (per user 2026-09-07)
+// แก้ไข/เพิ่ม/ปิดใช้งานได้จริงผ่าน db (คอลเลกชัน "standards" ใน Firestore) — ใช้ได้ทุกที่ที่เปิดเว็บนี้ ยกเว้น
+// หน้า Claude ที่บล็อกการโหลด Firebase (per user 2026-09-08 เปลี่ยนจาก db capability ของ Claude มา Firestore)
 const standardCompanyFilter = document.getElementById('standardCompanyFilter');
 COMPANY_ORDER.forEach(function(c) {
   const opt = document.createElement('option');
@@ -4181,7 +4208,7 @@ document.getElementById('standardFormCancelBtn').addEventListener('click', funct
 document.getElementById('standardFormSaveBtn').addEventListener('click', function() {
   const resultEl = document.getElementById('standardFormResult');
   if (!state.dbApi) {
-    resultEl.textContent = state.dbChecked ? 'ฟีเจอร์นี้ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น' : 'กำลังเช็คฟีเจอร์นี้ ลองใหม่อีกครั้งใน 2-3 วินาที';
+    resultEl.textContent = state.dbChecked ? DB_UNAVAILABLE_MSG : 'กำลังเช็คฟีเจอร์นี้ ลองใหม่อีกครั้งใน 2-3 วินาที';
     return;
   }
   const sku = document.getElementById('standardFormSku').value.trim().toUpperCase();
@@ -4239,7 +4266,7 @@ document.getElementById('homeDataHistoryBackBtn').addEventListener('click', func
 function renderDataHistoryStats() {
   const grid = document.getElementById('dataHistoryStatsGrid');
   if (!state.dbApi) {
-    grid.innerHTML = '<div class="empty-state">' + (state.dbChecked ? 'ฟีเจอร์นี้ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น' : 'กำลังเช็คฟีเจอร์นี้...') + '</div>';
+    grid.innerHTML = '<div class="empty-state">' + (state.dbChecked ? DB_UNAVAILABLE_MSG : 'กำลังเช็คฟีเจอร์นี้...') + '</div>';
     return;
   }
   grid.innerHTML = '<div class="empty-state">กำลังโหลด...</div>';
@@ -4271,7 +4298,7 @@ document.getElementById('dataHistoryCheckBtn').addEventListener('click', functio
   deleteRow.style.display = 'none';
   dataHistoryPendingDelete = null;
   if (!state.dbApi) {
-    resultEl.textContent = state.dbChecked ? 'ฟีเจอร์นี้ใช้ได้เฉพาะตอนเปิดหน้านี้ผ่านลิงก์ Claude เท่านั้น' : 'กำลังเช็คฟีเจอร์นี้ ลองใหม่อีกครั้ง';
+    resultEl.textContent = state.dbChecked ? DB_UNAVAILABLE_MSG : 'กำลังเช็คฟีเจอร์นี้ ลองใหม่อีกครั้ง';
     return;
   }
   const fromVal = document.getElementById('dataHistoryFromDate').value;
