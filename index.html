@@ -2708,16 +2708,9 @@ function buildMrpSheetXml(person, items, notItems) {
   rows.push('<row r="' + r7 + '">' + cellStr('A' + r7, 'จำนวนยังไม่สั่ง') + cellNum('B' + r7, notOrderedCount) + cellStr('C' + r7, 'SKU') + '</row>');
   const r8 = nextRow();
   rows.push('<row r="' + r8 + '">' + cellStr('A' + r8, 'จำนวนรวม') + cellNum('B' + r8, totalQty) + cellStr('C' + r8, 'ชิ้น') + '</row>');
-  const r9 = nextRow();
-  rows.push('<row r="' + r9 + '">' +
-    cellStr('A' + r9, 'เกณฑ์สี (ตามสีพื้นหลังแถว)') +
-    cellStr('B' + r9, '100 ขึ้นไป', 2) +
-    cellStr('C' + r9, '50-99', 3) +
-    cellStr('D' + r9, '20-49', 4) +
-    cellStr('E' + r9, '1-19', 5) +
-    '</row>');
+  // แถว "เกณฑ์สี (ตามสีพื้นหลังแถว)" เอาออกแล้วตามที่ผู้ใช้ขอ (per user 2026-09-09)
 
-  const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'จำนวนที่ลาวรับจริง', 'สถานะ', 'หมายเหตุ', 'ระดับจำนวน'];
+  const headerCells =['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'จำนวนที่ลาวรับจริง', 'สถานะ', 'หมายเหตุ', 'ระดับจำนวน'];
   const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
   function pushColumnHeaderRow() {
@@ -2835,7 +2828,7 @@ function buildMrpSheetXml(person, items, notItems) {
     '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
     '<dimension ref="A1:' + lastRef + '"/>' +
     colsXml(autoColWidths([
-      { header: headerCells[0], min: 8, values: ['เกณฑ์สี (ตามสีพื้นหลังแถว)', 'จำนวนยังไม่สั่ง', 'จำนวนสั่งแล้ว'].concat(items.concat(notList).map(function(_, i) { return i + 1; })) },
+      { header: headerCells[0], min: 8, values: ['จำนวนยังไม่สั่ง', 'จำนวนสั่งแล้ว'].concat(items.concat(notList).map(function(_, i) { return i + 1; })) },
       { header: headerCells[1], min: 10, values: items.concat(notList).map(function(it) { return it.sku; }) },
       { header: headerCells[2], min: 14, values: items.concat(notList).map(function(it) { return it.desc; }) },
       { header: headerCells[3], values: items.concat(notList).map(function(it) { return it.avgWeekly; }) },
@@ -2899,16 +2892,9 @@ function buildAllSkuSheetXml(company, items, notItems) {
   rows.push('<row r="' + r7 + '">' + cellStr('A' + r7, 'จำนวนยังไม่สั่ง') + cellNum('B' + r7, notOrderedCount) + cellStr('C' + r7, 'SKU') + '</row>');
   const r8 = nextRow();
   rows.push('<row r="' + r8 + '">' + cellStr('A' + r8, 'จำนวนรวม') + cellNum('B' + r8, totalQty) + cellStr('C' + r8, 'ชิ้น') + '</row>');
-  const r9 = nextRow();
-  rows.push('<row r="' + r9 + '">' +
-    cellStr('A' + r9, 'เกณฑ์สี (ตามสีพื้นหลังแถว)') +
-    cellStr('B' + r9, '100 ขึ้นไป', 2) +
-    cellStr('C' + r9, '50-99', 3) +
-    cellStr('D' + r9, '20-49', 4) +
-    cellStr('E' + r9, '1-19', 5) +
-    '</row>');
+  // แถว "เกณฑ์สี (ตามสีพื้นหลังแถว)" เอาออกแล้วตามที่ผู้ใช้ขอ (per user 2026-09-09)
 
-  const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'จำนวนที่ลาวรับจริง', 'สถานะ', 'หมายเหตุ', 'ระดับจำนวน'];
+  const headerCells =['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'จำนวนที่ลาวรับจริง', 'สถานะ', 'หมายเหตุ', 'ระดับจำนวน'];
   const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
   function pushColumnHeaderRow() {
@@ -3026,7 +3012,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
     '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
     '<dimension ref="A1:' + lastRef + '"/>' +
     colsXml(autoColWidths([
-      { header: headerCells[0], min: 8, values: ['เกณฑ์สี (ตามสีพื้นหลังแถว)', 'จำนวนยังไม่สั่ง', 'จำนวนสั่งแล้ว'].concat(items.concat(notList).map(function(_, i) { return i + 1; })) },
+      { header: headerCells[0], min: 8, values: ['จำนวนยังไม่สั่ง', 'จำนวนสั่งแล้ว'].concat(items.concat(notList).map(function(_, i) { return i + 1; })) },
       { header: headerCells[1], min: 10, values: items.concat(notList).map(function(it) { return it.sku; }) },
       { header: headerCells[2], min: 14, values: items.concat(notList).map(function(it) { return it.desc; }) },
       { header: headerCells[3], values: items.concat(notList).map(function(it) { return it.avgWeekly; }) },
