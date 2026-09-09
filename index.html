@@ -704,19 +704,44 @@
   .history-badge.ok { background: var(--ok-soft); color: var(--ok); }
   .history-badge.cancelled { background: var(--critical-soft); color: var(--critical); }
 
-  /* ---------- แดชบอร์ด (per user 2026-09-09) ---------- */
-  .dash-status-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
-  .dash-status-card .dash-status-company { font-weight: 700; font-size: 13px; color: var(--ink); }
-  .dash-status-card .dash-status-meta { font-size: 12px; color: var(--ink-muted); }
-  .dash-bar-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
-  .dash-bar-label { width: 68px; flex-shrink: 0; font-size: 12px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .dash-bar-track { flex: 1; background: var(--surface-2); border-radius: 4px; height: 10px; overflow: hidden; }
-  .dash-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; min-width: 3px; }
-  .dash-bar-value { width: 60px; flex-shrink: 0; text-align: right; font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
-  .dash-sku-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line); }
-  .dash-sku-row:last-child { border-bottom: none; }
-  .dash-sku-rank { width: 18px; flex-shrink: 0; font-size: 12px; color: var(--ink-muted); font-weight: 700; text-align: center; }
-  .dash-sku-name { width: 130px; flex-shrink: 0; font-size: 12.5px; color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---------- แดชบอร์ด v2 (per user 2026-09-09) — อิงโทน/เลย์เอาต์จาก dashboard-mockup.html ที่ผู้ใช้ทำไว้
+     คลาสสี/ฟอนต์ยืมตัวแปรเดิมของเว็บนี้ทั้งหมด (--accent/--warn/--critical/--ok/--surface-2 ฯลฯ) เพราะ
+     mockup สร้างด้วยชุดตัวแปรเดียวกันเป๊ะอยู่แล้ว เลยไม่ต้องเพิ่มสีใหม่เลย ---------- */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; box-shadow: var(--shadow); }
+  .kpi .k-label { font-size: 12px; color: var(--ink-muted); margin-bottom: 6px; }
+  .kpi .k-value { font-family: "IBM Plex Mono", monospace; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .kpi .k-delta { display: inline-block; font-size: 11.5px; margin-top: 5px; font-weight: 600; }
+  .kpi.warn .k-value { color: var(--warn); }
+  .kpi.critical .k-value { color: var(--critical); }
+  .kpi.ok .k-value { color: var(--ok); }
+  .d-down { color: var(--ok); }
+  .d-up { color: var(--critical); }
+  .d-flat { color: var(--ink-muted); }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+  .company-chip { font-family: "IBM Plex Mono", monospace; font-size: 11px; padding: 2px 8px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .bars { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: grid; grid-template-columns: 64px 1fr 44px; align-items: center; gap: 10px; }
+  .bar-name { font-size: 12.5px; font-weight: 600; text-align: right; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { background: var(--surface-2); border-radius: 6px; height: 20px; overflow: hidden; display: block; }
+  .bar-fill { display: block; background: var(--accent); height: 100%; border-radius: 6px; }
+  .bar-fill.mono { background: var(--accent-strong); }
+  .bar-val { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+  .donut-wrap { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .legend { display: flex; flex-direction: column; gap: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink); }
+  .legend-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+  .legend-val { font-family: "IBM Plex Mono", monospace; font-weight: 600; margin-left: auto; padding-left: 14px; }
+  .health-bar { display: flex; height: 28px; border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: var(--surface-2); }
+  .health-seg { height: 100%; }
+  .health-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+  .health-legend .legend-item { font-size: 12.5px; }
+  table.t10 { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.t10 th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-muted); padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.t10 td { padding: 7px 10px; border-bottom: 1px solid var(--line); font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.t10 tr:last-child td { border-bottom: none; }
+  table.t10 .rank { color: var(--ink-muted); }
   .history-card-detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
   .history-qty-cell { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
   .history-qty-cell .history-item-qty { width: 56px; text-align: center; font-variant-numeric: tabular-nums;
@@ -997,20 +1022,13 @@
 
   <section class="tab-panel" id="tab-dashboard">
     <div class="step-head"><span class="step-title">แดชบอร์ด</span></div>
-    <p class="lede" style="margin-top:-6px;">ภาพรวมจากประวัติแผน MRP ที่บันทึกไว้ (ข้อมูลชุดเดียวกับที่ทุกคนที่เปิดเว็บนี้เห็น) — ดึงจากแผนล่าสุดสูงสุด 200 แผน</p>
-
-    <div class="step-head" style="margin-top:20px;"><span class="step-title" style="font-size:14px;">สถานะแผนล่าสุดของแต่ละบริษัท</span></div>
-    <div class="home-kpi-grid" id="dashLatestStatusGrid"></div>
-
-    <div class="row-actions" style="margin-top:22px;margin-bottom:4px;">
-      <span class="step-title" style="font-size:14px;">แนวโน้มการสั่งซื้อย้อนหลัง (10 แผนล่าสุด)</span>
-      <select id="dashTrendCompanySelect" style="font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);margin-left:auto;"></select>
+    <p class="lede" style="margin-top:-6px;">สรุปแผนล่าสุดที่บันทึกไว้ เทียบกับรอบก่อนหน้า ของบริษัทที่เลือก (ข้อมูลชุดเดียวกับที่ทุกคนที่เปิดเว็บนี้เห็น)</p>
+    <div class="row-actions" style="margin-top:0;margin-bottom:4px;">
+      <label style="font-size:13px;color:var(--ink-muted);display:inline-flex;align-items:center;gap:6px;">บริษัท
+        <select id="dashCompanySelect" style="font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);"></select>
+      </label>
     </div>
-    <div id="dashTrendChart"></div>
-
-    <div class="step-head" style="margin-top:22px;"><span class="step-title" style="font-size:14px;">SKU ที่มีปัญหาบ่อย (ต้องสั่งซ้ำบ่อยที่สุด)</span></div>
-    <p class="bulk-status-note" style="margin-top:-6px;">นับจากจำนวนแผนที่ SKU นี้ปรากฏเป็นรายการ "ต้องสั่งเพิ่ม" — ยิ่งขึ้นบ่อยยิ่งควรพิจารณาทบทวน Standard ของ SKU นั้น</p>
-    <div id="dashProblemSkuList"></div>
+    <div id="dashContent"></div>
   </section>
 
 </main>
@@ -3600,6 +3618,16 @@ document.getElementById('saveHistoryBtn').addEventListener('click', function(e) 
   // เก็บลิสต์ SKU ที่ไม่มี Standard ไว้ในแผนด้วย (ไม่ใช่แค่จำนวน) ให้ตรงกับ unmatchedStandardCount ด้านบน
   // เพื่อให้กด KPI "ไม่มี Standard" หน้าหลักแล้วเห็นรายชื่อจริงจากแผนล่าสุดที่บันทึกไว้ (per user 2026-09-08)
   const unmatchedSkus = (state.diag && Array.isArray(state.diag.unmatchedSkus)) ? state.diag.unmatchedSkus : [];
+  // สรุป "สุขภาพสต็อก" เป็นแค่ 4 ตัวเลขรวม (ไม่ใช่ค่าต่อ SKU) เก็บไว้ในแผนด้วย ใช้โชว์ในแดชบอร์ด — ต้อง
+  // คำนวณตอนนี้เท่านั้นเพราะมีค่าสต็อก/Max ของทุก SKU ครบ (rows) ส่วน compactItems ด้านบนเก็บแค่รายการที่
+  // ต้องสั่งเพิ่มเท่านั้น ย้อนกลับไปคำนวณทีหลังไม่ได้แล้ว (per user 2026-09-09)
+  const stockHealth = { zero: 0, low: 0, normal: 0, overMax: 0 };
+  rows.forEach(function(r) {
+    if (r.stock <= 0) stockHealth.zero++;
+    else if (r.needOrder) stockHealth.low++;
+    else if (r.stock > r.max) stockHealth.overMax++;
+    else stockHealth.normal++;
+  });
   if (resultEl) resultEl.textContent = 'กำลังบันทึก...';
   nextHistoryPlanNo(db, company, now).then(function(planNo) {
     return db.doc('mrp_plans/' + planNo).set({
@@ -3611,6 +3639,7 @@ document.getElementById('saveHistoryBtn').addEventListener('click', function(e) 
       orderedCount: orderedCount,
       unmatchedStandardCount: unmatchedStandardCount,
       unmatchedSkus: unmatchedSkus,
+      stockHealth: stockHealth,
       cancelled: false,
       note: note,
       items: compactItems
@@ -3998,112 +4027,174 @@ document.getElementById('homeGoBomBtn').addEventListener('click', function() { s
 document.getElementById('homeGoHistoryBtn').addEventListener('click', function() { showTab('history'); });
 document.getElementById('homeGoDashboardBtn').addEventListener('click', function() { showTab('dashboard'); });
 
-// ---------- แดชบอร์ด: แนวโน้มสั่งซื้อ + สถานะแผนล่าสุด + SKU ที่มีปัญหาบ่อย ----------
-// ดึงแผนล่าสุดสูงสุด 200 แผนด้วย orderBy('createdAt') เดี่ยวๆ (ไม่ผสม where บริษัทเพิ่ม) เพราะ Firestore
-// จริงต้องมี composite index ถ้า where+orderBy คนละฟิลด์กัน — ดึงมาทีเดียวแล้วกรอง/จัดกลุ่มฝั่ง client แทน
-// ทั้ง 3 ส่วนใช้ชุดข้อมูลเดียวกัน ไม่ต้องยิง query ซ้ำ (per user 2026-09-09)
-const dashTrendCompanySelect = document.getElementById('dashTrendCompanySelect');
+// ---------- แดชบอร์ด v2: สรุปแผนล่าสุดเทียบรอบก่อนหน้า ต่อบริษัท ----------
+// เปลี่ยนจากเวอร์ชันเมื่อคืน (แนวโน้มย้อนหลัง/สถานะ 4 บริษัท/SKU ปัญหาบ่อย) มาใช้เลย์เอาต์ตาม
+// dashboard-mockup.html ที่ผู้ใช้ทำไว้แทนทั้งหมด (per user 2026-09-09) — "แยกตามคน" ของต้นฉบับ mockup
+// เปลี่ยนเป็น "แยกตามรหัส" 2 มุมมอง (จำนวนรายการ / จำนวนชิ้น) แทน เพราะไม่มีชื่อคนในระบบแล้ว และวัด 2 แบบ
+// กันซ้ำกับช่อง "แยกตามตระกูล" เดิมของ mockup ไปเลย
+// ดึงแผนล่าสุดสูงสุด 200 แผนด้วย orderBy('createdAt') เดี่ยวๆ (ไม่ผสม where บริษัท) เพราะ Firestore จริง
+// ต้องมี composite index ถ้า where+orderBy คนละฟิลด์กัน — ดึงมาทีเดียวแล้วกรอง/จัดกลุ่มฝั่ง client แทน
+const dashCompanySelect = document.getElementById('dashCompanySelect');
 COMPANY_ORDER.forEach(function(c) {
   const opt = document.createElement('option');
   opt.value = c;
   opt.textContent = c;
-  dashTrendCompanySelect.appendChild(opt);
+  dashCompanySelect.appendChild(opt);
 });
-dashTrendCompanySelect.value = COMPANY_ORDER[0];
-dashTrendCompanySelect.addEventListener('change', renderDashboardTrend);
+dashCompanySelect.value = COMPANY_ORDER[0];
+dashCompanySelect.addEventListener('change', renderDashboard);
 
 let dashPlansCache = null;
 function loadDashboardData() {
-  const statusGrid = document.getElementById('dashLatestStatusGrid');
-  const trendChart = document.getElementById('dashTrendChart');
-  const skuList = document.getElementById('dashProblemSkuList');
+  const contentEl = document.getElementById('dashContent');
+  if (!contentEl) return;
   if (!state.dbApi) {
-    const msg = '<div class="empty-state">' + DB_UNAVAILABLE_MSG + '</div>';
-    if (statusGrid) statusGrid.innerHTML = msg;
-    if (trendChart) trendChart.innerHTML = '';
-    if (skuList) skuList.innerHTML = '';
+    contentEl.innerHTML = '<div class="empty-state">' + DB_UNAVAILABLE_MSG + '</div>';
     return;
   }
-  if (statusGrid) statusGrid.innerHTML = '<div class="empty-state">กำลังโหลด...</div>';
+  contentEl.innerHTML = '<div class="empty-state">กำลังโหลด...</div>';
   state.dbApi.collection('mrp_plans').orderBy('createdAt', 'desc').limit(200).get().then(function(snap) {
     dashPlansCache = snap.docs.map(function(d) { return d.data(); });
-    renderDashboardStatus();
-    renderDashboardTrend();
-    renderDashboardProblemSkus();
+    renderDashboard();
   }).catch(function(err) {
-    if (statusGrid) statusGrid.innerHTML = '<div class="empty-state">โหลดไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ') + '</div>';
+    contentEl.innerHTML = '<div class="empty-state">โหลดไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ') + '</div>';
   });
 }
 
-// การ์ดสถานะแผนล่าสุดต่อบริษัท — dashPlansCache เรียง createdAt ล่าสุดมาก่อนอยู่แล้ว (จาก orderBy desc)
-// เลยแค่หาตัวแรกที่ company ตรงกันของแต่ละบริษัทก็ได้แผนล่าสุดของบริษัทนั้นทันที ไม่ต้อง sort ซ้ำ
-function renderDashboardStatus() {
-  const grid = document.getElementById('dashLatestStatusGrid');
-  if (!grid || !dashPlansCache) return;
-  grid.innerHTML = COMPANY_ORDER.map(function(company) {
-    const latest = dashPlansCache.find(function(p) { return p.company === company; });
-    if (!latest) {
-      return '<div class="dash-status-card"><div class="dash-status-company">' + xmlEscape(company) + '</div><span class="history-badge pending">ยังไม่เคยบันทึกแผน</span></div>';
-    }
-    const status = computeHistoryStatus(latest.orderedCount, latest.itemCount, latest.cancelled);
-    return '<div class="dash-status-card"><div class="dash-status-company">' + xmlEscape(company) + '</div>' +
-      '<span class="history-badge ' + historyStatusBadgeClass(status) + '">' + status + '</span>' +
-      '<div class="dash-status-meta">' + (latest.orderedCount || 0).toLocaleString('th-TH') + '/' + (latest.itemCount || 0).toLocaleString('th-TH') + ' รายการ &middot; ' + thaiHistoryDate(latest.createdAt) + '</div></div>';
-  }).join('');
+// ป้ายเปรียบเทียบกับรอบก่อนหน้า — lowerIsBetter=true หมายถึงค่าที่ลดลงถือว่าดี (เขียว) เช่น "ต้องสั่งเพิ่ม"
+// ยิ่งน้อยยิ่งดี (ตรงกับตัวอย่างใน mockup ทุกจุด: ต้องสั่งเพิ่มลด=เขียว, สต็อกหมดเพิ่ม=แดง)
+function fmtDelta(curr, prev, lowerIsBetter) {
+  if (prev === null || prev === undefined) return '<span class="k-delta d-flat">ไม่มีข้อมูลรอบก่อน</span>';
+  const diff = curr - prev;
+  if (diff === 0) return '<span class="k-delta d-flat">— เท่าเดิม</span>';
+  const good = lowerIsBetter ? diff < 0 : diff > 0;
+  const arrow = diff > 0 ? '&#9650;' : '&#9660;';
+  const cls = good ? 'd-down' : 'd-up';
+  return '<span class="k-delta ' + cls + '">' + arrow + ' ' + Math.abs(diff).toLocaleString('th-TH') + ' (รอบก่อน ' + prev.toLocaleString('th-TH') + ')</span>';
 }
 
-// กราฟแท่งแนวโน้ม: เฉพาะบริษัทที่เลือก เอา 10 แผนล่าสุด เรียงเก่า->ใหม่จากบนลงล่างให้อ่านเป็นไทม์ไลน์
-// เป็นซีรีส์เดียว (บริษัทเดียว ณ ตอนนั้น) เลยใช้สีเดียว (--accent) ได้เลย ไม่ต้องมี legend (per dataviz skill:
-// ซีรีส์เดียวไม่ต้องมี legend เพราะหัวข้อบอกอยู่แล้ว)
-function renderDashboardTrend() {
-  const chartEl = document.getElementById('dashTrendChart');
-  if (!chartEl || !dashPlansCache) return;
-  const company = dashTrendCompanySelect.value;
-  const plans = dashPlansCache.filter(function(p) { return p.company === company; }).slice(0, 10).reverse();
+function renderDashboard() {
+  const contentEl = document.getElementById('dashContent');
+  if (!contentEl || !dashPlansCache) return;
+  const company = dashCompanySelect.value;
+  const plans = dashPlansCache.filter(function(p) { return p.company === company; });
   if (plans.length === 0) {
-    chartEl.innerHTML = '<div class="empty-state">ยังไม่มีแผนที่บันทึกไว้ของบริษัทนี้</div>';
+    contentEl.innerHTML = '<div class="empty-state">ยังไม่มีแผนที่บันทึกไว้ของบริษัทนี้ — ลองประมวลผลแล้วกด "บันทึกแผนนี้ลงประวัติ MRP" ที่แท็บสร้างแผนก่อน</div>';
     return;
   }
-  const maxQty = Math.max.apply(null, plans.map(function(p) { return p.totalQty || 0; })) || 1;
-  chartEl.innerHTML = plans.map(function(p) {
-    const pct = Math.max(2, Math.round((p.totalQty || 0) / maxQty * 100));
-    const title = (p.planNo || '') + ' — ' + thaiHistoryDate(p.createdAt) + ' — สั่งรวม ' + (p.totalQty || 0).toLocaleString('th-TH') + ' ชิ้น';
-    return '<div class="dash-bar-row" title="' + xmlEscape(title) + '">' +
-      '<span class="dash-bar-label">' + xmlEscape(thaiHistoryDate(p.createdAt)) + '</span>' +
-      '<div class="dash-bar-track"><div class="dash-bar-fill" style="width:' + pct + '%"></div></div>' +
-      '<span class="dash-bar-value">' + (p.totalQty || 0).toLocaleString('th-TH') + '</span>' +
-      '</div>';
-  }).join('');
-}
+  const latest = plans[0];
+  const prev = plans.length > 1 ? plans[1] : null;
+  const items = latest.items || [];
 
-// SKU ที่มีปัญหาบ่อย: นับจำนวนแผน (จากทุกบริษัทรวมกัน) ที่ SKU นั้นปรากฏเป็นรายการ "ต้องสั่งเพิ่ม"
-// (items ในแต่ละแผนเก็บเฉพาะรายการที่ needOrder=true ตอนบันทึกอยู่แล้ว ไม่ต้องกรองซ้ำ) เรียงมากไปน้อย
-// เอาแค่ 10 อันดับแรก เป็นแท่งสีเดียว (magnitude เดียว ไม่มีหลายซีรีส์)
-function renderDashboardProblemSkus() {
-  const listEl = document.getElementById('dashProblemSkuList');
-  if (!listEl || !dashPlansCache) return;
-  const counts = new Map();
-  dashPlansCache.forEach(function(p) {
-    (p.items || []).forEach(function(it) {
-      if (!it || !it.sku) return;
-      counts.set(it.sku, (counts.get(it.sku) || 0) + 1);
-    });
+  // 1) การ์ด KPI 5 ช่อง
+  const totalStandardCount = computeEffectiveStandards().filter(function(s) { return s.company === company; }).length;
+  const orderedPct = latest.itemCount ? Math.round((latest.orderedCount || 0) / latest.itemCount * 100) : 0;
+  const zeroNow = latest.stockHealth ? latest.stockHealth.zero : null;
+  const zeroPrev = prev && prev.stockHealth ? prev.stockHealth.zero : null;
+  const kpiHtml =
+    '<div class="kpi-grid">' +
+      '<div class="kpi"><div class="k-label">SKU ที่มี Standard</div><div class="k-value">' + totalStandardCount.toLocaleString('th-TH') + '</div><span class="k-delta d-flat">— เท่าเดิม</span></div>' +
+      '<div class="kpi warn"><div class="k-label">ต้องสั่งเพิ่ม</div><div class="k-value">' + (latest.itemCount || 0).toLocaleString('th-TH') + '</div>' + fmtDelta(latest.itemCount || 0, prev ? (prev.itemCount || 0) : null, true) + '</div>' +
+      '<div class="kpi critical"><div class="k-label">สต็อกหมด (0 ชิ้น)</div><div class="k-value">' + (zeroNow === null ? '—' : zeroNow.toLocaleString('th-TH')) + '</div>' + (zeroNow === null ? '<span class="k-delta d-flat">แผนนี้บันทึกไว้ก่อนมีข้อมูลนี้</span>' : fmtDelta(zeroNow, zeroPrev, true)) + '</div>' +
+      '<div class="kpi"><div class="k-label">รวมยอดสั่ง (ชิ้น)</div><div class="k-value">' + (latest.totalQty || 0).toLocaleString('th-TH') + '</div>' + fmtDelta(latest.totalQty || 0, prev ? (prev.totalQty || 0) : null, true) + '</div>' +
+      '<div class="kpi ok"><div class="k-label">สั่งไปแล้ว</div><div class="k-value">' + orderedPct + '%</div><span class="k-delta d-flat">' + (latest.orderedCount || 0).toLocaleString('th-TH') + ' / ' + (latest.itemCount || 0).toLocaleString('th-TH') + ' รายการ</span></div>' +
+    '</div>';
+
+  // 2) แยกตามรหัส — สองมุมมอง (จำนวนรายการ / จำนวนชิ้น) แทน "แยกตามคน" เดิม
+  const skuToPrefix = {};
+  computeAllStandardsIncludingInactive().forEach(function(s) { skuToPrefix[s.sku] = s.prefix || '-'; });
+  const byPrefixCount = new Map(), byPrefixQty = new Map();
+  items.forEach(function(it) {
+    const pfx = skuToPrefix[it.sku] || '-';
+    byPrefixCount.set(pfx, (byPrefixCount.get(pfx) || 0) + 1);
+    byPrefixQty.set(pfx, (byPrefixQty.get(pfx) || 0) + (Number(it.q) || 0));
   });
-  const ranked = Array.from(counts.entries()).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 10);
-  if (ranked.length === 0) {
-    listEl.innerHTML = '<div class="empty-state">ยังไม่มีข้อมูลพอจะสรุป SKU ที่มีปัญหาบ่อย</div>';
-    return;
+  function barsHtml(map, mono) {
+    const entries = Array.from(map.entries()).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 6);
+    if (entries.length === 0) return '<div class="empty-state">ไม่มีข้อมูล</div>';
+    const max = entries[0][1] || 1;
+    return '<div class="bars">' + entries.map(function(e) {
+      const pct = Math.max(4, Math.round(e[1] / max * 100));
+      return '<div class="bar-row"><span class="bar-name">' + xmlEscape(e[0]) + '</span><span class="bar-track"><span class="bar-fill' + (mono ? ' mono' : '') + '" style="width:' + pct + '%"></span></span><span class="bar-val">' + e[1].toLocaleString('th-TH') + '</span></div>';
+    }).join('') + '</div>';
   }
-  const maxCount = ranked[0][1] || 1;
-  listEl.innerHTML = ranked.map(function(entry, i) {
-    const pct = Math.max(4, Math.round(entry[1] / maxCount * 100));
-    return '<div class="dash-sku-row" title="' + xmlEscape(entry[0]) + ' ต้องสั่งเพิ่ม ' + entry[1] + ' ครั้ง จากแผนที่บันทึกไว้ทั้งหมด">' +
-      '<span class="dash-sku-rank">' + (i + 1) + '</span>' +
-      '<span class="dash-sku-name">' + xmlEscape(entry[0]) + '</span>' +
-      '<div class="dash-bar-track"><div class="dash-bar-fill" style="width:' + pct + '%"></div></div>' +
-      '<span class="dash-bar-value">' + entry[1] + ' ครั้ง</span>' +
-      '</div>';
+  const barsSectionHtml =
+    '<div class="two-col">' +
+      '<section class="card"><div class="step-head"><span class="step-title" style="font-size:15px;">แยกตามรหัส — จำนวนรายการ</span></div><p class="step-sub" style="margin:-8px 0 12px;">รหัสไหนมี SKU ต้องสั่งเยอะสุด</p>' + barsHtml(byPrefixCount, false) + '</section>' +
+      '<section class="card"><div class="step-head"><span class="step-title" style="font-size:15px;">แยกตามรหัส — จำนวนชิ้นที่สั่ง</span></div><p class="step-sub" style="margin:-8px 0 12px;">รหัสไหนสั่งรวมเยอะสุด (ชิ้น)</p>' + barsHtml(byPrefixQty, true) + '</section>' +
+    '</div>';
+
+  // 3) โดนัทสถานะการสั่ง (สั่งแล้ว/ยังไม่สั่ง — โมเดลข้อมูลจริงมีแค่ 2 สถานะ ตัด "สั่งไม่ได้" ของ mockup
+  // ต้นฉบับออกเพราะเว็บนี้ไม่มีสถานะนี้จริง) — สร้างวงกลมด้วย r=15.9155 ให้เส้นรอบวง = 100 หน่วยพอดี
+  // ใช้ % ตรงๆ เป็น stroke-dasharray ได้เลย (เทคนิคเดียวกับใน mockup ต้นฉบับ)
+  const itemsLen = items.length;
+  const totalItems = itemsLen || 1;
+  const stOrdered = items.filter(function(it) { return it.st === 'สั่งแล้ว'; }).length;
+  const stPending = itemsLen - stOrdered;
+  const orderedFrac = Math.round(stOrdered / totalItems * 100);
+  const pendingFrac = 100 - orderedFrac;
+  const donutSvg =
+    '<svg width="140" height="140" viewBox="0 0 42 42">' +
+      '<circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--surface-2)" stroke-width="6"></circle>' +
+      '<circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--ok)" stroke-width="6" stroke-dasharray="' + orderedFrac + ' ' + (100 - orderedFrac) + '" stroke-dashoffset="25"></circle>' +
+      '<circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--warn)" stroke-width="6" stroke-dasharray="' + pendingFrac + ' ' + (100 - pendingFrac) + '" stroke-dashoffset="' + (25 - orderedFrac) + '"></circle>' +
+      '<text x="21" y="20" text-anchor="middle" font-size="7" font-weight="700" fill="var(--ink)" font-family="IBM Plex Mono, monospace">' + itemsLen + '</text>' +
+      '<text x="21" y="26" text-anchor="middle" font-size="3.4" fill="var(--ink-muted)">รายการ</text>' +
+    '</svg>';
+  const donutSectionHtml =
+    '<section class="card"><div class="step-head"><span class="step-title" style="font-size:15px;">สถานะการสั่ง</span></div><p class="step-sub" style="margin:-8px 0 12px;">ความคืบหน้าการสั่งของแผนล่าสุด (' + itemsLen.toLocaleString('th-TH') + ' รายการ)</p>' +
+    '<div class="donut-wrap">' + donutSvg +
+      '<div class="legend">' +
+        '<div class="legend-item"><span class="legend-dot" style="background:var(--ok)"></span> สั่งแล้ว <span class="legend-val">' + stOrdered.toLocaleString('th-TH') + '</span></div>' +
+        '<div class="legend-item"><span class="legend-dot" style="background:var(--warn)"></span> ยังไม่สั่ง <span class="legend-val">' + stPending.toLocaleString('th-TH') + '</span></div>' +
+      '</div>' +
+    '</div></section>';
+
+  // 4) สุขภาพสต็อก — ต้องใช้ฟิลด์ stockHealth ที่เพิ่งเพิ่มเข้ามาตอนบันทึกแผน (per user 2026-09-09)
+  // แผนเก่าก่อนหน้านี้ไม่มีฟิลด์นี้ (คำนวณย้อนหลังไม่ได้ เพราะไม่ได้เก็บค่าสต็อกของทุก SKU ไว้ตอนบันทึก
+  // มีแค่รายการที่ต้องสั่งเท่านั้น) เลยต้องมีข้อความ fallback บอกตรงๆ เหมือนที่เคยทำกับ unmatchedSkus
+  let healthSectionHtml;
+  if (latest.stockHealth) {
+    const h = latest.stockHealth;
+    const total = (h.zero + h.low + h.normal + h.overMax) || 1;
+    healthSectionHtml =
+      '<section class="card"><div class="step-head"><span class="step-title" style="font-size:15px;">สุขภาพสต็อก</span></div><p class="step-sub" style="margin:-8px 0 12px;">แบ่งกลุ่ม SKU ทั้งหมด ' + total.toLocaleString('th-TH') + ' ตัว ตามระดับคงเหลือ ณ ตอนบันทึกแผนนี้</p>' +
+      '<div class="health-bar">' +
+        '<div class="health-seg" style="width:' + (h.zero / total * 100) + '%;background:var(--critical)"></div>' +
+        '<div class="health-seg" style="width:' + (h.low / total * 100) + '%;background:var(--warn)"></div>' +
+        '<div class="health-seg" style="width:' + (h.normal / total * 100) + '%;background:var(--ok)"></div>' +
+        '<div class="health-seg" style="width:' + (h.overMax / total * 100) + '%;background:var(--accent)"></div>' +
+      '</div>' +
+      '<div class="health-legend">' +
+        '<div class="legend-item"><span class="legend-dot" style="background:var(--critical)"></span> หมด (0) <span class="legend-val">' + h.zero.toLocaleString('th-TH') + '</span></div>' +
+        '<div class="legend-item"><span class="legend-dot" style="background:var(--warn)"></span> ต่ำกว่าเป้า 12 วัน <span class="legend-val">' + h.low.toLocaleString('th-TH') + '</span></div>' +
+        '<div class="legend-item"><span class="legend-dot" style="background:var(--ok)"></span> ปกติ <span class="legend-val">' + h.normal.toLocaleString('th-TH') + '</span></div>' +
+        '<div class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span> เกิน Max <span class="legend-val">' + h.overMax.toLocaleString('th-TH') + '</span></div>' +
+      '</div></section>';
+  } else {
+    healthSectionHtml = '<section class="card"><div class="step-head"><span class="step-title" style="font-size:15px;">สุขภาพสต็อก</span></div><div class="empty-state">แผนนี้บันทึกไว้ก่อนฟีเจอร์นี้จะถูกเพิ่มเข้ามา — บันทึกแผนใหม่อีกครั้งเพื่อดูข้อมูลนี้</div></section>';
+  }
+  const donutHealthRowHtml = '<div class="two-col">' + donutSectionHtml + healthSectionHtml + '</div>';
+
+  // 5) Top 10 สั่งเยอะสุด — คอลัมน์จำกัดเท่าที่มีข้อมูลเก็บไว้จริงในแผน (ไม่มีสต็อก/WIP/เฉลี่ยย้อนหลัง
+  // เพราะไม่ได้บันทึกไว้ตอนบันทึกแผน กันเอกสารใหญ่เกินลิมิต 256 KiB ต่อเอกสาร per user 2026-09-07)
+  const top10 = items.slice().sort(function(a, b) { return (Number(b.q) || 0) - (Number(a.q) || 0); }).slice(0, 10);
+  const top10RowsHtml = top10.map(function(it, i) {
+    const pillClass = it.st === 'สั่งแล้ว' ? 'low' : 'zero';
+    return '<tr><td class="rank">' + (i + 1) + '</td><td>' + xmlEscape(it.sku) + '</td><td class="num">' + (Number(it.q) || 0).toLocaleString('th-TH') + '</td><td><span class="status-pill ' + pillClass + '">' + xmlEscape(it.st || 'ยังไม่สั่ง') + '</span></td></tr>';
   }).join('');
+  const top10SectionHtml =
+    '<section class="card"><div class="step-head"><span class="step-title" style="font-size:15px;">Top 10 สั่งเยอะสุด</span></div>' +
+    '<p class="step-sub" style="margin:-8px 0 12px;">เรียงตามจำนวนที่แนะนำสั่งมากที่สุดในแผนล่าสุด</p>' +
+    (top10.length === 0 ? '<div class="empty-state">ไม่มีรายการ</div>' :
+    '<div class="table-scroll"><table class="t10"><thead><tr><th>#</th><th>SKU</th><th class="num">สั่งเพิ่ม</th><th>สถานะ</th></tr></thead><tbody>' + top10RowsHtml + '</tbody></table></div>') +
+    '</section>';
+
+  contentEl.innerHTML =
+    '<section class="card"><div class="step-head"><span class="step-title" style="font-size:15px;">ภาพรวมแผนล่าสุด</span> <span class="company-chip">' + xmlEscape(company) + ' &middot; ' + xmlEscape(latest.planNo || '') + '</span></div>' +
+    '<p class="step-sub" style="margin:-8px 0 12px;">' + (prev ? 'เทียบกับรอบก่อนหน้า (' + xmlEscape(thaiHistoryDate(prev.createdAt)) + ')' : 'ยังไม่มีรอบก่อนหน้าให้เทียบ') + ' &middot; บันทึกเมื่อ ' + xmlEscape(thaiHistoryDate(latest.createdAt)) + '</p>' +
+    kpiHtml + '</section>' +
+    barsSectionHtml + donutHealthRowHtml + top10SectionHtml;
 }
 
 // ---------- หน้าย่อย "ไม่มี Standard": ลิสต์ SKU จริงที่ไม่ตรง Standard ตัวไหนเลย + เพิ่มเป็น Standard ได้เลย ----------
