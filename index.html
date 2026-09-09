@@ -703,6 +703,20 @@
   .history-badge.partial { background: var(--accent-soft); color: var(--accent); }
   .history-badge.ok { background: var(--ok-soft); color: var(--ok); }
   .history-badge.cancelled { background: var(--critical-soft); color: var(--critical); }
+
+  /* ---------- แดชบอร์ด (per user 2026-09-09) ---------- */
+  .dash-status-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .dash-status-card .dash-status-company { font-weight: 700; font-size: 13px; color: var(--ink); }
+  .dash-status-card .dash-status-meta { font-size: 12px; color: var(--ink-muted); }
+  .dash-bar-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .dash-bar-label { width: 68px; flex-shrink: 0; font-size: 12px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dash-bar-track { flex: 1; background: var(--surface-2); border-radius: 4px; height: 10px; overflow: hidden; }
+  .dash-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; min-width: 3px; }
+  .dash-bar-value { width: 60px; flex-shrink: 0; text-align: right; font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+  .dash-sku-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .dash-sku-row:last-child { border-bottom: none; }
+  .dash-sku-rank { width: 18px; flex-shrink: 0; font-size: 12px; color: var(--ink-muted); font-weight: 700; text-align: center; }
+  .dash-sku-name { width: 130px; flex-shrink: 0; font-size: 12.5px; color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .history-card-detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
   .history-qty-cell { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
   .history-qty-cell .history-item-qty { width: 56px; text-align: center; font-variant-numeric: tabular-nums;
@@ -784,6 +798,11 @@
         <button type="button" class="home-shortcut" id="homeGoDataHistoryBtn">
           <span class="shortcut-icon">▣</span>
           <span><strong>ข้อมูลและประวัติ</strong><small id="homeDataHistorySummary">ตรวจสอบพื้นที่และลบข้อมูลเก่า</small></span>
+          <b>&#8250;</b>
+        </button>
+        <button type="button" class="home-shortcut" id="homeGoDashboardBtn">
+          <span class="shortcut-icon">▥</span>
+          <span><strong>แดชบอร์ด</strong><small>แนวโน้มสั่งซื้อ · สถานะแผนล่าสุด · SKU มีปัญหาบ่อย</small></span>
           <b>&#8250;</b>
         </button>
       </div>
@@ -976,6 +995,24 @@
   </section>
   </section>
 
+  <section class="tab-panel" id="tab-dashboard">
+    <div class="step-head"><span class="step-title">แดชบอร์ด</span></div>
+    <p class="lede" style="margin-top:-6px;">ภาพรวมจากประวัติแผน MRP ที่บันทึกไว้ (ข้อมูลชุดเดียวกับที่ทุกคนที่เปิดเว็บนี้เห็น) — ดึงจากแผนล่าสุดสูงสุด 200 แผน</p>
+
+    <div class="step-head" style="margin-top:20px;"><span class="step-title" style="font-size:14px;">สถานะแผนล่าสุดของแต่ละบริษัท</span></div>
+    <div class="home-kpi-grid" id="dashLatestStatusGrid"></div>
+
+    <div class="row-actions" style="margin-top:22px;margin-bottom:4px;">
+      <span class="step-title" style="font-size:14px;">แนวโน้มการสั่งซื้อย้อนหลัง (10 แผนล่าสุด)</span>
+      <select id="dashTrendCompanySelect" style="font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);margin-left:auto;"></select>
+    </div>
+    <div id="dashTrendChart"></div>
+
+    <div class="step-head" style="margin-top:22px;"><span class="step-title" style="font-size:14px;">SKU ที่มีปัญหาบ่อย (ต้องสั่งซ้ำบ่อยที่สุด)</span></div>
+    <p class="bulk-status-note" style="margin-top:-6px;">นับจากจำนวนแผนที่ SKU นี้ปรากฏเป็นรายการ "ต้องสั่งเพิ่ม" — ยิ่งขึ้นบ่อยยิ่งควรพิจารณาทบทวน Standard ของ SKU นั้น</p>
+    <div id="dashProblemSkuList"></div>
+  </section>
+
 </main>
 
 <nav class="bottom-nav">
@@ -984,6 +1021,7 @@
   <button type="button" class="nav-btn nav-center" id="nav-plan" data-tab="plan"><span class="nav-icon">＋</span>สร้างแผน</button>
   <button type="button" class="nav-btn" id="nav-bom" data-tab="bom"><span class="nav-icon">▦</span>BOM</button>
   <button type="button" class="nav-btn" id="nav-history" data-tab="history"><span class="nav-icon">▤</span>แผน MRP</button>
+  <button type="button" class="nav-btn" id="nav-dashboard" data-tab="dashboard"><span class="nav-icon">▥</span>แดชบอร์ด</button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -3849,7 +3887,7 @@ document.getElementById('exportHistoryBtn').addEventListener('click', function(e
 // ---------- app shell: แท็บเนวิเกชัน 5 ปุ่ม (หน้าหลัก/Standard/สร้างแผน/BOM/แผน MRP) ----------
 // เดิมหน้านี้เป็นหน้าเดียวยาวๆ เปลี่ยนมาแบ่งเป็นแท็บให้ใช้งานคล้ายแอปมือถือ (per user 2026-09-07)
 // ทุก id ของ element เดิมยังอยู่ครบ แค่ย้ายไปอยู่ในกล่อง tab-panel เฉยๆ ตรรกะข้างในไม่ได้แก้อะไรเลย
-const TABS = ['home', 'standard', 'plan', 'bom', 'history'];
+const TABS = ['home', 'standard', 'plan', 'bom', 'history', 'dashboard'];
 function showTab(tab) {
   // บั๊กเดิม: เคยตั้งแค่ panel.style.display ล้าง inline style เฉยๆ แต่ .tab-panel { display:none }
   // เป็น class-level rule อยู่แล้ว การล้าง inline ไม่ได้ทำให้โผล่ขึ้นมา ต้องเติม/เอาคลาส "active" ออก
@@ -3871,6 +3909,9 @@ function showTab(tab) {
     if (dataHistoryView) dataHistoryView.style.display = 'none';
     if (unmatchedView) unmatchedView.style.display = 'none';
   }
+  // แดชบอร์ดโหลดข้อมูลใหม่ทุกครั้งที่เข้าแท็บ (เหมือน renderHomeTab ที่ดึงใหม่ทุกครั้ง) เพื่อให้เห็นแผน
+  // ล่าสุดที่เพิ่งบันทึกจากที่อื่นเสมอ ไม่ต้องกดรีเฟรชหน้าเว็บ (per user 2026-09-09)
+  if (tab === 'dashboard') loadDashboardData();
   window.scrollTo(0, 0);
 }
 TABS.forEach(function(t) {
@@ -3955,6 +3996,115 @@ document.getElementById('homeGoPlanBtn').addEventListener('click', function() { 
 document.getElementById('homeGoStandardBtn').addEventListener('click', function() { showTab('standard'); });
 document.getElementById('homeGoBomBtn').addEventListener('click', function() { showTab('bom'); });
 document.getElementById('homeGoHistoryBtn').addEventListener('click', function() { showTab('history'); });
+document.getElementById('homeGoDashboardBtn').addEventListener('click', function() { showTab('dashboard'); });
+
+// ---------- แดชบอร์ด: แนวโน้มสั่งซื้อ + สถานะแผนล่าสุด + SKU ที่มีปัญหาบ่อย ----------
+// ดึงแผนล่าสุดสูงสุด 200 แผนด้วย orderBy('createdAt') เดี่ยวๆ (ไม่ผสม where บริษัทเพิ่ม) เพราะ Firestore
+// จริงต้องมี composite index ถ้า where+orderBy คนละฟิลด์กัน — ดึงมาทีเดียวแล้วกรอง/จัดกลุ่มฝั่ง client แทน
+// ทั้ง 3 ส่วนใช้ชุดข้อมูลเดียวกัน ไม่ต้องยิง query ซ้ำ (per user 2026-09-09)
+const dashTrendCompanySelect = document.getElementById('dashTrendCompanySelect');
+COMPANY_ORDER.forEach(function(c) {
+  const opt = document.createElement('option');
+  opt.value = c;
+  opt.textContent = c;
+  dashTrendCompanySelect.appendChild(opt);
+});
+dashTrendCompanySelect.value = COMPANY_ORDER[0];
+dashTrendCompanySelect.addEventListener('change', renderDashboardTrend);
+
+let dashPlansCache = null;
+function loadDashboardData() {
+  const statusGrid = document.getElementById('dashLatestStatusGrid');
+  const trendChart = document.getElementById('dashTrendChart');
+  const skuList = document.getElementById('dashProblemSkuList');
+  if (!state.dbApi) {
+    const msg = '<div class="empty-state">' + DB_UNAVAILABLE_MSG + '</div>';
+    if (statusGrid) statusGrid.innerHTML = msg;
+    if (trendChart) trendChart.innerHTML = '';
+    if (skuList) skuList.innerHTML = '';
+    return;
+  }
+  if (statusGrid) statusGrid.innerHTML = '<div class="empty-state">กำลังโหลด...</div>';
+  state.dbApi.collection('mrp_plans').orderBy('createdAt', 'desc').limit(200).get().then(function(snap) {
+    dashPlansCache = snap.docs.map(function(d) { return d.data(); });
+    renderDashboardStatus();
+    renderDashboardTrend();
+    renderDashboardProblemSkus();
+  }).catch(function(err) {
+    if (statusGrid) statusGrid.innerHTML = '<div class="empty-state">โหลดไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ') + '</div>';
+  });
+}
+
+// การ์ดสถานะแผนล่าสุดต่อบริษัท — dashPlansCache เรียง createdAt ล่าสุดมาก่อนอยู่แล้ว (จาก orderBy desc)
+// เลยแค่หาตัวแรกที่ company ตรงกันของแต่ละบริษัทก็ได้แผนล่าสุดของบริษัทนั้นทันที ไม่ต้อง sort ซ้ำ
+function renderDashboardStatus() {
+  const grid = document.getElementById('dashLatestStatusGrid');
+  if (!grid || !dashPlansCache) return;
+  grid.innerHTML = COMPANY_ORDER.map(function(company) {
+    const latest = dashPlansCache.find(function(p) { return p.company === company; });
+    if (!latest) {
+      return '<div class="dash-status-card"><div class="dash-status-company">' + xmlEscape(company) + '</div><span class="history-badge pending">ยังไม่เคยบันทึกแผน</span></div>';
+    }
+    const status = computeHistoryStatus(latest.orderedCount, latest.itemCount, latest.cancelled);
+    return '<div class="dash-status-card"><div class="dash-status-company">' + xmlEscape(company) + '</div>' +
+      '<span class="history-badge ' + historyStatusBadgeClass(status) + '">' + status + '</span>' +
+      '<div class="dash-status-meta">' + (latest.orderedCount || 0).toLocaleString('th-TH') + '/' + (latest.itemCount || 0).toLocaleString('th-TH') + ' รายการ &middot; ' + thaiHistoryDate(latest.createdAt) + '</div></div>';
+  }).join('');
+}
+
+// กราฟแท่งแนวโน้ม: เฉพาะบริษัทที่เลือก เอา 10 แผนล่าสุด เรียงเก่า->ใหม่จากบนลงล่างให้อ่านเป็นไทม์ไลน์
+// เป็นซีรีส์เดียว (บริษัทเดียว ณ ตอนนั้น) เลยใช้สีเดียว (--accent) ได้เลย ไม่ต้องมี legend (per dataviz skill:
+// ซีรีส์เดียวไม่ต้องมี legend เพราะหัวข้อบอกอยู่แล้ว)
+function renderDashboardTrend() {
+  const chartEl = document.getElementById('dashTrendChart');
+  if (!chartEl || !dashPlansCache) return;
+  const company = dashTrendCompanySelect.value;
+  const plans = dashPlansCache.filter(function(p) { return p.company === company; }).slice(0, 10).reverse();
+  if (plans.length === 0) {
+    chartEl.innerHTML = '<div class="empty-state">ยังไม่มีแผนที่บันทึกไว้ของบริษัทนี้</div>';
+    return;
+  }
+  const maxQty = Math.max.apply(null, plans.map(function(p) { return p.totalQty || 0; })) || 1;
+  chartEl.innerHTML = plans.map(function(p) {
+    const pct = Math.max(2, Math.round((p.totalQty || 0) / maxQty * 100));
+    const title = (p.planNo || '') + ' — ' + thaiHistoryDate(p.createdAt) + ' — สั่งรวม ' + (p.totalQty || 0).toLocaleString('th-TH') + ' ชิ้น';
+    return '<div class="dash-bar-row" title="' + xmlEscape(title) + '">' +
+      '<span class="dash-bar-label">' + xmlEscape(thaiHistoryDate(p.createdAt)) + '</span>' +
+      '<div class="dash-bar-track"><div class="dash-bar-fill" style="width:' + pct + '%"></div></div>' +
+      '<span class="dash-bar-value">' + (p.totalQty || 0).toLocaleString('th-TH') + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+// SKU ที่มีปัญหาบ่อย: นับจำนวนแผน (จากทุกบริษัทรวมกัน) ที่ SKU นั้นปรากฏเป็นรายการ "ต้องสั่งเพิ่ม"
+// (items ในแต่ละแผนเก็บเฉพาะรายการที่ needOrder=true ตอนบันทึกอยู่แล้ว ไม่ต้องกรองซ้ำ) เรียงมากไปน้อย
+// เอาแค่ 10 อันดับแรก เป็นแท่งสีเดียว (magnitude เดียว ไม่มีหลายซีรีส์)
+function renderDashboardProblemSkus() {
+  const listEl = document.getElementById('dashProblemSkuList');
+  if (!listEl || !dashPlansCache) return;
+  const counts = new Map();
+  dashPlansCache.forEach(function(p) {
+    (p.items || []).forEach(function(it) {
+      if (!it || !it.sku) return;
+      counts.set(it.sku, (counts.get(it.sku) || 0) + 1);
+    });
+  });
+  const ranked = Array.from(counts.entries()).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 10);
+  if (ranked.length === 0) {
+    listEl.innerHTML = '<div class="empty-state">ยังไม่มีข้อมูลพอจะสรุป SKU ที่มีปัญหาบ่อย</div>';
+    return;
+  }
+  const maxCount = ranked[0][1] || 1;
+  listEl.innerHTML = ranked.map(function(entry, i) {
+    const pct = Math.max(4, Math.round(entry[1] / maxCount * 100));
+    return '<div class="dash-sku-row" title="' + xmlEscape(entry[0]) + ' ต้องสั่งเพิ่ม ' + entry[1] + ' ครั้ง จากแผนที่บันทึกไว้ทั้งหมด">' +
+      '<span class="dash-sku-rank">' + (i + 1) + '</span>' +
+      '<span class="dash-sku-name">' + xmlEscape(entry[0]) + '</span>' +
+      '<div class="dash-bar-track"><div class="dash-bar-fill" style="width:' + pct + '%"></div></div>' +
+      '<span class="dash-bar-value">' + entry[1] + ' ครั้ง</span>' +
+      '</div>';
+  }).join('');
+}
 
 // ---------- หน้าย่อย "ไม่มี Standard": ลิสต์ SKU จริงที่ไม่ตรง Standard ตัวไหนเลย + เพิ่มเป็น Standard ได้เลย ----------
 // แหล่งข้อมูล: ถ้ามีแผนล่าสุดที่บันทึกไว้ใน db ใช้ลิสต์จากแผนนั้น (ตรงกับตัวเลข KPI ที่โชว์อยู่) ถ้ายังไม่เคย
