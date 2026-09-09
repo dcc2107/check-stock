@@ -2620,6 +2620,36 @@ const TABLE_HEADER_STYLE = 13;
 const TABLE_TIER_STYLE = { 0: 14, 2: 15, 3: 16, 4: 17, 5: 18 };
 function tableStyleFor(tierStyle) { return TABLE_TIER_STYLE[tierStyle || 0] || 14; }
 
+// ---------- ความกว้างคอลัมน์อัตโนมัติ (per user 2026-09-09) ----------
+// คำนวณจากความยาวข้อความจริงในหัวตาราง + ทุกแถวข้อมูล แทนตัวเลขความกว้างคงที่เดิมที่ผู้ใช้ต้องมาลากขยาย
+// คอลัมน์เองทุกครั้งที่เปิดไฟล์ — นับความยาวสตริง (จำนวนตัวอักษร) เป็นตัวประมาณคร่าวๆ ไม่ได้วัดความกว้าง
+// pixel จริงแบบที่ Excel auto-fit ทำตอนดับเบิลคลิกขอบคอลัมน์ (ภาษาไทยมีสระ/วรรณยุกต์ซ้อนที่ไม่กินความกว้าง
+// เพิ่มจริงแต่ถูกนับเป็นตัวอักษรเพิ่ม) แต่ใกล้เคียงพอที่จะไม่ต้องมานั่งลากเองแล้ว ปัดขึ้นเผื่อเล็กน้อยเสมอ
+// เพื่อไม่ให้แคบเกินไปจนข้อความยังโดนตัดอยู่ (เผื่อกว้างเกินนิดหน่อยดีกว่าแคบเกินไป)
+function strWidth(v) {
+  if (v === undefined || v === null) return 0;
+  return String(v).length;
+}
+function autoColWidths(colDefs) {
+  // colDefs: [{ header: string, values: array<string|number>, min?: number, max?: number }, ...]
+  return colDefs.map(function(col) {
+    let w = strWidth(col.header);
+    (col.values || []).forEach(function(v) {
+      const vw = strWidth(v);
+      if (vw > w) w = vw;
+    });
+    w += 2.5; // กันตัวอักษรชิดขอบซ้ายขวาเกินไป
+    if (col.min !== undefined && w < col.min) w = col.min;
+    if (col.max !== undefined && w > col.max) w = col.max;
+    return Math.round(w * 10) / 10;
+  });
+}
+function colsXml(widths) {
+  return '<cols>' + widths.map(function(w, i) {
+    return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>';
+  }).join('') + '</cols>';
+}
+
 const THAI_MONTHS_ABBR = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const THAI_WEEKDAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 // วันที่เต็มแบบ "พุธ 26 ส.ค. 2569" (วัน + วันที่ + เดือนย่อ + ปี พ.ศ. เต็ม 4 หลัก) ใช้กับแถบทักทายหน้าหลัก
@@ -2804,12 +2834,20 @@ function buildMrpSheetXml(person, items, notItems) {
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
     '<dimension ref="A1:' + lastRef + '"/>' +
-    '<cols><col min="1" max="1" width="8.83" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/>' +
-    '<col min="3" max="3" width="42" customWidth="1"/><col min="4" max="4" width="24" customWidth="1"/>' +
-    '<col min="5" max="5" width="18" customWidth="1"/><col min="6" max="6" width="24" customWidth="1"/>' +
-    '<col min="7" max="7" width="18" customWidth="1"/><col min="8" max="8" width="16" customWidth="1"/>' +
-    '<col min="9" max="9" width="18" customWidth="1"/><col min="10" max="10" width="12" customWidth="1"/>' +
-    '<col min="11" max="11" width="26" customWidth="1"/><col min="12" max="12" width="16" customWidth="1"/></cols>' +
+    colsXml(autoColWidths([
+      { header: headerCells[0], min: 8, values: ['เกณฑ์สี (ตามสีพื้นหลังแถว)', 'จำนวนยังไม่สั่ง', 'จำนวนสั่งแล้ว'].concat(items.concat(notList).map(function(_, i) { return i + 1; })) },
+      { header: headerCells[1], min: 10, values: items.concat(notList).map(function(it) { return it.sku; }) },
+      { header: headerCells[2], min: 14, values: items.concat(notList).map(function(it) { return it.desc; }) },
+      { header: headerCells[3], values: items.concat(notList).map(function(it) { return it.avgWeekly; }) },
+      { header: headerCells[4], values: items.concat(notList).map(function(it) { return it.target12; }) },
+      { header: headerCells[5], values: items.concat(notList).map(function(it) { return it.stock; }) },
+      { header: headerCells[6], values: items.concat(notList).map(function(it) { return it.wip; }) },
+      { header: headerCells[7], values: items.map(function(it) { return it.orderQty; }) },
+      { header: headerCells[8], values: items.map(function(it) { return it.confirmedQty; }) },
+      { header: headerCells[9], values: items.map(function(it) { return it.orderStatus; }) },
+      { header: headerCells[10], values: items.map(function(it) { return it.orderRemark; }) },
+      { header: headerCells[11], values: items.map(function(it) { return tierFor(it.orderQty).label; }) }
+    ])) +
     '<sheetData>' + rows.join('') + '</sheetData>' +
     '<mergeCells count="1"><mergeCell ref="A1:L1"/></mergeCells>' +
     '<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
@@ -2987,12 +3025,20 @@ function buildAllSkuSheetXml(company, items, notItems) {
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
     '<dimension ref="A1:' + lastRef + '"/>' +
-    '<cols><col min="1" max="1" width="8.83" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/>' +
-    '<col min="3" max="3" width="42" customWidth="1"/><col min="4" max="4" width="24" customWidth="1"/>' +
-    '<col min="5" max="5" width="18" customWidth="1"/><col min="6" max="6" width="24" customWidth="1"/>' +
-    '<col min="7" max="7" width="18" customWidth="1"/><col min="8" max="8" width="16" customWidth="1"/>' +
-    '<col min="9" max="9" width="18" customWidth="1"/><col min="10" max="10" width="12" customWidth="1"/>' +
-    '<col min="11" max="11" width="26" customWidth="1"/><col min="12" max="12" width="16" customWidth="1"/></cols>' +
+    colsXml(autoColWidths([
+      { header: headerCells[0], min: 8, values: ['เกณฑ์สี (ตามสีพื้นหลังแถว)', 'จำนวนยังไม่สั่ง', 'จำนวนสั่งแล้ว'].concat(items.concat(notList).map(function(_, i) { return i + 1; })) },
+      { header: headerCells[1], min: 10, values: items.concat(notList).map(function(it) { return it.sku; }) },
+      { header: headerCells[2], min: 14, values: items.concat(notList).map(function(it) { return it.desc; }) },
+      { header: headerCells[3], values: items.concat(notList).map(function(it) { return it.avgWeekly; }) },
+      { header: headerCells[4], values: items.concat(notList).map(function(it) { return it.target12; }) },
+      { header: headerCells[5], values: items.concat(notList).map(function(it) { return it.stock; }) },
+      { header: headerCells[6], values: items.concat(notList).map(function(it) { return it.wip; }) },
+      { header: headerCells[7], values: items.map(function(it) { return it.orderQty; }) },
+      { header: headerCells[8], values: items.map(function(it) { return it.confirmedQty; }) },
+      { header: headerCells[9], values: items.map(function(it) { return it.orderStatus; }) },
+      { header: headerCells[10], values: items.map(function(it) { return it.orderRemark; }) },
+      { header: headerCells[11], values: items.map(function(it) { return tierFor(it.orderQty).label; }) }
+    ])) +
     '<sheetData>' + rows.join('') + '</sheetData>' +
     '<mergeCells count="1"><mergeCell ref="A1:L1"/></mergeCells>' +
     '<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
@@ -3553,10 +3599,16 @@ function buildHistorySummarySheetXml(company, plans) {
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
     '<dimension ref="A1:' + lastRef + '"/>' +
-    '<cols><col min="1" max="1" width="8.83" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/>' +
-    '<col min="3" max="3" width="18" customWidth="1"/><col min="4" max="4" width="12" customWidth="1"/>' +
-    '<col min="5" max="5" width="16" customWidth="1"/><col min="6" max="6" width="16" customWidth="1"/>' +
-    '<col min="7" max="7" width="14" customWidth="1"/><col min="8" max="8" width="32" customWidth="1"/></cols>' +
+    colsXml(autoColWidths([
+      { header: headerCells[0], min: 8, values: ['จำนวนแผนทั้งหมด'].concat(plans.map(function(_, i) { return i + 1; })) },
+      { header: headerCells[1], min: 10, values: plans.map(function(p) { return p.planNo; }) },
+      { header: headerCells[2], values: plans.map(function(p) { return thaiHistoryDate(p.createdAt); }) },
+      { header: headerCells[3], values: plans.map(function(p) { return p.itemCount; }) },
+      { header: headerCells[4], values: plans.map(function(p) { return p.totalQty; }) },
+      { header: headerCells[5], values: plans.map(function(p) { return p.orderedCount; }) },
+      { header: headerCells[6], values: plans.map(function(p) { return computeHistoryStatus(p.orderedCount || 0, p.itemCount || 0, !!p.cancelled); }) },
+      { header: headerCells[7], values: plans.map(function(p) { return p.note; }) }
+    ])) +
     '<sheetData>' + rows.join('') + '</sheetData>' +
     '<mergeCells count="1"><mergeCell ref="A1:H1"/></mergeCells>' +
     '<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
@@ -3577,6 +3629,7 @@ function buildHistoryDetailSheetXml(company, plans) {
   rows.push('<row r="' + headerRow + '">' + headerCols.map(function(col, i) { return cellStr(col + headerRow, headerCells[i], col === 'A' ? HEADER_CENTER_STYLE : TABLE_HEADER_STYLE); }).join('') + '</row>');
   let i = 0;
   const ts = TABLE_TIER_STYLE[0];
+  const allDetailItems = []; // เก็บแบบแบนไว้ด้วยเผื่อคำนวณความกว้างคอลัมน์อัตโนมัติด้านล่าง (per user 2026-09-09)
   plans.forEach(function(p) {
     (p.items || []).forEach(function(it) {
       i += 1;
@@ -3590,6 +3643,7 @@ function buildHistoryDetailSheetXml(company, plans) {
         cellStr('F' + rr, it.st || 'ยังไม่สั่ง', ts) +
         cellStr('G' + rr, it.rm || '-', ts) +
         '</row>');
+      allDetailItems.push({ planNo: p.planNo, sku: it.sku, q: it.q, cf: it.cf, st: it.st, rm: it.rm });
     });
   });
   const lastRef = 'G' + r;
@@ -3597,10 +3651,15 @@ function buildHistoryDetailSheetXml(company, plans) {
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
     '<dimension ref="A1:' + lastRef + '"/>' +
-    '<cols><col min="1" max="1" width="8.83" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/>' +
-    '<col min="3" max="3" width="16" customWidth="1"/><col min="4" max="4" width="12" customWidth="1"/>' +
-    '<col min="5" max="5" width="14" customWidth="1"/><col min="6" max="6" width="12" customWidth="1"/>' +
-    '<col min="7" max="7" width="32" customWidth="1"/></cols>' +
+    colsXml(autoColWidths([
+      { header: headerCells[0], min: 8, values: allDetailItems.map(function(_, i) { return i + 1; }) },
+      { header: headerCells[1], min: 10, values: allDetailItems.map(function(x) { return x.planNo; }) },
+      { header: headerCells[2], min: 10, values: allDetailItems.map(function(x) { return x.sku; }) },
+      { header: headerCells[3], values: allDetailItems.map(function(x) { return x.q; }) },
+      { header: headerCells[4], values: allDetailItems.map(function(x) { return x.cf; }) },
+      { header: headerCells[5], values: allDetailItems.map(function(x) { return x.st; }) },
+      { header: headerCells[6], values: allDetailItems.map(function(x) { return x.rm; }) }
+    ])) +
     '<sheetData>' + rows.join('') + '</sheetData>' +
     '<mergeCells count="1"><mergeCell ref="A1:G1"/></mergeCells>' +
     '<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
