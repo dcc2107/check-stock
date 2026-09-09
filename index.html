@@ -2747,6 +2747,18 @@ function buildMrpSheetXml(person, items, notItems) {
   const highList = items.filter(function(it) { return it.avgWeekly >= 10; });
   const lowList = items.filter(function(it) { return it.avgWeekly < 10; });
 
+  // แถว "รวม" ท้ายตารางแต่ละตาราง (คนละตัวกับ totalRow ด้านล่างที่รวมทั้ง 2 กลุ่ม "ต้องสั่ง" เข้าด้วยกัน)
+  // ตามที่หัวหน้าขอเพิ่ม (per user 2026-09-09) — ตาราง "ต้องสั่ง" รวมคอลัมน์ "จำนวนสั่ง (ชิ้น)"
+  function pushOrderSubtotalRow(list) {
+    const sum = list.reduce(function(s, it) { return s + (it.orderQty || 0); }, 0);
+    const rr = nextRow();
+    rows.push('<row r="' + rr + '">' +
+      cellStr('C' + rr, 'รวม', 1) +
+      cellNum('H' + rr, sum, 1) +
+      cellStr('I' + rr, 'ชิ้น', 1) +
+      '</row>');
+  }
+
   if (highList.length > 0) {
     const rr = nextRow();
     rows.push('<row r="' + rr + '">' +
@@ -2756,6 +2768,7 @@ function buildMrpSheetXml(person, items, notItems) {
       '</row>');
     pushColumnHeaderRow();
     pushItemRows(highList);
+    pushOrderSubtotalRow(highList);
   }
   if (lowList.length > 0) {
     if (highList.length > 0) nextRow(); // เว้น 1 แถวคั่นระหว่าง 2 กลุ่มย่อย
@@ -2767,12 +2780,13 @@ function buildMrpSheetXml(person, items, notItems) {
       '</row>');
     pushColumnHeaderRow();
     pushItemRows(lowList);
+    pushOrderSubtotalRow(lowList);
   }
 
-  nextRow(); // เว้น 1 แถวก่อนแถวรวมยอด
+  nextRow(); // เว้น 1 แถวก่อนแถวรวมยอดทั้งหมด (รวม 2 ตารางข้างบนเข้าด้วยกัน แยกจากรวมย่อยต่อตารางด้านบน)
   const totalRow = nextRow();
   rows.push('<row r="' + totalRow + '">' +
-    cellStr('C' + totalRow, 'รวม', 1) +
+    cellStr('C' + totalRow, 'รวมทั้งหมด', 1) +
     cellNum('H' + totalRow, totalQty, 1) +
     cellStr('I' + totalRow, 'ชิ้น', 1) +
     '</row>');
@@ -2782,6 +2796,16 @@ function buildMrpSheetXml(person, items, notItems) {
   function pushNotColumnHeaderRow() {
     const rr = nextRow();
     rows.push('<row r="' + rr + '">' + ['A','B','C','D','E','F','G'].map(function(col, i) { return cellStr(col + rr, notHeaderCells[i], col === 'A' ? HEADER_CENTER_STYLE : TABLE_HEADER_STYLE); }).join('') + '</row>');
+  }
+  // ตาราง "ไม่ต้องสั่ง" ไม่มีคอลัมน์ "จำนวนสั่ง" (ไม่มีค่านี้จริง) — รวม "ยอดคงเหลือ ณ ตอนดึงข้อมูล" แทน
+  // ตามที่หัวหน้าระบุ (per user 2026-09-09)
+  function pushStockSubtotalRow(list) {
+    const sum = list.reduce(function(s, it) { return s + (it.stock || 0); }, 0);
+    const rr = nextRow();
+    rows.push('<row r="' + rr + '">' +
+      cellStr('C' + rr, 'รวม', 1) +
+      cellNum('F' + rr, sum, 1) +
+      '</row>');
   }
   function pushNotItemRows(list) {
     list.forEach(function(item, i) {
@@ -2809,6 +2833,7 @@ function buildMrpSheetXml(person, items, notItems) {
       '</row>');
     pushNotColumnHeaderRow();
     pushNotItemRows(notHighList);
+    pushStockSubtotalRow(notHighList);
   }
   if (notLowList.length > 0) {
     if (notHighList.length > 0) nextRow(); // เว้น 1 แถวคั่นระหว่าง 2 กลุ่มย่อย
@@ -2820,6 +2845,7 @@ function buildMrpSheetXml(person, items, notItems) {
       '</row>');
     pushNotColumnHeaderRow();
     pushNotItemRows(notLowList);
+    pushStockSubtotalRow(notLowList);
   }
 
   const lastRef = 'L' + r;
@@ -2931,6 +2957,18 @@ function buildAllSkuSheetXml(company, items, notItems) {
   const highList = items.filter(function(it) { return it.avgWeekly >= 10; });
   const lowList = items.filter(function(it) { return it.avgWeekly < 10; });
 
+  // แถว "รวม" ท้ายตารางแต่ละตาราง (คนละตัวกับ totalRow ด้านล่างที่รวมทั้ง 2 กลุ่ม "ต้องสั่ง" เข้าด้วยกัน)
+  // ตามที่หัวหน้าขอเพิ่ม (per user 2026-09-09) — ตาราง "ต้องสั่ง" รวมคอลัมน์ "จำนวนสั่ง (ชิ้น)"
+  function pushOrderSubtotalRow(list) {
+    const sum = list.reduce(function(s, it) { return s + (it.orderQty || 0); }, 0);
+    const rr = nextRow();
+    rows.push('<row r="' + rr + '">' +
+      cellStr('C' + rr, 'รวม', 1) +
+      cellNum('H' + rr, sum, 1) +
+      cellStr('I' + rr, 'ชิ้น', 1) +
+      '</row>');
+  }
+
   if (highList.length > 0) {
     const rr = nextRow();
     rows.push('<row r="' + rr + '">' +
@@ -2940,6 +2978,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
       '</row>');
     pushColumnHeaderRow();
     pushItemRows(highList);
+    pushOrderSubtotalRow(highList);
   }
   if (lowList.length > 0) {
     if (highList.length > 0) nextRow(); // เว้น 1 แถวคั่นระหว่าง 2 กลุ่มย่อย
@@ -2951,12 +2990,13 @@ function buildAllSkuSheetXml(company, items, notItems) {
       '</row>');
     pushColumnHeaderRow();
     pushItemRows(lowList);
+    pushOrderSubtotalRow(lowList);
   }
 
-  nextRow(); // เว้น 1 แถวก่อนแถวรวมยอด
+  nextRow(); // เว้น 1 แถวก่อนแถวรวมยอดทั้งหมด (รวม 2 ตารางข้างบนเข้าด้วยกัน แยกจากรวมย่อยต่อตารางด้านบน)
   const totalRow = nextRow();
   rows.push('<row r="' + totalRow + '">' +
-    cellStr('C' + totalRow, 'รวม', 1) +
+    cellStr('C' + totalRow, 'รวมทั้งหมด', 1) +
     cellNum('H' + totalRow, totalQty, 1) +
     cellStr('I' + totalRow, 'ชิ้น', 1) +
     '</row>');
@@ -2966,6 +3006,16 @@ function buildAllSkuSheetXml(company, items, notItems) {
   function pushNotColumnHeaderRow() {
     const rr = nextRow();
     rows.push('<row r="' + rr + '">' + ['A','B','C','D','E','F','G'].map(function(col, i) { return cellStr(col + rr, notHeaderCells[i], col === 'A' ? HEADER_CENTER_STYLE : TABLE_HEADER_STYLE); }).join('') + '</row>');
+  }
+  // ตาราง "ไม่ต้องสั่ง" ไม่มีคอลัมน์ "จำนวนสั่ง" (ไม่มีค่านี้จริง) — รวม "ยอดคงเหลือ ณ ตอนดึงข้อมูล" แทน
+  // ตามที่หัวหน้าระบุ (per user 2026-09-09)
+  function pushStockSubtotalRow(list) {
+    const sum = list.reduce(function(s, it) { return s + (it.stock || 0); }, 0);
+    const rr = nextRow();
+    rows.push('<row r="' + rr + '">' +
+      cellStr('C' + rr, 'รวม', 1) +
+      cellNum('F' + rr, sum, 1) +
+      '</row>');
   }
   function pushNotItemRows(list) {
     list.forEach(function(item, i) {
@@ -2993,6 +3043,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
       '</row>');
     pushNotColumnHeaderRow();
     pushNotItemRows(notHighList);
+    pushStockSubtotalRow(notHighList);
   }
   if (notLowList.length > 0) {
     if (notHighList.length > 0) nextRow(); // เว้น 1 แถวคั่นระหว่าง 2 กลุ่มย่อย
@@ -3004,6 +3055,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
       '</row>');
     pushNotColumnHeaderRow();
     pushNotItemRows(notLowList);
+    pushStockSubtotalRow(notLowList);
   }
 
   const lastRef = 'L' + r;
