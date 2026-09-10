@@ -2173,6 +2173,17 @@ function parseStockText(text) {
     unparsedSamples: [],
     anomalyFlags: []
   };
+  // \u0E23\u0E2D\u0E07\u0E23\u0E31\u0E1A\u0E23\u0E32\u0E22\u0E07\u0E32\u0E19\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E04\u0E07\u0E40\u0E2B\u0E25\u0E37\u0E2D\u0E08\u0E32\u0E01 Express 2 \u0E41\u0E1A\u0E1A:
+  //  - "\u0E40\u0E23\u0E35\u0E22\u0E07\u0E15\u0E32\u0E21\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32" (\u0E1B\u0E01\u0E15\u0E34): \u0E22\u0E48\u0E2D\u0E2B\u0E19\u0E49\u0E32\u0E1A\u0E23\u0E23\u0E17\u0E31\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 2 \u0E0A\u0E48\u0E2D\u0E07
+  //  - "\u0E41\u0E22\u0E01\u0E15\u0E32\u0E21\u0E04\u0E25\u0E31\u0E07\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32": \u0E22\u0E48\u0E2D\u0E2B\u0E19\u0E49\u0E32\u0E1A\u0E23\u0E23\u0E17\u0E31\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 3 \u0E0A\u0E48\u0E2D\u0E07 + \u0E21\u0E35\u0E1A\u0E23\u0E23\u0E17\u0E31\u0E14\u0E2B\u0E31\u0E27\u0E04\u0E25\u0E31\u0E07 ("01 \u0E04\u0E25\u0E31\u0E07...") \u0E41\u0E25\u0E30\u0E1A\u0E23\u0E23\u0E17\u0E31\u0E14
+  //    \u0E2B\u0E31\u0E27\u0E15\u0E32\u0E23\u0E32\u0E07 ("\u0E04\u0E25\u0E31\u0E07  \u0E23\u0E2B\u0E31\u0E2A/\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 ...") \u0E04\u0E31\u0E48\u0E19\u0E17\u0E38\u0E01\u0E2B\u0E19\u0E49\u0E32 \u2014 \u0E2A\u0E33\u0E2B\u0E23\u0E31\u0E1A\u0E1B\u0E35\u0E40\u0E15\u0E2D\u0E23\u0E4C\u0E04\u0E2D\u0E25\u0E31\u0E21\u0E19\u0E4C\u0E41\u0E23\u0E01\u0E01\u0E47\u0E22\u0E31\u0E07\u0E40\u0E1B\u0E47\u0E19\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32
+  // \u0E40\u0E0A\u0E47\u0E04\u0E08\u0E32\u0E01\u0E1A\u0E23\u0E23\u0E17\u0E31\u0E14\u0E0A\u0E37\u0E48\u0E2D\u0E23\u0E32\u0E22\u0E07\u0E32\u0E19 "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E04\u0E07\u0E40\u0E2B\u0E25\u0E37\u0E2D \u0E41\u0E22\u0E01\u0E15\u0E32\u0E21\u0E04\u0E25\u0E31\u0E07" \u0E40\u0E17\u0E48\u0E32\u0E19\u0E31\u0E49\u0E19 (\u0E44\u0E1F\u0E25\u0E4C\u0E1B\u0E01\u0E15\u0E34\u0E21\u0E35\u0E04\u0E33\u0E27\u0E48\u0E32 "\u0E41\u0E22\u0E01\u0E15\u0E32\u0E21\u0E04\u0E25\u0E31\u0E07\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32"
+  // \u0E42\u0E1C\u0E25\u0E48\u0E43\u0E19\u0E27\u0E07\u0E40\u0E25\u0E47\u0E1A "(\u0E04\u0E34\u0E14\u0E15\u0E49\u0E19\u0E17\u0E38\u0E19\u0E41\u0E22\u0E01\u0E15\u0E32\u0E21\u0E04\u0E25\u0E31\u0E07\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32)" \u0E14\u0E49\u0E27\u0E22 \u0E40\u0E25\u0E22\u0E2B\u0E49\u0E32\u0E21\u0E40\u0E0A\u0E47\u0E04\u0E41\u0E04\u0E48 "\u0E41\u0E22\u0E01\u0E15\u0E32\u0E21\u0E04\u0E25\u0E31\u0E07" \u0E25\u0E2D\u0E22\u0E46)
+  // (per user 2026-09-10: \u0E2D\u0E22\u0E32\u0E01\u0E42\u0E22\u0E19\u0E44\u0E1F\u0E25\u0E4C\u0E41\u0E1A\u0E1A\u0E41\u0E22\u0E01\u0E15\u0E32\u0E21\u0E04\u0E25\u0E31\u0E07\u0E40\u0E02\u0E49\u0E32\u0E40\u0E27\u0E47\u0E1A\u0E44\u0E14\u0E49\u0E40\u0E25\u0E22 \u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07 export \u0E43\u0E2B\u0E21\u0E48)
+  // \u0E23\u0E30\u0E27\u0E31\u0E07: \u0E0A\u0E48\u0E2D\u0E07\u0E27\u0E48\u0E32\u0E07\u0E23\u0E30\u0E2B\u0E27\u0E48\u0E32\u0E07\u0E04\u0E33\u0E43\u0E19\u0E44\u0E1F\u0E25\u0E4C\u0E21\u0E31\u0E01\u0E40\u0E1B\u0E47\u0E19 NBSP (U+00A0) \u0E44\u0E21\u0E48\u0E43\u0E0A\u0E48\u0E0A\u0E48\u0E2D\u0E07\u0E27\u0E48\u0E32\u0E07\u0E18\u0E23\u0E23\u0E21\u0E14\u0E32 \u2014 \u0E43\u0E0A\u0E49 \\s
+  const byWarehouse = /\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E04\u0E07\u0E40\u0E2B\u0E25\u0E37\u0E2D\s+\u0E41\u0E22\u0E01\u0E15\u0E32\u0E21\u0E04\u0E25\u0E31\u0E07/.test(text);
+  diag.format = byWarehouse ? '\u0E41\u0E22\u0E01\u0E15\u0E32\u0E21\u0E04\u0E25\u0E31\u0E07' : '\u0E40\u0E23\u0E35\u0E22\u0E07\u0E15\u0E32\u0E21\u0E23\u0E2B\u0E31\u0E2A';
+  const skuLineRe = byWarehouse ? /^ {3}(\S+) {2}/ : /^ {2}(\S+) {2}/;
   const lines = text.split(/\n/);
   let lastSku = null;
   for (let raw of lines) {
@@ -2188,10 +2199,12 @@ function parseStockText(text) {
       continue;
     }
 
-    const m = line.match(/^ {2}(\S+) {2}/);
+    const m = line.match(skuLineRe);
     if (!m) continue;
     const sku = m[1];
     if (STOCK_HEADER_LABELS.has(sku)) continue;
+    // \u0E23\u0E32\u0E22\u0E07\u0E32\u0E19\u0E41\u0E22\u0E01\u0E15\u0E32\u0E21\u0E04\u0E25\u0E31\u0E07: \u0E02\u0E49\u0E32\u0E21\u0E1A\u0E23\u0E23\u0E17\u0E31\u0E14\u0E2B\u0E31\u0E27\u0E15\u0E32\u0E23\u0E32\u0E07 ("\u0E04\u0E25\u0E31\u0E07  \u0E23\u0E2B\u0E31\u0E2A/\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32") \u0E41\u0E25\u0E30\u0E2B\u0E31\u0E27\u0E04\u0E25\u0E31\u0E07 ("01", "02" ...)
+    if (byWarehouse && (sku === '\u0E04\u0E25\u0E31\u0E07' || /^\d{2}$/.test(sku))) continue;
 
     diag.candidateLines++;
     const rest = line.slice(m[0].length);
@@ -2311,10 +2324,11 @@ function readFileAsText874(file) {
 function mergeEntries(entries) {
   const merged = new Map();
   const mergedDesc = new Map();
-  const diag = { totalLines: 0, candidateLines: 0, parsedLines: 0, unparsedSamples: [], anomalyFlags: [] };
+  const diag = { totalLines: 0, candidateLines: 0, parsedLines: 0, unparsedSamples: [], anomalyFlags: [], formats: [] };
   entries.forEach(function(entry) {
     if (!entry.parsed) return;
     const parsed = entry.parsed;
+    if (parsed.diag.format && diag.formats.indexOf(parsed.diag.format) === -1) diag.formats.push(parsed.diag.format);
     parsed.stock.forEach(function(qty, sku) {
       merged.set(sku, (merged.get(sku) || 0) + qty);
     });
@@ -3225,6 +3239,10 @@ function renderDiagnostics(rows) {
   const diag = state.diag;
   if (diag) {
     parts.push('<div style="font-size:13.5px;font-weight:600;margin:14px 0 6px;">ไฟล์ที่อัปโหลดล่าสุด</div>');
+    if (diag.formats && diag.formats.length > 0) {
+      parts.push('<div style="font-size:12.5px;color:var(--ink-muted);margin-bottom:6px;">' +
+        'รูปแบบรายงานที่ตรวจพบ: <strong>' + diag.formats.map(xmlEscape).join(', ') + '</strong></div>');
+    }
     parts.push('<div style="font-size:12.5px;color:var(--ink-muted);margin-bottom:6px;">' +
       'อ่านบรรทัดในไฟล์ทั้งหมด ' + diag.totalLines.toLocaleString('th-TH') +
       ' &middot; รายการสินค้าที่จับคู่ได้ ' + diag.parsedLines.toLocaleString('th-TH') +
