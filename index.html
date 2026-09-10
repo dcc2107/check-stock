@@ -937,7 +937,10 @@
     <div class="stat-strip" id="statStrip"></div>
     <div class="pending-note" id="pendingNote"></div>
     <div class="row-actions" style="margin-top:0;margin-bottom:16px;flex-wrap:wrap;">
-      <label style="font-size:13px;color:var(--ink-muted);display:inline-flex;align-items:center;gap:6px;">ดูเฉพาะรหัสนี้
+      <span style="font-size:13px;color:var(--ink-muted);">มุมมองรายการที่ต้องสั่ง</span>
+      <button type="button" class="btn btn-primary btn-sm" id="groupModePrefixBtn">แยกตามรหัส</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="groupModePersonBtn">แยกตามคน</button>
+      <label style="font-size:13px;color:var(--ink-muted);display:inline-flex;align-items:center;gap:6px;"><span id="groupFilterLabelText">ดูเฉพาะรหัสนี้</span>
         <select id="prefixFilter" style="font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);">
           <option value="">ทั้งหมด</option>
         </select>
@@ -1824,7 +1827,8 @@ const state = {
   wipEntries: [], // { file, parsed:{wip:Map<sku,qty>,rowCount,excludedCount}|null, recognized: number|null, error: string|null } — ไฟล์แผนผลิต (WIP) ไม่บังคับ
   companyResults: {}, // company -> array of computed rows (มีอยู่แค่ 1 คีย์เสมอ คือบริษัทที่เลือกไว้)
   diag: null, // parsing diagnostics for the last processed batch
-  prefixFilter: '', // '' = ทั้งหมด
+  prefixFilter: '', // '' = ทั้งหมด — ใช้เป็นตัวกรองของทั้ง 2 มุมมอง (รหัส/คน) แล้วแต่ resultsGroupMode
+  resultsGroupMode: 'prefix', // 'prefix' | 'person' — มุมมองการจัดกลุ่มรายการที่ต้องสั่งในหน้าผลลัพธ์ (per user 2026-09-10)
   downloadsApi: null,
   downloadsChecked: false,
   mrpCounter: 0,
@@ -2416,6 +2420,35 @@ function groupByPrefix(rows) {
   rows.forEach(function(r) {
     if (!map.has(r.prefix)) map.set(r.prefix, []);
     map.get(r.prefix).push(r);
+  });
+  return map;
+}
+
+// จับคู่ "รหัส (Prefix)" กับ "ชื่อผู้รับผิดชอบ" ตามตารางแบ่งงานทีม RD ที่หัวหน้าส่งมา (per user 2026-09-10)
+// คนละอันกับฟิลด์ "person" เดิมที่เคยฝังไว้ใน STANDARDS ต่อ SKU (เลิกใช้ไปแล้วตั้งแต่ตัดคอลัมน์ผู้รับผิดชอบ
+// ออกทั้งเว็บ per user 2026-09-07) — อันนี้คือรายชื่อทีม RD จริงที่รับผิดชอบเป็นรายรหัส/ตระกูลสินค้า ใช้เฉพาะ
+// มุมมอง "แยกตามคน" ในหน้าผลลัพธ์เท่านั้น ไม่ได้ผูกกับการคำนวณหรือที่เก็บข้อมูลจุดอื่นใดเลย
+const PREFIX_PERSON_MAP = {
+  'MA': 'ราชวิทย์', 'RV': 'ราชวิทย์', 'CT': 'ราชวิทย์', 'DRC': 'ราชวิทย์', 'ST': 'ราชวิทย์', 'SP': 'ราชวิทย์',
+  'AG': 'ธนากร', 'MIG': 'ธนากร', 'OKR': 'ธนากร', 'OKU': 'ธนากร',
+  'FE': 'ดุรงฤทธิ์', 'II': 'ดุรงฤทธิ์', 'IC': 'ดุรงฤทธิ์', 'FD': 'ดุรงฤทธิ์', 'HD': 'ดุรงฤทธิ์', 'FA': 'ดุรงฤทธิ์',
+  'GE': 'ดุรงฤทธิ์', 'HC': 'ดุรงฤทธิ์', 'ID': 'ดุรงฤทธิ์', 'FK': 'ดุรงฤทธิ์', 'GA': 'ดุรงฤทธิ์', 'HE': 'ดุรงฤทธิ์',
+  'AP': 'ธวัชชัย',
+  'TR': 'วิภาวี', 'TR3': 'วิภาวี', '3HD': 'วิภาวี',
+  'MI': 'ธนกร',
+  'AIF': 'ณัฐพล',
+  'AII': 'ศรชัย', 'AIO': 'ศรชัย', 'MX': 'ศรชัย'
+};
+const UNASSIGNED_PERSON_LABEL = 'ยังไม่ระบุคนดูแล';
+function personForPrefix(prefix) {
+  return PREFIX_PERSON_MAP[prefix] || UNASSIGNED_PERSON_LABEL;
+}
+function groupByPerson(rows) {
+  const map = new Map();
+  rows.forEach(function(r) {
+    const person = personForPrefix(r.prefix);
+    if (!map.has(person)) map.set(person, []);
+    map.get(person).push(r);
   });
   return map;
 }
@@ -3234,13 +3267,20 @@ function renderResults() {
     }
   }
 
-  // dropdown "ดูเฉพาะรหัสนี้" — รายชื่อ Prefix ทั้งหมดของบริษัทนี้ (เดิมแยกตามชื่อคนรับผิดชอบ
-  // เปลี่ยนมาแยกตามรหัส/Prefix แทน เพราะตอนนี้ใช้เว็บนี้คนเดียว per user 2026-09-07)
-  const allPrefixes = Array.from(new Set(rows.map(function(r){ return r.prefix; }))).sort(function(a, b) { return a.localeCompare(b, 'th'); });
+  // dropdown ตัวกรอง + พาแนลกลุ่ม — แยกตามรหัส (prefix) หรือแยกตามคน (ตารางแบ่งงานทีม RD) แล้วแต่
+  // state.resultsGroupMode ที่สลับได้จากปุ่ม "แยกตามรหัส"/"แยกตามคน" ด้านบน (per user 2026-09-10 — เอา
+  // มุมมองแยกตามคนกลับมาให้ ตามตารางแบ่งงานทีม RD ใหม่ คนละอันกับ "person" เดิมที่เคยตัดออกไปแล้ว)
+  const isPersonMode = state.resultsGroupMode === 'person';
+  const groupKeyLabelText = document.getElementById('groupFilterLabelText');
+  if (groupKeyLabelText) groupKeyLabelText.textContent = isPersonMode ? 'ดูเฉพาะคนนี้' : 'ดูเฉพาะรหัสนี้';
+  const groupKeyFn = isPersonMode ? function(r) { return personForPrefix(r.prefix); } : function(r) { return r.prefix; };
+  const groupFn = isPersonMode ? groupByPerson : groupByPrefix;
+
+  const allGroupKeys = Array.from(new Set(rows.map(groupKeyFn))).sort(function(a, b) { return a.localeCompare(b, 'th'); });
   const prefixSelect = document.getElementById('prefixFilter');
   const prevFilter = state.prefixFilter;
-  prefixSelect.innerHTML = '<option value="">ทั้งหมด</option>' + allPrefixes.map(function(p) { return '<option value="' + p + '">' + p + '</option>'; }).join('');
-  if (allPrefixes.indexOf(prevFilter) !== -1) {
+  prefixSelect.innerHTML = '<option value="">ทั้งหมด</option>' + allGroupKeys.map(function(p) { return '<option value="' + xmlEscape(p) + '">' + xmlEscape(p) + '</option>'; }).join('');
+  if (allGroupKeys.indexOf(prevFilter) !== -1) {
     prefixSelect.value = prevFilter;
   } else {
     state.prefixFilter = '';
@@ -3250,32 +3290,33 @@ function renderResults() {
   const company = state.selectedCompany;
   const panels = document.getElementById('personPanels');
   panels.innerHTML = '';
-  const grouped = groupByPrefix(rows.filter(function(r){return r.needOrder;}));
-  const notGrouped = groupByPrefix(rows.filter(function(r){return !r.needOrder;}));
-  let prefixes = Array.from(grouped.keys()).sort(function(a, b) {
+  const grouped = groupFn(rows.filter(function(r){return r.needOrder;}));
+  const notGrouped = groupFn(rows.filter(function(r){return !r.needOrder;}));
+  let groupKeys = Array.from(grouped.keys()).sort(function(a, b) {
     return grouped.get(b).length - grouped.get(a).length;
   });
   if (state.prefixFilter) {
-    prefixes = prefixes.filter(function(p) { return p === state.prefixFilter; });
+    groupKeys = groupKeys.filter(function(p) { return p === state.prefixFilter; });
   }
 
-  if (prefixes.length === 0) {
-    panels.innerHTML = '<div class="empty-state">' + (state.prefixFilter ? 'ไม่มีรายการที่ต้องสั่งเพิ่มของรหัส ' + state.prefixFilter : 'ยังไม่มีรายการที่ต้องสั่งเพิ่มจากข้อมูลที่เช็คแล้ว') + '</div>';
+  if (groupKeys.length === 0) {
+    const emptyLabel = isPersonMode ? 'คน' : 'รหัส';
+    panels.innerHTML = '<div class="empty-state">' + (state.prefixFilter ? 'ไม่มีรายการที่ต้องสั่งเพิ่มของ' + emptyLabel + ' ' + state.prefixFilter : 'ยังไม่มีรายการที่ต้องสั่งเพิ่มจากข้อมูลที่เช็คแล้ว') + '</div>';
     return;
   }
 
-  prefixes.forEach(function(prefix, i) {
-    // เรียงตามลำดับใน Standard PDF เดิม (อันดับขายดีของแต่ละตระกูล) ไม่ใช่ตามจำนวนสั่งหรือตัวอักษร —
-    // ตัวที่ต้องสั่งไล่เลข 1,2,3,... ตามลำดับนี้ ส่วนตัวที่ไม่เข้าเกณฑ์ก็ไล่เลข 1,2,3,... แยกฝั่งเดียวกัน
-    const items = grouped.get(prefix).slice();
-    const notItems = (notGrouped.get(prefix) || []).slice();
+  groupKeys.forEach(function(groupKey, i) {
+    // โหมดรหัส: เรียงตามลำดับใน Standard PDF เดิม (อันดับขายดีของแต่ละตระกูล) ไม่ใช่ตามจำนวนสั่งหรือตัวอักษร
+    // โหมดคน: รวมหลายรหัสของคนคนเดียวกันไว้ในตารางเดียว เรียงตามลำดับที่ SKU ปรากฏในแต่ละรหัสเหมือนกัน
+    const items = grouped.get(groupKey).slice();
+    const notItems = (notGrouped.get(groupKey) || []).slice();
     const details = document.createElement('details');
     details.className = 'person-panel';
     if (i === 0) details.setAttribute('open', '');
 
     const summary = document.createElement('summary');
     summary.innerHTML =
-      '<span>' + prefix + '</span>' +
+      '<span>' + xmlEscape(groupKey) + '</span>' +
       '<span class="pmeta"><span class="count-badge">' + items.length + ' รายการ</span><span class="chev">&#8250;</span></span>';
     details.appendChild(summary);
 
@@ -3293,8 +3334,8 @@ function renderResults() {
     mrpBtn.textContent = 'สร้างรีพอร์ต MRP (.xlsx)';
     mrpBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      const blob = buildMrpWorkbook(prefix, items, notItems);
-      offerBinaryDownload('MRP_' + company + '_' + prefix + '.xlsx', blob);
+      const blob = buildMrpWorkbook(groupKey, items, notItems);
+      offerBinaryDownload('MRP_' + company + '_' + groupKey + '.xlsx', blob);
     });
     body.appendChild(btnRow);
 
@@ -3384,6 +3425,20 @@ document.getElementById('prefixFilter').addEventListener('change', function() {
   state.prefixFilter = this.value;
   renderResults();
 });
+
+// ปุ่มสลับมุมมอง "แยกตามรหัส" / "แยกตามคน" (per user 2026-09-10) — เคลียร์ตัวกรองเดิมทุกครั้งที่สลับโหมด
+// กันเอาค่ากรองของมุมมองเก่า (เช่น ชื่อรหัส) มาใช้ผิดกับมุมมองใหม่ (เช่น ชื่อคน) โดยไม่ตั้งใจ
+function setResultsGroupMode(mode) {
+  state.resultsGroupMode = mode;
+  state.prefixFilter = '';
+  const prefixBtn = document.getElementById('groupModePrefixBtn');
+  const personBtn = document.getElementById('groupModePersonBtn');
+  if (prefixBtn) prefixBtn.className = 'btn btn-sm ' + (mode === 'prefix' ? 'btn-primary' : 'btn-ghost');
+  if (personBtn) personBtn.className = 'btn btn-sm ' + (mode === 'person' ? 'btn-primary' : 'btn-ghost');
+  renderResults();
+}
+document.getElementById('groupModePrefixBtn').addEventListener('click', function() { setResultsGroupMode('prefix'); });
+document.getElementById('groupModePersonBtn').addEventListener('click', function() { setResultsGroupMode('person'); });
 
 document.getElementById('downloadAllXlsxBtn').addEventListener('click', function(e) {
   e.preventDefault();
