@@ -1030,6 +1030,10 @@
       <label style="font-size:13px;color:var(--ink-muted);display:inline-flex;align-items:center;gap:6px;">บริษัท
         <select id="dashCompanySelect" style="font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);"></select>
       </label>
+      <label style="font-size:13px;color:var(--ink-muted);display:inline-flex;align-items:center;gap:6px;">ดูยอด ณ วันที่
+        <input type="date" id="dashDateSelect" style="font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);">
+      </label>
+      <button type="button" class="btn btn-ghost btn-sm" id="dashDateClearBtn">ล่าสุด</button>
     </div>
     <div id="dashContent"></div>
   </section>
@@ -4196,6 +4200,15 @@ COMPANY_ORDER.forEach(function(c) {
 dashCompanySelect.value = COMPANY_ORDER[0];
 dashCompanySelect.addEventListener('change', renderDashboard);
 
+// เลือกดูยอด ณ วันที่ต้องการได้ด้วย (per user 2026-09-10) — ปล่อยว่าง = ดูแผนล่าสุดตามปกติ (พฤติกรรมเดิม)
+// เลือกวันที่ = หาแผนล่าสุดที่บันทึกไว้ "ในหรือก่อน" วันนั้น (ไม่จำเป็นต้องมีแผนตรงวันเป๊ะๆ) มาโชว์แทน
+const dashDateSelect = document.getElementById('dashDateSelect');
+dashDateSelect.addEventListener('change', renderDashboard);
+document.getElementById('dashDateClearBtn').addEventListener('click', function() {
+  dashDateSelect.value = '';
+  renderDashboard();
+});
+
 let dashPlansCache = null;
 function loadDashboardData() {
   const contentEl = document.getElementById('dashContent');
@@ -4229,13 +4242,27 @@ function renderDashboard() {
   const contentEl = document.getElementById('dashContent');
   if (!contentEl || !dashPlansCache) return;
   const company = dashCompanySelect.value;
-  const plans = dashPlansCache.filter(function(p) { return p.company === company; });
+  const plans = dashPlansCache.filter(function(p) { return p.company === company; }); // เรียง createdAt ล่าสุดมาก่อนอยู่แล้ว
   if (plans.length === 0) {
     contentEl.innerHTML = '<div class="empty-state">ยังไม่มีแผนที่บันทึกไว้ของบริษัทนี้ — ลองประมวลผลแล้วกด "บันทึกแผนนี้ลงประวัติ MRP" ที่แท็บสร้างแผนก่อน</div>';
     return;
   }
-  const latest = plans[0];
-  const prev = plans.length > 1 ? plans[1] : null;
+  // ถ้าเลือกวันที่ไว้ (#dashDateSelect) หาแผนล่าสุดที่บันทึกไว้ "ในหรือก่อน" วันนั้นแทนแผนล่าสุดสุดจริง
+  // (ไม่บังคับต้องมีแผนตรงวันเป๊ะๆ — เอาแผนที่ใกล้เคียงที่สุดก่อนหน้ามาแสดงแทน แจ้งให้รู้ถ้าไม่ตรงวันเป๊ะ)
+  let idx = 0;
+  const selectedDateStr = dashDateSelect.value;
+  let dateNotExact = false;
+  if (selectedDateStr) {
+    const endOfDay = selectedDateStr + 'T23:59:59.999Z';
+    idx = plans.findIndex(function(p) { return p.createdAt <= endOfDay; });
+    if (idx === -1) {
+      contentEl.innerHTML = '<div class="empty-state">ยังไม่มีแผนของบริษัทนี้ที่บันทึกไว้ในหรือก่อนวันที่เลือก (แผนแรกสุดที่มีบันทึกไว้ทีหลังวันนี้)</div>';
+      return;
+    }
+    dateNotExact = plans[idx].createdAt.slice(0, 10) !== selectedDateStr;
+  }
+  const latest = plans[idx];
+  const prev = plans.length > idx + 1 ? plans[idx + 1] : null;
   const items = latest.items || [];
 
   // 1) การ์ด KPI 5 ช่อง
@@ -4342,8 +4369,12 @@ function renderDashboard() {
     '<div class="table-scroll"><table class="t10"><thead><tr><th>#</th><th>SKU</th><th class="num">สั่งเพิ่ม</th><th>สถานะ</th></tr></thead><tbody>' + top10RowsHtml + '</tbody></table></div>') +
     '</section>';
 
+  const dateNoteHtml = dateNotExact
+    ? '<p class="step-sub" style="margin:-4px 0 8px;color:var(--warn);">ไม่มีแผนบันทึกไว้ตรงวันที่เลือกเป๊ะๆ — แสดงแผนล่าสุดก่อนหน้าวันนั้นแทน</p>'
+    : '';
   contentEl.innerHTML =
-    '<section class="card"><div class="step-head"><span class="step-title" style="font-size:15px;">ภาพรวมแผนล่าสุด</span> <span class="company-chip">' + xmlEscape(company) + ' &middot; ' + xmlEscape(latest.planNo || '') + '</span></div>' +
+    '<section class="card"><div class="step-head"><span class="step-title" style="font-size:15px;">ภาพรวมแผน' + (selectedDateStr ? '' : 'ล่าสุด') + '</span> <span class="company-chip">' + xmlEscape(company) + ' &middot; ' + xmlEscape(latest.planNo || '') + '</span></div>' +
+    dateNoteHtml +
     '<p class="step-sub" style="margin:-8px 0 12px;">' + (prev ? 'เทียบกับรอบก่อนหน้า (' + xmlEscape(thaiHistoryDate(prev.createdAt)) + ')' : 'ยังไม่มีรอบก่อนหน้าให้เทียบ') + ' &middot; บันทึกเมื่อ ' + xmlEscape(thaiHistoryDate(latest.createdAt)) + '</p>' +
     kpiHtml + '</section>' +
     barsSectionHtml + donutHealthRowHtml + top10SectionHtml;
