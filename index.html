@@ -2467,6 +2467,11 @@ const UNASSIGNED_PERSON_LABEL = 'ยังไม่ระบุคนดูแ�
 function personForPrefix(prefix) {
   return PREFIX_PERSON_MAP[prefix] || UNASSIGNED_PERSON_LABEL;
 }
+
+// รหัสที่เดิมเป็นของมิยาโมโตะ แต่ตอนนี้ผูก Standard ไว้ใช้ร่วมกับปีเตอร์ด้วย (per user 2026-09-10) — ใน
+// รีพอร์ตรวมทุกรหัสของปีเตอร์ ต้องแยกรหัสกลุ่มนี้ออกมาเป็นอีกชุดตารางต่างหาก ไม่ปนกับรหัสของปีเตอร์เอง
+// (ตามที่หัวหน้าขอ: "แยกแค่เฉพาะรหัสมิยาออกมาเป็นอีกตารางเลย ไม่รวมกับปีเตอร์")
+const MIYA_SHARED_PREFIXES = ['MA', 'MIG', 'MI', 'MX'];
 function groupByPerson(rows) {
   const map = new Map();
   rows.forEach(function(r) {
@@ -3016,14 +3021,9 @@ function buildAllSkuSheetXml(company, items, notItems) {
   }
 
   // แบ่งเป็น 4 ตารางย่อยตามเฉลี่ยใช้ต่อสัปดาห์ (ต้องสั่ง/ไม่ต้องสั่ง × มากกว่าหรือเท่ากับ10/น้อยกว่า10)
-  // ตามที่หัวหน้าสั่งให้แก้ (per user 2026-09-09) — เกณฑ์ 10 พอดีนับเข้ากลุ่ม "มากกว่าหรือเท่ากับ 10" เสมอ
-  // (สลับจากเดิมที่เกณฑ์ 10 พอดีเคยถูกจัดไว้กลุ่ม "น้อยกว่า/10 หรือน้อยกว่า" ตอน 2026-09-04 — ตอนนี้เปลี่ยนแล้ว
-  // และเพิ่มการแบ่งแบบเดียวกันนี้ให้ฝั่ง "ไม่ต้องสั่ง" ด้วย ซึ่งเดิมมีแค่ตารางเดียวรวมกันไม่แยก)
-  const highList = items.filter(function(it) { return it.avgWeekly >= 10; });
-  const lowList = items.filter(function(it) { return it.avgWeekly < 10; });
-
-  // แถว "รวม" ท้ายตารางแต่ละตาราง (คนละตัวกับ totalRow ด้านล่างที่รวมทั้ง 2 กลุ่ม "ต้องสั่ง" เข้าด้วยกัน)
-  // ตามที่หัวหน้าขอเพิ่ม (per user 2026-09-09) — ตาราง "ต้องสั่ง" รวมคอลัมน์ "จำนวนสั่ง (ชิ้น)"
+  // ห่อเป็นฟังก์ชัน buildOrderSection() ให้เรียกซ้ำได้ เพราะตอนนี้ต้องแยกรหัสมิยาโมโตะออกเป็นอีกชุดตาราง
+  // ต่างหากตอนประมวลผลบริษัทปีเตอร์ (per user 2026-09-10) — โครงสร้างตารางเหมือนเดิมทุกอย่าง (per user
+  // 2026-09-09) แค่เรียกซ้ำ 2 รอบ (รหัสปีเตอร์เอง / รหัสมิยาโมโตะที่ใช้ร่วม) แทนเรียกครั้งเดียวรวมกันหมด
   function pushOrderSubtotalRow(list) {
     const sum = list.reduce(function(s, it) { return s + (it.orderQty || 0); }, 0);
     const rr = nextRow();
@@ -3033,40 +3033,6 @@ function buildAllSkuSheetXml(company, items, notItems) {
       cellStr('I' + rr, 'ชิ้น', 1) +
       '</row>');
   }
-
-  if (highList.length > 0) {
-    const rr = nextRow();
-    rows.push('<row r="' + rr + '">' +
-      cellStr('A' + rr, 'รายการที่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์มากกว่าหรือเท่ากับ 10', GROUP_TITLE_WRAP_STYLE) +
-      cellNum('B' + rr, highList.length, 1) +
-      cellStr('C' + rr, 'SKU', 1) +
-      '</row>');
-    pushColumnHeaderRow();
-    pushItemRows(highList);
-    pushOrderSubtotalRow(highList);
-  }
-  if (lowList.length > 0) {
-    if (highList.length > 0) nextRow(); // เว้น 1 แถวคั่นระหว่าง 2 กลุ่มย่อย
-    const rr = nextRow();
-    rows.push('<row r="' + rr + '">' +
-      cellStr('A' + rr, 'รายการที่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์น้อยกว่า 10', GROUP_TITLE_WRAP_STYLE) +
-      cellNum('B' + rr, lowList.length, 1) +
-      cellStr('C' + rr, 'SKU', 1) +
-      '</row>');
-    pushColumnHeaderRow();
-    pushItemRows(lowList);
-    pushOrderSubtotalRow(lowList);
-  }
-
-  nextRow(); // เว้น 1 แถวก่อนแถวรวมยอดทั้งหมด (รวม 2 ตารางข้างบนเข้าด้วยกัน แยกจากรวมย่อยต่อตารางด้านบน)
-  const totalRow = nextRow();
-  rows.push('<row r="' + totalRow + '">' +
-    cellStr('C' + totalRow, 'รวมทั้งหมด', 1) +
-    cellNum('H' + totalRow, totalQty, 1) +
-    cellStr('I' + totalRow, 'ชิ้น', 1) +
-    '</row>');
-
-  const notList = notItems || [];
   const notHeaderCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)'];
   function pushNotColumnHeaderRow() {
     const rr = nextRow();
@@ -3096,31 +3062,101 @@ function buildAllSkuSheetXml(company, items, notItems) {
         '</row>');
     });
   }
-  const notHighList = notList.filter(function(it) { return it.avgWeekly >= 10; });
-  const notLowList = notList.filter(function(it) { return it.avgWeekly < 10; });
-  if (notList.length > 0) nextRow(); // เว้น 1 แถวก่อนขึ้นหัวข้อกลุ่มแรกของ "ไม่ต้องสั่ง"
-  if (notHighList.length > 0) {
-    const rr = nextRow();
-    rows.push('<row r="' + rr + '">' +
-      cellStr('A' + rr, 'รายการที่ไม่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์มากกว่าหรือเท่ากับ 10', GROUP_TITLE_WRAP_STYLE) +
-      cellNum('B' + rr, notHighList.length, 1) +
-      cellStr('C' + rr, 'SKU', 1) +
-      '</row>');
-    pushNotColumnHeaderRow();
-    pushNotItemRows(notHighList);
-    pushStockSubtotalRow(notHighList);
+
+  // แถวที่ควรตัดหน้าพิมพ์ (ก่อนขึ้นส่วน "ไม่ต้องสั่ง" ของแต่ละ section) — section เดียวจะมีแค่ 1 จุดเหมือนเดิม
+  // ถ้าแยกเป็น 2 section (ปีเตอร์ + มิยา) จะมี 2 จุด
+  const breakRows = [];
+
+  function buildOrderSection(sectionItems, sectionNotItems) {
+    const sHigh = sectionItems.filter(function(it) { return it.avgWeekly >= 10; });
+    const sLow = sectionItems.filter(function(it) { return it.avgWeekly < 10; });
+    if (sHigh.length > 0) {
+      const rr = nextRow();
+      rows.push('<row r="' + rr + '">' +
+        cellStr('A' + rr, 'รายการที่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์มากกว่าหรือเท่ากับ 10', GROUP_TITLE_WRAP_STYLE) +
+        cellNum('B' + rr, sHigh.length, 1) +
+        cellStr('C' + rr, 'SKU', 1) +
+        '</row>');
+      pushColumnHeaderRow();
+      pushItemRows(sHigh);
+      pushOrderSubtotalRow(sHigh);
+    }
+    if (sLow.length > 0) {
+      if (sHigh.length > 0) nextRow(); // เว้น 1 แถวคั่นระหว่าง 2 กลุ่มย่อย
+      const rr = nextRow();
+      rows.push('<row r="' + rr + '">' +
+        cellStr('A' + rr, 'รายการที่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์น้อยกว่า 10', GROUP_TITLE_WRAP_STYLE) +
+        cellNum('B' + rr, sLow.length, 1) +
+        cellStr('C' + rr, 'SKU', 1) +
+        '</row>');
+      pushColumnHeaderRow();
+      pushItemRows(sLow);
+      pushOrderSubtotalRow(sLow);
+    }
+    if (sHigh.length > 0 || sLow.length > 0) {
+      const sectionTotalQty = sectionItems.reduce(function(sum, it) { return sum + it.orderQty; }, 0);
+      nextRow(); // เว้น 1 แถวก่อนแถวรวมยอดของ section นี้ (รวม 2 ตารางข้างบนเข้าด้วยกัน แยกจากรวมย่อยต่อตาราง)
+      const rr = nextRow();
+      rows.push('<row r="' + rr + '">' +
+        cellStr('C' + rr, 'รวมทั้งหมด', 1) +
+        cellNum('H' + rr, sectionTotalQty, 1) +
+        cellStr('I' + rr, 'ชิ้น', 1) +
+        '</row>');
+    }
+
+    const sNotHigh = (sectionNotItems || []).filter(function(it) { return it.avgWeekly >= 10; });
+    const sNotLow = (sectionNotItems || []).filter(function(it) { return it.avgWeekly < 10; });
+    if ((sectionNotItems || []).length > 0) {
+      breakRows.push(r); // แถวสุดท้ายก่อนขึ้น "ไม่ต้องสั่ง" — ใช้ตัดหน้าพิมพ์
+      nextRow();
+    }
+    if (sNotHigh.length > 0) {
+      const rr = nextRow();
+      rows.push('<row r="' + rr + '">' +
+        cellStr('A' + rr, 'รายการที่ไม่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์มากกว่าหรือเท่ากับ 10', GROUP_TITLE_WRAP_STYLE) +
+        cellNum('B' + rr, sNotHigh.length, 1) +
+        cellStr('C' + rr, 'SKU', 1) +
+        '</row>');
+      pushNotColumnHeaderRow();
+      pushNotItemRows(sNotHigh);
+      pushStockSubtotalRow(sNotHigh);
+    }
+    if (sNotLow.length > 0) {
+      if (sNotHigh.length > 0) nextRow(); // เว้น 1 แถวคั่นระหว่าง 2 กลุ่มย่อย
+      const rr = nextRow();
+      rows.push('<row r="' + rr + '">' +
+        cellStr('A' + rr, 'รายการที่ไม่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์น้อยกว่า 10', GROUP_TITLE_WRAP_STYLE) +
+        cellNum('B' + rr, sNotLow.length, 1) +
+        cellStr('C' + rr, 'SKU', 1) +
+        '</row>');
+      pushNotColumnHeaderRow();
+      pushNotItemRows(sNotLow);
+      pushStockSubtotalRow(sNotLow);
+    }
   }
-  if (notLowList.length > 0) {
-    if (notHighList.length > 0) nextRow(); // เว้น 1 แถวคั่นระหว่าง 2 กลุ่มย่อย
-    const rr = nextRow();
-    rows.push('<row r="' + rr + '">' +
-      cellStr('A' + rr, 'รายการที่ไม่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์น้อยกว่า 10', GROUP_TITLE_WRAP_STYLE) +
-      cellNum('B' + rr, notLowList.length, 1) +
-      cellStr('C' + rr, 'SKU', 1) +
-      '</row>');
-    pushNotColumnHeaderRow();
-    pushNotItemRows(notLowList);
-    pushStockSubtotalRow(notLowList);
+
+  const notList = notItems || [];
+  // แยกรหัสมิยาโมโตะ (MA/MIG/MI/MX) ออกมาเป็นอีกชุดตารางต่างหาก เฉพาะตอนประมวลผลบริษัท "ปีเตอร์" และมี
+  // รหัสกลุ่มนี้ปนอยู่จริงเท่านั้น (บริษัทอื่นไม่ต้องแยก เพราะรหัสพวกนี้เป็นของเขาอยู่แล้วตามปกติ) (per user 2026-09-10)
+  function isMiyaPrefix(prefix) { return MIYA_SHARED_PREFIXES.indexOf(prefix) !== -1; }
+  const splitMiya = company === 'ปีเตอร์' && (items.some(function(it) { return isMiyaPrefix(it.prefix); }) || notList.some(function(it) { return isMiyaPrefix(it.prefix); }));
+
+  if (splitMiya) {
+    const nativeItems = items.filter(function(it) { return !isMiyaPrefix(it.prefix); });
+    const nativeNotItems = notList.filter(function(it) { return !isMiyaPrefix(it.prefix); });
+    const miyaItems = items.filter(function(it) { return isMiyaPrefix(it.prefix); });
+    const miyaNotItems = notList.filter(function(it) { return isMiyaPrefix(it.prefix); });
+
+    const sec1Row = nextRow();
+    rows.push('<row r="' + sec1Row + '">' + cellStr('A' + sec1Row, '■ รหัสของปีเตอร์', 1) + '</row>');
+    buildOrderSection(nativeItems, nativeNotItems);
+
+    nextRow(); // เว้น 1 แถวก่อนขึ้น section ถัดไป
+    const sec2Row = nextRow();
+    rows.push('<row r="' + sec2Row + '">' + cellStr('A' + sec2Row, '■ รหัสมิยาโมโตะ (ใช้ร่วมกับปีเตอร์)', 1) + '</row>');
+    buildOrderSection(miyaItems, miyaNotItems);
+  } else {
+    buildOrderSection(items, notList);
   }
 
   const lastRef = 'K' + r;
@@ -3145,7 +3181,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
     '<mergeCells count="1"><mergeCell ref="A1:K1"/></mergeCells>' +
     '<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
     '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0" scale="100"/>' +
-    (notList.length > 0 ? '<rowBreaks count="1" manualBreakCount="1"><brk id="' + totalRow + '" max="16383" man="1"/></rowBreaks>' : '') +
+    (breakRows.length > 0 ? '<rowBreaks count="' + breakRows.length + '" manualBreakCount="' + breakRows.length + '">' + breakRows.map(function(rb) { return '<brk id="' + rb + '" max="16383" man="1"/>'; }).join('') + '</rowBreaks>' : '') +
     '</worksheet>';
 }
 
