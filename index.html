@@ -884,7 +884,7 @@
       <div class="standard-form-grid">
         <label>SKU <input type="text" id="standardFormSku" placeholder="เช่น AIF-20-506N"></label>
         <label>Prefix <input type="text" id="standardFormPrefix"></label>
-        <label>บริษัท <select id="standardFormCompany"></select></label>
+        <label>บริษัท (เลือกได้มากกว่า 1 ถ้าของใช้ร่วมกันหลายบริษัท) <span id="standardFormCompanyChecks" style="display:flex;gap:12px;flex-wrap:wrap;"></span></label>
         <label>ผู้รับผิดชอบ <input type="text" id="standardFormPerson"></label>
         <label>Min <input type="number" id="standardFormMin" step="1"></label>
         <label>Max <input type="number" id="standardFormMax" step="1"></label>
@@ -1070,217 +1070,217 @@
 const STANDARDS = [
 {"sku":"3-HD-26-502","prefix":"3HD","min":4,"max":14,"lot":10,"avg":5,"person":"นุ๊ก","company":"อามาด้า"},
 {"sku":"3-HD-26-506","prefix":"3HD","min":2,"max":12,"lot":10,"avg":1.67,"person":"นุ๊ก","company":"อามาด้า"},
-{"sku":"MA-22-502-XT","prefix":"MA","min":118,"max":198,"lot":80,"avg":156.5,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-21-506-XT","prefix":"MA","min":112,"max":192,"lot":80,"avg":149.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-20-502-XT","prefix":"MA","min":97,"max":167,"lot":70,"avg":128.2,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-20-506-XT","prefix":"MA","min":93,"max":163,"lot":70,"avg":123.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-22-506-XT","prefix":"MA","min":87,"max":147,"lot":60,"avg":115.8,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-21-502-XT","prefix":"MA","min":85,"max":145,"lot":60,"avg":113.2,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-18-506-XT","prefix":"MA","min":76,"max":136,"lot":60,"avg":101.2,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-20-538-XT","prefix":"MA","min":72,"max":122,"lot":50,"avg":95.8,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-24-502-XT","prefix":"MA","min":64,"max":114,"lot":50,"avg":85.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-18-502-XT","prefix":"MA","min":59,"max":99,"lot":40,"avg":78.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-22-655-XT","prefix":"MA","min":50,"max":90,"lot":40,"avg":65.8,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-17-702-XT","prefix":"MA","min":48,"max":88,"lot":40,"avg":63.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-22-531-XT","prefix":"MA","min":46,"max":86,"lot":40,"avg":61.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-17-511-XT","prefix":"MA","min":33,"max":63,"lot":30,"avg":43.2,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-24-632-XT","prefix":"MA","min":33,"max":63,"lot":30,"avg":43.2,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-16-505-XT","prefix":"MA","min":30,"max":50,"lot":20,"avg":39.5,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-17-519-XT","prefix":"MA","min":28,"max":48,"lot":20,"avg":36.5,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-20-528-XT","prefix":"MA","min":28,"max":48,"lot":20,"avg":36.5,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-24-506-XT","prefix":"MA","min":23,"max":43,"lot":20,"avg":30.2,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-17-680-XT","prefix":"MA","min":22,"max":42,"lot":20,"avg":28.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-18-537-XT","prefix":"MA","min":20,"max":40,"lot":20,"avg":26.7,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-16-506-X","prefix":"MA","min":19,"max":39,"lot":20,"avg":24.8,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-19-538-XT","prefix":"MA","min":19,"max":39,"lot":20,"avg":24.8,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-21-538-XT","prefix":"MA","min":19,"max":39,"lot":20,"avg":24.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-16-524-XT","prefix":"MA","min":18,"max":38,"lot":20,"avg":23.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-24-504-XT","prefix":"MA","min":18,"max":38,"lot":20,"avg":23.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-17-518-XT","prefix":"MA","min":28,"max":48,"lot":20,"avg":36.5,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-14-505-XT","prefix":"MA","min":17,"max":37,"lot":20,"avg":21.7,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-16-680-XT","prefix":"MA","min":14,"max":24,"lot":10,"avg":18.5,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-16-679-XT","prefix":"MA","min":14,"max":24,"lot":10,"avg":18.2,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-21-525-XT","prefix":"MA","min":13,"max":23,"lot":10,"avg":16.7,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-21-619-XT","prefix":"MA","min":13,"max":23,"lot":10,"avg":16.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-16-502-XT","prefix":"MA","min":12,"max":22,"lot":10,"avg":15,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-19-502-XT","prefix":"MA","min":12,"max":22,"lot":10,"avg":15,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-17-679-XT","prefix":"MA","min":9,"max":19,"lot":10,"avg":11.7,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-21-521-XT","prefix":"MA","min":9,"max":19,"lot":10,"avg":11.5,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-14-511-XT","prefix":"MA","min":9,"max":19,"lot":10,"avg":11.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-23-703-XT","prefix":"MA","min":8,"max":18,"lot":10,"avg":10.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-16-519-XT","prefix":"MA","min":7,"max":17,"lot":10,"avg":8.8,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-14-513-XT","prefix":"MA","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-16-518-XT","prefix":"MA","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-19-506-XT","prefix":"MA","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-19-657-XT","prefix":"MA","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-23-654-XT","prefix":"MA","min":7,"max":17,"lot":10,"avg":8.2,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-23-531-XT","prefix":"MA","min":6,"max":16,"lot":10,"avg":7.7,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-20-521-XT","prefix":"MA","min":5,"max":15,"lot":10,"avg":6.7,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-16-702-XT","prefix":"MA","min":4,"max":14,"lot":10,"avg":4.8,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-15-679-XT","prefix":"MA","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-15-680-XT","prefix":"MA","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-15.5-511-XT","prefix":"MA","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-16.5-518-XT","prefix":"MA","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-20-512-XT","prefix":"MA","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-15-524-XT","prefix":"MA","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-16.5-519-XT","prefix":"MA","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-18-702-XT","prefix":"MA","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-23-713-XT","prefix":"MA","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-26-502-XT","prefix":"MA","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-22-714-XT","prefix":"MA","min":1,"max":11,"lot":10,"avg":0.7,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MA-24-716-XT","prefix":"MA","min":1,"max":11,"lot":10,"avg":0.3,"person":"พี่หมู","company":"มิยาโมโตะ"},
-{"sku":"MI-22-502","prefix":"MI","min":364,"max":614,"lot":250,"avg":485.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-21-506","prefix":"MI","min":324,"max":544,"lot":220,"avg":431.5,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-22-506","prefix":"MI","min":281,"max":471,"lot":190,"avg":373.5,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-20-506","prefix":"MI","min":274,"max":464,"lot":190,"avg":365.2,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-21-502","prefix":"MI","min":259,"max":439,"lot":180,"avg":344.8,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-24-502","prefix":"MI","min":209,"max":349,"lot":140,"avg":278.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-20-502","prefix":"MI","min":182,"max":312,"lot":130,"avg":241.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-24-506","prefix":"MI","min":165,"max":275,"lot":110,"avg":220,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-17-518","prefix":"MI","min":157,"max":267,"lot":110,"avg":208.5,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-17-519","prefix":"MI","min":156,"max":266,"lot":110,"avg":207,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-17-511","prefix":"MI","min":144,"max":244,"lot":100,"avg":191.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-18-506","prefix":"MI","min":143,"max":243,"lot":100,"avg":190,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16-511","prefix":"MI","min":130,"max":220,"lot":90,"avg":173.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-20-538","prefix":"MI","min":122,"max":202,"lot":80,"avg":161.5,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-26-502","prefix":"MI","min":118,"max":198,"lot":80,"avg":156.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-18-502","prefix":"MI","min":114,"max":194,"lot":80,"avg":152,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-22-531","prefix":"MI","min":102,"max":172,"lot":70,"avg":135.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-17-702","prefix":"MI","min":97,"max":167,"lot":70,"avg":128.5,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-14-513","prefix":"MI","min":93,"max":163,"lot":70,"avg":123.5,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16-505","prefix":"MI","min":87,"max":147,"lot":60,"avg":115,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-14-505","prefix":"MI","min":76,"max":126,"lot":50,"avg":100.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-21-521","prefix":"MI","min":74,"max":124,"lot":50,"avg":98.2,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16-715","prefix":"MI","min":72,"max":122,"lot":50,"avg":95,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-15.5-511","prefix":"MI","min":70,"max":120,"lot":50,"avg":92.2,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-22-512","prefix":"MI","min":68,"max":118,"lot":50,"avg":90,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-15-511","prefix":"MI","min":64,"max":114,"lot":50,"avg":84.8,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16-506","prefix":"MI","min":63,"max":113,"lot":50,"avg":83.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16-519S","prefix":"MI","min":59,"max":99,"lot":40,"avg":78.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16-518S","prefix":"MI","min":59,"max":99,"lot":40,"avg":78.2,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-26-506","prefix":"MI","min":58,"max":98,"lot":40,"avg":76.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-24-504","prefix":"MI","min":54,"max":94,"lot":40,"avg":71.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16-524","prefix":"MI","min":53,"max":93,"lot":40,"avg":70,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16-502","prefix":"MI","min":52,"max":92,"lot":40,"avg":68.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16.5-518","prefix":"MI","min":51,"max":91,"lot":40,"avg":67.5,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16.5-519","prefix":"MI","min":51,"max":91,"lot":40,"avg":67.5,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16-679","prefix":"MI","min":47,"max":77,"lot":30,"avg":61.5,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-19-538","prefix":"MI","min":45,"max":75,"lot":30,"avg":60,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-17-680","prefix":"MI","min":43,"max":73,"lot":30,"avg":56.8,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-12-505","prefix":"MI","min":43,"max":73,"lot":30,"avg":56.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16-680","prefix":"MI","min":42,"max":72,"lot":30,"avg":55.8,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-17-679","prefix":"MI","min":39,"max":69,"lot":30,"avg":52,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-21-528","prefix":"MI","min":38,"max":68,"lot":30,"avg":50,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-14-715","prefix":"MI","min":37,"max":67,"lot":30,"avg":48.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-21-619","prefix":"MI","min":35,"max":65,"lot":30,"avg":46.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-23-531","prefix":"MI","min":30,"max":50,"lot":20,"avg":40,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-19-506","prefix":"MI","min":29,"max":49,"lot":20,"avg":38.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-20-512","prefix":"MI","min":27,"max":47,"lot":20,"avg":35.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-18-538","prefix":"MI","min":24,"max":44,"lot":20,"avg":31.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-21-525","prefix":"MI","min":23,"max":43,"lot":20,"avg":30,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-15-524","prefix":"MI","min":22,"max":42,"lot":20,"avg":28.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-22-655","prefix":"MI","min":22,"max":42,"lot":20,"avg":28.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16-702","prefix":"MI","min":20,"max":40,"lot":20,"avg":26.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-17-524","prefix":"MI","min":19,"max":39,"lot":20,"avg":25,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-15-505","prefix":"MI","min":18,"max":38,"lot":20,"avg":23.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-18-521","prefix":"MI","min":18,"max":38,"lot":20,"avg":23.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-19-502","prefix":"MI","min":18,"max":38,"lot":20,"avg":23.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-21-531","prefix":"MI","min":17,"max":37,"lot":20,"avg":21.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-15-501","prefix":"MI","min":15,"max":25,"lot":10,"avg":20,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-18-511","prefix":"MI","min":15,"max":25,"lot":10,"avg":20,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-21-538","prefix":"MI","min":15,"max":25,"lot":10,"avg":20,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-18-519","prefix":"MI","min":15,"max":25,"lot":10,"avg":19,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16-501","prefix":"MI","min":13,"max":23,"lot":10,"avg":16.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-23-654","prefix":"MI","min":13,"max":23,"lot":10,"avg":16.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-18-518","prefix":"MI","min":12,"max":22,"lot":10,"avg":16,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-18-505","prefix":"MI","min":12,"max":22,"lot":10,"avg":15,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-24-632","prefix":"MI","min":12,"max":22,"lot":10,"avg":15,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-18-537","prefix":"MI","min":10,"max":20,"lot":10,"avg":13.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-19-657","prefix":"MI","min":10,"max":20,"lot":10,"avg":13.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-15-679","prefix":"MI","min":9,"max":19,"lot":10,"avg":11.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-15-680","prefix":"MI","min":9,"max":19,"lot":10,"avg":11.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-24-512","prefix":"MI","min":9,"max":19,"lot":10,"avg":11.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-22-531-O","prefix":"MI","min":8,"max":18,"lot":10,"avg":10,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-15-503","prefix":"MI","min":7,"max":17,"lot":10,"avg":8.5,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-17-518-O","prefix":"MI","min":5,"max":15,"lot":10,"avg":6.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-17-519-O","prefix":"MI","min":5,"max":15,"lot":10,"avg":6.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-18-702","prefix":"MI","min":5,"max":15,"lot":10,"avg":6.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-20-538-O","prefix":"MI","min":5,"max":15,"lot":10,"avg":6.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-17-511-O","prefix":"MI","min":5,"max":15,"lot":10,"avg":5.8,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16-710","prefix":"MI","min":4,"max":14,"lot":10,"avg":5,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-26-512","prefix":"MI","min":4,"max":14,"lot":10,"avg":5,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-14-524","prefix":"MI","min":3,"max":13,"lot":10,"avg":3.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-17-558","prefix":"MI","min":3,"max":13,"lot":10,"avg":3.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-17-679-O","prefix":"MI","min":3,"max":13,"lot":10,"avg":3.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-17-680-O","prefix":"MI","min":3,"max":13,"lot":10,"avg":3.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-20-531","prefix":"MI","min":3,"max":13,"lot":10,"avg":3.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-20-712","prefix":"MI","min":3,"max":13,"lot":10,"avg":3.2,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-20-528","prefix":"MI","min":2,"max":12,"lot":10,"avg":1.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-21-628","prefix":"MI","min":2,"max":12,"lot":10,"avg":1.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-23-655","prefix":"MI","min":2,"max":12,"lot":10,"avg":1.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-23-713","prefix":"MI","min":2,"max":12,"lot":10,"avg":1.7,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-16-513","prefix":"MI","min":1,"max":11,"lot":10,"avg":0.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MI-17-657","prefix":"MI","min":1,"max":11,"lot":10,"avg":0.3,"person":"ภูมิ","company":"มิยาโมโตะ"},
-{"sku":"MX-22-506","prefix":"MX","min":35,"max":65,"lot":30,"avg":46.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-22-502","prefix":"MX","min":31,"max":51,"lot":20,"avg":40.2,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-21-502","prefix":"MX","min":29,"max":49,"lot":20,"avg":38.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-20-506","prefix":"MX","min":25,"max":45,"lot":20,"avg":33.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-21-506","prefix":"MX","min":25,"max":45,"lot":20,"avg":33.2,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-24-502","prefix":"MX","min":23,"max":43,"lot":20,"avg":30.2,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-20-502","prefix":"MX","min":23,"max":43,"lot":20,"avg":30,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-24-506","prefix":"MX","min":22,"max":42,"lot":20,"avg":28.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-18-506","prefix":"MX","min":18,"max":38,"lot":20,"avg":23.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-18-502","prefix":"MX","min":18,"max":38,"lot":20,"avg":23.2,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-17-519","prefix":"MX","min":17,"max":37,"lot":20,"avg":21.8,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-14-513","prefix":"MX","min":17,"max":37,"lot":20,"avg":21.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-17-511","prefix":"MX","min":17,"max":37,"lot":20,"avg":21.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-17-518","prefix":"MX","min":17,"max":37,"lot":20,"avg":21.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-14-505","prefix":"MX","min":15,"max":25,"lot":10,"avg":18.8,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-16-505","prefix":"MX","min":14,"max":24,"lot":10,"avg":18.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-20-538","prefix":"MX","min":12,"max":22,"lot":10,"avg":15,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-16-511","prefix":"MX","min":10,"max":20,"lot":10,"avg":13.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-22-531","prefix":"MX","min":10,"max":20,"lot":10,"avg":13.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-16-506","prefix":"MX","min":8,"max":18,"lot":10,"avg":10,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-17-702","prefix":"MX","min":8,"max":18,"lot":10,"avg":10,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-16-518S","prefix":"MX","min":7,"max":17,"lot":10,"avg":8.8,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-21-521","prefix":"MX","min":7,"max":17,"lot":10,"avg":8.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-15-511","prefix":"MX","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-15.5-511","prefix":"MX","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-16-519S","prefix":"MX","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-17-679","prefix":"MX","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-17-680","prefix":"MX","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-16-680","prefix":"MX","min":6,"max":16,"lot":10,"avg":6.8,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-12-505","prefix":"MX","min":5,"max":15,"lot":10,"avg":6.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-16-679","prefix":"MX","min":5,"max":15,"lot":10,"avg":6.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-17-511-O","prefix":"MX","min":5,"max":15,"lot":10,"avg":6.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-17-679-O","prefix":"MX","min":5,"max":15,"lot":10,"avg":6.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-17-680-O","prefix":"MX","min":5,"max":15,"lot":10,"avg":6.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-26-502","prefix":"MX","min":5,"max":15,"lot":10,"avg":6.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-15-501","prefix":"MX","min":4,"max":14,"lot":10,"avg":5,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-16-502","prefix":"MX","min":4,"max":14,"lot":10,"avg":5,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-16-702","prefix":"MX","min":4,"max":14,"lot":10,"avg":5,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-16-715","prefix":"MX","min":4,"max":14,"lot":10,"avg":5,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-17-518-O","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-17-519-O","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-19-538","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-22-512","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-24-504","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-24-632","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-26-506","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-22-655","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.2,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-15-505","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-15-679","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-15-680","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-16-524","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-16.5-518","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-18-505","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-18-518","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-18-519","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-18-538","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-18-702","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-21-525","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-21-528","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
-{"sku":"MX-23-645","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":"มิยาโมโตะ"},
+{"sku":"MA-22-502-XT","prefix":"MA","min":118,"max":198,"lot":80,"avg":156.5,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-21-506-XT","prefix":"MA","min":112,"max":192,"lot":80,"avg":149.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-20-502-XT","prefix":"MA","min":97,"max":167,"lot":70,"avg":128.2,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-20-506-XT","prefix":"MA","min":93,"max":163,"lot":70,"avg":123.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-22-506-XT","prefix":"MA","min":87,"max":147,"lot":60,"avg":115.8,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-21-502-XT","prefix":"MA","min":85,"max":145,"lot":60,"avg":113.2,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-18-506-XT","prefix":"MA","min":76,"max":136,"lot":60,"avg":101.2,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-20-538-XT","prefix":"MA","min":72,"max":122,"lot":50,"avg":95.8,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-24-502-XT","prefix":"MA","min":64,"max":114,"lot":50,"avg":85.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-18-502-XT","prefix":"MA","min":59,"max":99,"lot":40,"avg":78.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-22-655-XT","prefix":"MA","min":50,"max":90,"lot":40,"avg":65.8,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-17-702-XT","prefix":"MA","min":48,"max":88,"lot":40,"avg":63.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-22-531-XT","prefix":"MA","min":46,"max":86,"lot":40,"avg":61.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-17-511-XT","prefix":"MA","min":33,"max":63,"lot":30,"avg":43.2,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-24-632-XT","prefix":"MA","min":33,"max":63,"lot":30,"avg":43.2,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-16-505-XT","prefix":"MA","min":30,"max":50,"lot":20,"avg":39.5,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-17-519-XT","prefix":"MA","min":28,"max":48,"lot":20,"avg":36.5,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-20-528-XT","prefix":"MA","min":28,"max":48,"lot":20,"avg":36.5,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-24-506-XT","prefix":"MA","min":23,"max":43,"lot":20,"avg":30.2,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-17-680-XT","prefix":"MA","min":22,"max":42,"lot":20,"avg":28.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-18-537-XT","prefix":"MA","min":20,"max":40,"lot":20,"avg":26.7,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-16-506-X","prefix":"MA","min":19,"max":39,"lot":20,"avg":24.8,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-19-538-XT","prefix":"MA","min":19,"max":39,"lot":20,"avg":24.8,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-21-538-XT","prefix":"MA","min":19,"max":39,"lot":20,"avg":24.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-16-524-XT","prefix":"MA","min":18,"max":38,"lot":20,"avg":23.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-24-504-XT","prefix":"MA","min":18,"max":38,"lot":20,"avg":23.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-17-518-XT","prefix":"MA","min":28,"max":48,"lot":20,"avg":36.5,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-14-505-XT","prefix":"MA","min":17,"max":37,"lot":20,"avg":21.7,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-16-680-XT","prefix":"MA","min":14,"max":24,"lot":10,"avg":18.5,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-16-679-XT","prefix":"MA","min":14,"max":24,"lot":10,"avg":18.2,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-21-525-XT","prefix":"MA","min":13,"max":23,"lot":10,"avg":16.7,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-21-619-XT","prefix":"MA","min":13,"max":23,"lot":10,"avg":16.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-16-502-XT","prefix":"MA","min":12,"max":22,"lot":10,"avg":15,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-19-502-XT","prefix":"MA","min":12,"max":22,"lot":10,"avg":15,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-17-679-XT","prefix":"MA","min":9,"max":19,"lot":10,"avg":11.7,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-21-521-XT","prefix":"MA","min":9,"max":19,"lot":10,"avg":11.5,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-14-511-XT","prefix":"MA","min":9,"max":19,"lot":10,"avg":11.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-23-703-XT","prefix":"MA","min":8,"max":18,"lot":10,"avg":10.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-16-519-XT","prefix":"MA","min":7,"max":17,"lot":10,"avg":8.8,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-14-513-XT","prefix":"MA","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-16-518-XT","prefix":"MA","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-19-506-XT","prefix":"MA","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-19-657-XT","prefix":"MA","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-23-654-XT","prefix":"MA","min":7,"max":17,"lot":10,"avg":8.2,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-23-531-XT","prefix":"MA","min":6,"max":16,"lot":10,"avg":7.7,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-20-521-XT","prefix":"MA","min":5,"max":15,"lot":10,"avg":6.7,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-16-702-XT","prefix":"MA","min":4,"max":14,"lot":10,"avg":4.8,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-15-679-XT","prefix":"MA","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-15-680-XT","prefix":"MA","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-15.5-511-XT","prefix":"MA","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-16.5-518-XT","prefix":"MA","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-20-512-XT","prefix":"MA","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-15-524-XT","prefix":"MA","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-16.5-519-XT","prefix":"MA","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-18-702-XT","prefix":"MA","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-23-713-XT","prefix":"MA","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-26-502-XT","prefix":"MA","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-22-714-XT","prefix":"MA","min":1,"max":11,"lot":10,"avg":0.7,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MA-24-716-XT","prefix":"MA","min":1,"max":11,"lot":10,"avg":0.3,"person":"พี่หมู","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-22-502","prefix":"MI","min":364,"max":614,"lot":250,"avg":485.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-21-506","prefix":"MI","min":324,"max":544,"lot":220,"avg":431.5,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-22-506","prefix":"MI","min":281,"max":471,"lot":190,"avg":373.5,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-20-506","prefix":"MI","min":274,"max":464,"lot":190,"avg":365.2,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-21-502","prefix":"MI","min":259,"max":439,"lot":180,"avg":344.8,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-24-502","prefix":"MI","min":209,"max":349,"lot":140,"avg":278.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-20-502","prefix":"MI","min":182,"max":312,"lot":130,"avg":241.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-24-506","prefix":"MI","min":165,"max":275,"lot":110,"avg":220,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-17-518","prefix":"MI","min":157,"max":267,"lot":110,"avg":208.5,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-17-519","prefix":"MI","min":156,"max":266,"lot":110,"avg":207,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-17-511","prefix":"MI","min":144,"max":244,"lot":100,"avg":191.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-18-506","prefix":"MI","min":143,"max":243,"lot":100,"avg":190,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16-511","prefix":"MI","min":130,"max":220,"lot":90,"avg":173.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-20-538","prefix":"MI","min":122,"max":202,"lot":80,"avg":161.5,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-26-502","prefix":"MI","min":118,"max":198,"lot":80,"avg":156.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-18-502","prefix":"MI","min":114,"max":194,"lot":80,"avg":152,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-22-531","prefix":"MI","min":102,"max":172,"lot":70,"avg":135.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-17-702","prefix":"MI","min":97,"max":167,"lot":70,"avg":128.5,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-14-513","prefix":"MI","min":93,"max":163,"lot":70,"avg":123.5,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16-505","prefix":"MI","min":87,"max":147,"lot":60,"avg":115,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-14-505","prefix":"MI","min":76,"max":126,"lot":50,"avg":100.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-21-521","prefix":"MI","min":74,"max":124,"lot":50,"avg":98.2,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16-715","prefix":"MI","min":72,"max":122,"lot":50,"avg":95,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-15.5-511","prefix":"MI","min":70,"max":120,"lot":50,"avg":92.2,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-22-512","prefix":"MI","min":68,"max":118,"lot":50,"avg":90,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-15-511","prefix":"MI","min":64,"max":114,"lot":50,"avg":84.8,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16-506","prefix":"MI","min":63,"max":113,"lot":50,"avg":83.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16-519S","prefix":"MI","min":59,"max":99,"lot":40,"avg":78.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16-518S","prefix":"MI","min":59,"max":99,"lot":40,"avg":78.2,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-26-506","prefix":"MI","min":58,"max":98,"lot":40,"avg":76.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-24-504","prefix":"MI","min":54,"max":94,"lot":40,"avg":71.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16-524","prefix":"MI","min":53,"max":93,"lot":40,"avg":70,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16-502","prefix":"MI","min":52,"max":92,"lot":40,"avg":68.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16.5-518","prefix":"MI","min":51,"max":91,"lot":40,"avg":67.5,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16.5-519","prefix":"MI","min":51,"max":91,"lot":40,"avg":67.5,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16-679","prefix":"MI","min":47,"max":77,"lot":30,"avg":61.5,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-19-538","prefix":"MI","min":45,"max":75,"lot":30,"avg":60,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-17-680","prefix":"MI","min":43,"max":73,"lot":30,"avg":56.8,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-12-505","prefix":"MI","min":43,"max":73,"lot":30,"avg":56.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16-680","prefix":"MI","min":42,"max":72,"lot":30,"avg":55.8,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-17-679","prefix":"MI","min":39,"max":69,"lot":30,"avg":52,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-21-528","prefix":"MI","min":38,"max":68,"lot":30,"avg":50,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-14-715","prefix":"MI","min":37,"max":67,"lot":30,"avg":48.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-21-619","prefix":"MI","min":35,"max":65,"lot":30,"avg":46.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-23-531","prefix":"MI","min":30,"max":50,"lot":20,"avg":40,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-19-506","prefix":"MI","min":29,"max":49,"lot":20,"avg":38.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-20-512","prefix":"MI","min":27,"max":47,"lot":20,"avg":35.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-18-538","prefix":"MI","min":24,"max":44,"lot":20,"avg":31.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-21-525","prefix":"MI","min":23,"max":43,"lot":20,"avg":30,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-15-524","prefix":"MI","min":22,"max":42,"lot":20,"avg":28.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-22-655","prefix":"MI","min":22,"max":42,"lot":20,"avg":28.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16-702","prefix":"MI","min":20,"max":40,"lot":20,"avg":26.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-17-524","prefix":"MI","min":19,"max":39,"lot":20,"avg":25,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-15-505","prefix":"MI","min":18,"max":38,"lot":20,"avg":23.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-18-521","prefix":"MI","min":18,"max":38,"lot":20,"avg":23.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-19-502","prefix":"MI","min":18,"max":38,"lot":20,"avg":23.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-21-531","prefix":"MI","min":17,"max":37,"lot":20,"avg":21.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-15-501","prefix":"MI","min":15,"max":25,"lot":10,"avg":20,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-18-511","prefix":"MI","min":15,"max":25,"lot":10,"avg":20,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-21-538","prefix":"MI","min":15,"max":25,"lot":10,"avg":20,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-18-519","prefix":"MI","min":15,"max":25,"lot":10,"avg":19,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16-501","prefix":"MI","min":13,"max":23,"lot":10,"avg":16.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-23-654","prefix":"MI","min":13,"max":23,"lot":10,"avg":16.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-18-518","prefix":"MI","min":12,"max":22,"lot":10,"avg":16,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-18-505","prefix":"MI","min":12,"max":22,"lot":10,"avg":15,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-24-632","prefix":"MI","min":12,"max":22,"lot":10,"avg":15,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-18-537","prefix":"MI","min":10,"max":20,"lot":10,"avg":13.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-19-657","prefix":"MI","min":10,"max":20,"lot":10,"avg":13.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-15-679","prefix":"MI","min":9,"max":19,"lot":10,"avg":11.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-15-680","prefix":"MI","min":9,"max":19,"lot":10,"avg":11.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-24-512","prefix":"MI","min":9,"max":19,"lot":10,"avg":11.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-22-531-O","prefix":"MI","min":8,"max":18,"lot":10,"avg":10,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-15-503","prefix":"MI","min":7,"max":17,"lot":10,"avg":8.5,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-17-518-O","prefix":"MI","min":5,"max":15,"lot":10,"avg":6.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-17-519-O","prefix":"MI","min":5,"max":15,"lot":10,"avg":6.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-18-702","prefix":"MI","min":5,"max":15,"lot":10,"avg":6.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-20-538-O","prefix":"MI","min":5,"max":15,"lot":10,"avg":6.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-17-511-O","prefix":"MI","min":5,"max":15,"lot":10,"avg":5.8,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16-710","prefix":"MI","min":4,"max":14,"lot":10,"avg":5,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-26-512","prefix":"MI","min":4,"max":14,"lot":10,"avg":5,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-14-524","prefix":"MI","min":3,"max":13,"lot":10,"avg":3.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-17-558","prefix":"MI","min":3,"max":13,"lot":10,"avg":3.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-17-679-O","prefix":"MI","min":3,"max":13,"lot":10,"avg":3.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-17-680-O","prefix":"MI","min":3,"max":13,"lot":10,"avg":3.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-20-531","prefix":"MI","min":3,"max":13,"lot":10,"avg":3.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-20-712","prefix":"MI","min":3,"max":13,"lot":10,"avg":3.2,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-20-528","prefix":"MI","min":2,"max":12,"lot":10,"avg":1.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-21-628","prefix":"MI","min":2,"max":12,"lot":10,"avg":1.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-23-655","prefix":"MI","min":2,"max":12,"lot":10,"avg":1.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-23-713","prefix":"MI","min":2,"max":12,"lot":10,"avg":1.7,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-16-513","prefix":"MI","min":1,"max":11,"lot":10,"avg":0.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MI-17-657","prefix":"MI","min":1,"max":11,"lot":10,"avg":0.3,"person":"ภูมิ","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-22-506","prefix":"MX","min":35,"max":65,"lot":30,"avg":46.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-22-502","prefix":"MX","min":31,"max":51,"lot":20,"avg":40.2,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-21-502","prefix":"MX","min":29,"max":49,"lot":20,"avg":38.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-20-506","prefix":"MX","min":25,"max":45,"lot":20,"avg":33.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-21-506","prefix":"MX","min":25,"max":45,"lot":20,"avg":33.2,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-24-502","prefix":"MX","min":23,"max":43,"lot":20,"avg":30.2,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-20-502","prefix":"MX","min":23,"max":43,"lot":20,"avg":30,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-24-506","prefix":"MX","min":22,"max":42,"lot":20,"avg":28.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-18-506","prefix":"MX","min":18,"max":38,"lot":20,"avg":23.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-18-502","prefix":"MX","min":18,"max":38,"lot":20,"avg":23.2,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-17-519","prefix":"MX","min":17,"max":37,"lot":20,"avg":21.8,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-14-513","prefix":"MX","min":17,"max":37,"lot":20,"avg":21.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-17-511","prefix":"MX","min":17,"max":37,"lot":20,"avg":21.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-17-518","prefix":"MX","min":17,"max":37,"lot":20,"avg":21.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-14-505","prefix":"MX","min":15,"max":25,"lot":10,"avg":18.8,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-16-505","prefix":"MX","min":14,"max":24,"lot":10,"avg":18.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-20-538","prefix":"MX","min":12,"max":22,"lot":10,"avg":15,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-16-511","prefix":"MX","min":10,"max":20,"lot":10,"avg":13.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-22-531","prefix":"MX","min":10,"max":20,"lot":10,"avg":13.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-16-506","prefix":"MX","min":8,"max":18,"lot":10,"avg":10,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-17-702","prefix":"MX","min":8,"max":18,"lot":10,"avg":10,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-16-518S","prefix":"MX","min":7,"max":17,"lot":10,"avg":8.8,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-21-521","prefix":"MX","min":7,"max":17,"lot":10,"avg":8.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-15-511","prefix":"MX","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-15.5-511","prefix":"MX","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-16-519S","prefix":"MX","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-17-679","prefix":"MX","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-17-680","prefix":"MX","min":7,"max":17,"lot":10,"avg":8.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-16-680","prefix":"MX","min":6,"max":16,"lot":10,"avg":6.8,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-12-505","prefix":"MX","min":5,"max":15,"lot":10,"avg":6.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-16-679","prefix":"MX","min":5,"max":15,"lot":10,"avg":6.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-17-511-O","prefix":"MX","min":5,"max":15,"lot":10,"avg":6.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-17-679-O","prefix":"MX","min":5,"max":15,"lot":10,"avg":6.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-17-680-O","prefix":"MX","min":5,"max":15,"lot":10,"avg":6.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-26-502","prefix":"MX","min":5,"max":15,"lot":10,"avg":6.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-15-501","prefix":"MX","min":4,"max":14,"lot":10,"avg":5,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-16-502","prefix":"MX","min":4,"max":14,"lot":10,"avg":5,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-16-702","prefix":"MX","min":4,"max":14,"lot":10,"avg":5,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-16-715","prefix":"MX","min":4,"max":14,"lot":10,"avg":5,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-17-518-O","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-17-519-O","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-19-538","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-22-512","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-24-504","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-24-632","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-26-506","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.3,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-22-655","prefix":"MX","min":3,"max":13,"lot":10,"avg":3.2,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-15-505","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-15-679","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-15-680","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-16-524","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-16.5-518","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-18-505","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-18-518","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-18-519","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-18-538","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-18-702","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-21-525","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-21-528","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MX-23-645","prefix":"MX","min":2,"max":12,"lot":10,"avg":1.7,"person":"พี่ศร","company":["มิยาโมโตะ","ปีเตอร์"]},
 {"sku":"OKR-18-502","prefix":"OKR","min":13,"max":23,"lot":10,"avg":16.67,"person":"พี่เกม","company":"ปีเตอร์"},
 {"sku":"OKR-21-502","prefix":"OKR","min":13,"max":23,"lot":10,"avg":16.67,"person":"พี่เกม","company":"ปีเตอร์"},
 {"sku":"OKR-22-502","prefix":"OKR","min":13,"max":23,"lot":10,"avg":16.67,"person":"พี่เกม","company":"ปีเตอร์"},
@@ -1778,27 +1778,27 @@ const STANDARDS = [
 {"sku":"AG-24-512","prefix":"AG","min":2,"max":12,"lot":10,"avg":1.67,"person":"พี่เกม","company":"อามาด้า"},
 {"sku":"AG-26-506","prefix":"AG","min":2,"max":12,"lot":10,"avg":1.67,"person":"พี่เกม","company":"อามาด้า"},
 {"sku":"AG-24-632","prefix":"AG","min":2,"max":12,"lot":10,"avg":1.5,"person":"พี่เกม","company":"อามาด้า"},
-{"sku":"MIG-22-502","prefix":"MIG","min":8,"max":18,"lot":10,"avg":10,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-17-518","prefix":"MIG","min":7,"max":17,"lot":10,"avg":9.33,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-17-519","prefix":"MIG","min":7,"max":17,"lot":10,"avg":9.17,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-22-531","prefix":"MIG","min":7,"max":17,"lot":10,"avg":8.33,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-24-502","prefix":"MIG","min":7,"max":17,"lot":10,"avg":8.33,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-17-702","prefix":"MIG","min":6,"max":16,"lot":10,"avg":6.83,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-20-538","prefix":"MIG","min":6,"max":16,"lot":10,"avg":6.83,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-22-512","prefix":"MIG","min":5,"max":15,"lot":10,"avg":6.67,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-16-524","prefix":"MIG","min":4,"max":14,"lot":10,"avg":5,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-17-680","prefix":"MIG","min":4,"max":14,"lot":10,"avg":5,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-22-506","prefix":"MIG","min":4,"max":14,"lot":10,"avg":5,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-17-679","prefix":"MIG","min":4,"max":14,"lot":10,"avg":4.83,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-16-680","prefix":"MIG","min":3,"max":13,"lot":10,"avg":3.33,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-21-506","prefix":"MIG","min":3,"max":13,"lot":10,"avg":3.33,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-24-504","prefix":"MIG","min":3,"max":13,"lot":10,"avg":3.33,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-16-679","prefix":"MIG","min":3,"max":13,"lot":10,"avg":3.17,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-16-518S","prefix":"MIG","min":2,"max":12,"lot":10,"avg":1.67,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-16-519S","prefix":"MIG","min":2,"max":12,"lot":10,"avg":1.67,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-21-502","prefix":"MIG","min":2,"max":12,"lot":10,"avg":1.67,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-21-528","prefix":"MIG","min":2,"max":12,"lot":10,"avg":1.67,"person":"พี่เกม","company":"มิยาโมโตะ"},
-{"sku":"MIG-24-632","prefix":"MIG","min":1,"max":11,"lot":10,"avg":0.17,"person":"พี่เกม","company":"มิยาโมโตะ"},
+{"sku":"MIG-22-502","prefix":"MIG","min":8,"max":18,"lot":10,"avg":10,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-17-518","prefix":"MIG","min":7,"max":17,"lot":10,"avg":9.33,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-17-519","prefix":"MIG","min":7,"max":17,"lot":10,"avg":9.17,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-22-531","prefix":"MIG","min":7,"max":17,"lot":10,"avg":8.33,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-24-502","prefix":"MIG","min":7,"max":17,"lot":10,"avg":8.33,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-17-702","prefix":"MIG","min":6,"max":16,"lot":10,"avg":6.83,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-20-538","prefix":"MIG","min":6,"max":16,"lot":10,"avg":6.83,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-22-512","prefix":"MIG","min":5,"max":15,"lot":10,"avg":6.67,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-16-524","prefix":"MIG","min":4,"max":14,"lot":10,"avg":5,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-17-680","prefix":"MIG","min":4,"max":14,"lot":10,"avg":5,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-22-506","prefix":"MIG","min":4,"max":14,"lot":10,"avg":5,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-17-679","prefix":"MIG","min":4,"max":14,"lot":10,"avg":4.83,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-16-680","prefix":"MIG","min":3,"max":13,"lot":10,"avg":3.33,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-21-506","prefix":"MIG","min":3,"max":13,"lot":10,"avg":3.33,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-24-504","prefix":"MIG","min":3,"max":13,"lot":10,"avg":3.33,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-16-679","prefix":"MIG","min":3,"max":13,"lot":10,"avg":3.17,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-16-518S","prefix":"MIG","min":2,"max":12,"lot":10,"avg":1.67,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-16-519S","prefix":"MIG","min":2,"max":12,"lot":10,"avg":1.67,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-21-502","prefix":"MIG","min":2,"max":12,"lot":10,"avg":1.67,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-21-528","prefix":"MIG","min":2,"max":12,"lot":10,"avg":1.67,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
+{"sku":"MIG-24-632","prefix":"MIG","min":1,"max":11,"lot":10,"avg":0.17,"person":"พี่เกม","company":["มิยาโมโตะ","ปีเตอร์"]},
 {"sku":"AII-17-511","prefix":"AII","min":32,"max":52,"lot":20,"avg":41.5,"person":"พี่ศร","company":"อามาด้า"},
 {"sku":"AII-22-531","prefix":"AII","min":23,"max":43,"lot":20,"avg":30,"person":"พี่ศร","company":"อามาด้า"},
 {"sku":"AII-17-519","prefix":"AII","min":17,"max":37,"lot":20,"avg":22.33,"person":"พี่ศร","company":"อามาด้า"},
@@ -1814,15 +1814,30 @@ const STANDARDS = [
 ;
 
 const COMPANY_ORDER = ['อามาด้า', 'มิยาโมโตะ', 'ปีเตอร์', 'เฟิร์ส'];
-// แต่ละ SKU ผูกกับบริษัทเดียวเสมอ — ใช้จับคู่ตรงตัวกับ SKU ใน Standard (ไม่เดา prefix จากรูปแบบ SKU
-// เพราะบาง SKU เช่นตระกูล 3HD เขียนเป็น "3-HD-26-502" ซึ่งมีขีดกลางอยู่ในตัว prefix เองด้วย)
-const skuToCompany = {};
-STANDARDS.forEach(function(s) { skuToCompany[s.sku] = s.company; });
+// SKU ส่วนใหญ่ผูกกับบริษัทเดียว แต่บาง SKU (เช่นตระกูล MA/MIG/MI/MX) เป็นสินค้าตัวเดียวกันที่ใช้ร่วมกัน
+// 2 บริษัทขึ้นไป (มิยาโมโตะ+ปีเตอร์) เลยรองรับ s.company เป็นได้ทั้ง string เดี่ยว (ส่วนใหญ่) หรือ array
+// ของหลายบริษัท (ของที่ใช้ร่วมกัน) — companiesOf() แปลงให้เป็น array เสมอไม่ว่าค่าจริงจะเป็นแบบไหน
+// (per user 2026-09-10 เจอปัญหาจริง: ของที่ใช้ร่วม 2 บริษัทแต่ผูก company เดียว ทำให้อีกบริษัทไม่ถูกคำนวณ
+// ต้องสั่งเลย เสี่ยงของหมดแล้วไม่มีแจ้งเตือน)
+function companiesOf(s) {
+  if (Array.isArray(s.company)) return s.company;
+  return s.company ? [s.company] : [];
+}
+
+// แต่ละ SKU อาจอยู่ได้หลายบริษัท (ดู companiesOf ด้านบน) — ใช้จับคู่ตรงตัวกับ SKU ใน Standard (ไม่เดา
+// prefix จากรูปแบบ SKU เพราะบาง SKU เช่นตระกูล 3HD เขียนเป็น "3-HD-26-502" ซึ่งมีขีดกลางอยู่ในตัว prefix เอง)
+const skuToCompanies = {};
+STANDARDS.forEach(function(s) {
+  companiesOf(s).forEach(function(c) {
+    if (!skuToCompanies[s.sku]) skuToCompanies[s.sku] = [];
+    if (skuToCompanies[s.sku].indexOf(c) === -1) skuToCompanies[s.sku].push(c);
+  });
+});
 
 // นับว่าไฟล์นี้มี SKU ของ "บริษัทที่เลือกไว้" กี่รายการ — เตือนไว้เผื่อโยนไฟล์ผิดบริษัทเข้ามา
 function countRecognizedSkus(stockMap, company) {
   let count = 0;
-  stockMap.forEach(function(qty, sku) { if (skuToCompany[sku] === company) count++; });
+  stockMap.forEach(function(qty, sku) { if (skuToCompanies[sku] && skuToCompanies[sku].indexOf(company) !== -1) count++; });
   return count;
 }
 
@@ -1935,7 +1950,7 @@ const companyGrid = document.getElementById('companyGrid');
 function renderCompanyGrid() {
   companyGrid.innerHTML = '';
   COMPANY_ORDER.forEach(function(company) {
-    const skuCount = STANDARDS.filter(function(s) { return s.company === company; }).length;
+    const skuCount = STANDARDS.filter(function(s) { return companiesOf(s).indexOf(company) !== -1; }).length;
     const active = state.selectedCompany === company;
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -2322,7 +2337,9 @@ function mergeEntries(entries) {
 function computeRowsForCompany(company, merged, mergedDesc, diag, wipMap) {
   // ใช้ computeEffectiveStandards() แทน STANDARDS ตรงๆ เพื่อให้ Standard ที่แก้ไข/เพิ่ม/ปิดใช้งาน
   // ผ่านแท็บ Standard (บันทึกลง db) มีผลกับการคำนวณจริงด้วย ไม่ใช่แค่โชว์ในหน้า Standard เฉยๆ (per user 2026-09-07)
-  const relevant = computeEffectiveStandards().filter(function(s) { return s.company === company; });
+  // ใช้ companiesOf(s) แทน s.company === company ตรงๆ เพราะบาง SKU (เช่นตระกูล MA/MIG/MI/MX) ผูกได้
+  // หลายบริษัทพร้อมกัน (ของใช้ร่วมกัน) — s.company เก็บเป็น array ในกรณีนั้น (per user 2026-09-10)
+  const relevant = computeEffectiveStandards().filter(function(s) { return companiesOf(s).indexOf(company) !== -1; });
   const rows = relevant.map(function(s) {
     const found = merged.has(s.sku);
     const stock = found ? merged.get(s.sku) : 0;
@@ -2343,7 +2360,9 @@ function computeRowsForCompany(company, merged, mergedDesc, diag, wipMap) {
       orderQty = Math.max(10, Math.ceil((target12 - position) / 10) * 10);
     }
     return {
-      sku: s.sku, prefix: s.prefix, person: s.person, company: s.company,
+      // company ของแถวนี้ = บริษัทที่กำลังคำนวณอยู่ตอนนี้ (พารามิเตอร์ company) ไม่ใช่ s.company ตรงๆ เพราะ
+      // s.company อาจเป็น array ถ้า SKU นี้ใช้ร่วมหลายบริษัท — แถวนี้เป็นมุมมองของบริษัทเดียวที่เลือกอยู่
+      sku: s.sku, prefix: s.prefix, person: s.person, company: company,
       min: s.min, max: s.max, lot: s.lot, avg: s.avg,
       avgWeekly: avgWeekly, target12: target12, desc: mergedDesc.get(s.sku) || '',
       stock: stock, wip: wip, found: found, needOrder: needOrder,
@@ -4289,7 +4308,7 @@ function renderDashboard() {
   const items = latest.items || [];
 
   // 1) การ์ด KPI 5 ช่อง
-  const totalStandardCount = computeEffectiveStandards().filter(function(s) { return s.company === company; }).length;
+  const totalStandardCount = computeEffectiveStandards().filter(function(s) { return companiesOf(s).indexOf(company) !== -1; }).length;
   const orderedPct = latest.itemCount ? Math.round((latest.orderedCount || 0) / latest.itemCount * 100) : 0;
   const zeroNow = latest.stockHealth ? latest.stockHealth.zero : null;
   const zeroPrev = prev && prev.stockHealth ? prev.stockHealth.zero : null;
@@ -4468,12 +4487,20 @@ COMPANY_ORDER.forEach(function(c) {
   opt.textContent = c;
   standardCompanyFilter.appendChild(opt);
 });
-const standardFormCompanySelect = document.getElementById('standardFormCompany');
+// เปลี่ยนจาก <select> เดี่ยวเป็น checkbox หลายตัว (per user 2026-09-10) — บาง SKU เช่นตระกูล MA/MIG/MI/MX
+// เป็นของใช้ร่วมกันหลายบริษัท (มิยาโมโตะ+ปีเตอร์) ต้องเลือกได้มากกว่า 1 บริษัทต่อ SKU
+const standardFormCompanyChecks = document.getElementById('standardFormCompanyChecks');
 COMPANY_ORDER.forEach(function(c) {
-  const opt = document.createElement('option');
-  opt.value = c;
-  opt.textContent = c;
-  standardFormCompanySelect.appendChild(opt);
+  const label = document.createElement('label');
+  label.className = 'standard-check-label';
+  label.style.fontWeight = '400';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.id = 'standardFormCompany_' + c;
+  cb.value = c;
+  label.appendChild(cb);
+  label.appendChild(document.createTextNode(' ' + c));
+  standardFormCompanyChecks.appendChild(label);
 });
 
 function renderStandardTable() {
@@ -4489,7 +4516,7 @@ function renderStandardTable() {
     return;
   }
   let matched = source;
-  if (company) matched = matched.filter(function(s) { return s.company === company; });
+  if (company) matched = matched.filter(function(s) { return companiesOf(s).indexOf(company) !== -1; });
   if (q) matched = matched.filter(function(s) { return s.sku.toUpperCase().indexOf(q) !== -1 || (s.prefix || '').toUpperCase().indexOf(q) !== -1; });
   countEl.textContent = 'พบ ' + matched.length.toLocaleString('th-TH') + ' รายการ';
   if (matched.length === 0) {
@@ -4501,7 +4528,7 @@ function renderStandardTable() {
     return '<tr data-sku="' + xmlEscape(s.sku) + '">' +
       '<td>' + xmlEscape(s.prefix || '-') + '</td>' +
       '<td>' + xmlEscape(s.sku) + inactiveTag + '</td>' +
-      '<td>' + xmlEscape(s.company || '-') + '</td>' +
+      '<td>' + xmlEscape(companiesOf(s).join(', ') || '-') + '</td>' +
       '<td class="num">' + (s.min || 0).toLocaleString('th-TH') + '</td>' +
       '<td class="num">' + (s.max || 0).toLocaleString('th-TH') + '</td>' +
       '<td class="num">' + (s.lot || 0).toLocaleString('th-TH') + '</td>' +
@@ -4534,7 +4561,13 @@ function openStandardForm(existingSku) {
     skuInput.value = s.sku;
     skuInput.readOnly = true;
     document.getElementById('standardFormPrefix').value = s.prefix || '';
-    document.getElementById('standardFormCompany').value = s.company || COMPANY_ORDER[0];
+    // ติ๊ก checkbox บริษัทตาม companiesOf(s) — อาจติ๊กได้มากกว่า 1 อันถ้าของใช้ร่วมกันหลายบริษัท
+    // (per user 2026-09-10)
+    const existingCompanies = companiesOf(s);
+    COMPANY_ORDER.forEach(function(c) {
+      const cb = document.getElementById('standardFormCompany_' + c);
+      if (cb) cb.checked = existingCompanies.indexOf(c) !== -1;
+    });
     document.getElementById('standardFormPerson').value = s.person || '';
     document.getElementById('standardFormMin').value = s.min || 0;
     document.getElementById('standardFormMax').value = s.max || 0;
@@ -4546,7 +4579,11 @@ function openStandardForm(existingSku) {
     skuInput.value = '';
     skuInput.readOnly = false;
     document.getElementById('standardFormPrefix').value = '';
-    document.getElementById('standardFormCompany').value = COMPANY_ORDER[0];
+    // ค่าเริ่มต้นตอนเพิ่มใหม่: ติ๊กแค่บริษัทแรก (ผู้ใช้ติ๊กเพิ่มเองได้ถ้าของใช้ร่วมกันหลายบริษัท)
+    COMPANY_ORDER.forEach(function(c, i) {
+      const cb = document.getElementById('standardFormCompany_' + c);
+      if (cb) cb.checked = i === 0;
+    });
     document.getElementById('standardFormPerson').value = '';
     document.getElementById('standardFormMin').value = 0;
     document.getElementById('standardFormMax').value = 0;
@@ -4573,10 +4610,20 @@ document.getElementById('standardFormSaveBtn').addEventListener('click', functio
     resultEl.textContent = 'กรุณากรอก SKU';
     return;
   }
+  // เก็บเป็น string เดี่ยวถ้าติ๊กบริษัทเดียว (เหมือนข้อมูลส่วนใหญ่เดิม) หรือ array ถ้าติ๊กหลายบริษัท
+  // (ของใช้ร่วมกัน) — companiesOf() อ่านได้ทั้ง 2 แบบอยู่แล้ว (per user 2026-09-10)
+  const checkedCompanies = COMPANY_ORDER.filter(function(c) {
+    const cb = document.getElementById('standardFormCompany_' + c);
+    return cb && cb.checked;
+  });
+  if (checkedCompanies.length === 0) {
+    resultEl.textContent = 'กรุณาเลือกอย่างน้อย 1 บริษัท';
+    return;
+  }
   const doc = {
     sku: sku,
     prefix: document.getElementById('standardFormPrefix').value.trim(),
-    company: document.getElementById('standardFormCompany').value,
+    company: checkedCompanies.length === 1 ? checkedCompanies[0] : checkedCompanies,
     person: document.getElementById('standardFormPerson').value.trim(),
     min: Number(document.getElementById('standardFormMin').value) || 0,
     max: Number(document.getElementById('standardFormMax').value) || 0,
