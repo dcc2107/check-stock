@@ -780,6 +780,14 @@
   }
 
   /* หน้ารหัสผ่าน (.password-gate ฯลฯ) เอาออกแล้ว (per user 2026-09-08) — แชร์เว็บให้ทีมใช้แบบเปิดเลย ไม่ต้องล็อกอิน */
+
+  /* ---------- พิมพ์แผน (per user 2026-09-10) ---------- */
+  /* ปกติ #printArea ซ่อนไว้ (display:none ผ่าน inline style) พอสั่งพิมพ์จริง (window.print()) ให้ซ่อนทุกอย่าง
+     ในหน้ายกเว้น #printArea เพื่อให้กระดาษที่ออกมามีแค่ตารางที่พิมพ์ ไม่ติดเมนู/แท็บ/ปุ่มอื่นๆ ของเว็บมาด้วย */
+  @media print {
+    body > *:not(#printArea) { display: none !important; }
+    #printArea { display: block !important; }
+  }
 </style>
 
 <!-- หน้ารหัสผ่านเอาออกแล้ว (per user 2026-09-08) — แชร์เว็บให้ทีมใช้งานแบบเปิดเลยแล้ว ไม่ต้องล็อกอิน/ใส่รหัสอีก -->
@@ -946,10 +954,6 @@
         </select>
       </label>
       <button type="button" class="btn btn-ghost btn-sm" id="downloadAllXlsxBtn">สร้างรีพอร์ตรวมทุกรหัส (.xlsx)</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="saveStatusBtn">บันทึกสถานะเป็นไฟล์ (.json)</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="loadStatusBtn">โหลดสถานะจากไฟล์</button>
-      <input type="file" id="loadStatusInput" accept=".json,.JSON" style="display:none;">
-      <span class="bulk-status-result" id="loadStatusResult"></span>
       <div class="bulk-status-actions" id="notePresetRow" style="margin-top:0;">
         <button type="button" class="btn btn-ghost btn-sm note-preset-btn" data-note="ข้อมูลจาก Express และ WIP จากทางลาว ยังไม่ได้ตัดตัวที่ไม่ต้องการสั่งออก">ยังไม่ตัดตัวที่ไม่ต้องการสั่งออก</button>
         <button type="button" class="btn btn-ghost btn-sm note-preset-btn" data-note="รอทางไทยคอนเฟิร์มว่าจะให้ทางลาวผลิตตัวไหนบ้าง">รอไทยคอนเฟิร์ม</button>
@@ -1053,6 +1057,7 @@
 </nav>
 
 <div class="toast" id="toast"></div>
+<div id="printArea" style="display:none;"></div>
 
 <!-- Firebase (Firestore) — ฐานข้อมูลจริงที่ใช้แชร์ Standard/ประวัติแผน MRP/ข้อมูลและประวัติให้ทุกคนเห็นชุดเดียวกัน
      โหลดได้ปกติตอนเปิดผ่านลิงก์เว็บ GitHub Pages/ไฟล์ในเครื่อง แต่จะถูกบล็อกตอนเปิดผ่านหน้า Claude นี้ (นโยบาย
@@ -2750,8 +2755,10 @@ function buildMrpSheetXml(person, items, notItems) {
   rows.push('<row r="' + r8 + '">' + cellStr('A' + r8, 'จำนวนรวม') + cellNum('B' + r8, totalQty) + cellStr('C' + r8, 'ชิ้น') + '</row>');
   // แถว "เกณฑ์สี (ตามสีพื้นหลังแถว)" เอาออกแล้วตามที่ผู้ใช้ขอ (per user 2026-09-09)
 
-  const headerCells =['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'จำนวนที่ลาวรับจริง', 'สถานะ', 'หมายเหตุ', 'ระดับจำนวน'];
-  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+  // ตัดคอลัมน์ "ระดับจำนวน" ออกแล้วตามที่ผู้ใช้ขอ (per user 2026-09-10) — สีพื้นหลังแถวตามระดับจำนวนสั่ง
+  // ยังคงอยู่เหมือนเดิม (คำนวณจาก tierFor() ต่อไป) แค่ไม่มีคอลัมน์ข้อความบอกชื่อระดับแยกต่างหากแล้ว
+  const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'จำนวนที่ลาวรับจริง', 'สถานะ', 'หมายเหตุ'];
+  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
 
   function pushColumnHeaderRow() {
     const rr = nextRow();
@@ -2775,7 +2782,6 @@ function buildMrpSheetXml(person, items, notItems) {
         cellStr('I' + rr, (item.confirmedQty !== undefined && item.confirmedQty !== null && item.confirmedQty !== '') ? item.confirmedQty : '-', ts) +
         cellStr('J' + rr, item.orderStatus || 'ยังไม่สั่ง', ts) +
         cellStr('K' + rr, item.orderRemark || '-', ts) +
-        cellStr('L' + rr, tier.label, ts) +
         '</row>');
     });
   }
@@ -2888,7 +2894,7 @@ function buildMrpSheetXml(person, items, notItems) {
     pushStockSubtotalRow(notLowList);
   }
 
-  const lastRef = 'L' + r;
+  const lastRef = 'K' + r;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
@@ -2904,11 +2910,10 @@ function buildMrpSheetXml(person, items, notItems) {
       { header: headerCells[7], values: items.map(function(it) { return it.orderQty; }) },
       { header: headerCells[8], values: items.map(function(it) { return it.confirmedQty; }) },
       { header: headerCells[9], values: items.map(function(it) { return it.orderStatus; }) },
-      { header: headerCells[10], values: items.map(function(it) { return it.orderRemark; }) },
-      { header: headerCells[11], values: items.map(function(it) { return tierFor(it.orderQty).label; }) }
+      { header: headerCells[10], values: items.map(function(it) { return it.orderRemark; }) }
     ])) +
     '<sheetData>' + rows.join('') + '</sheetData>' +
-    '<mergeCells count="1"><mergeCell ref="A1:L1"/></mergeCells>' +
+    '<mergeCells count="1"><mergeCell ref="A1:K1"/></mergeCells>' +
     '<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
     '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0" scale="100"/>' +
     (notList.length > 0 ? '<rowBreaks count="1" manualBreakCount="1"><brk id="' + totalRow + '" max="16383" man="1"/></rowBreaks>' : '') +
@@ -2960,8 +2965,10 @@ function buildAllSkuSheetXml(company, items, notItems) {
   rows.push('<row r="' + r8 + '">' + cellStr('A' + r8, 'จำนวนรวม') + cellNum('B' + r8, totalQty) + cellStr('C' + r8, 'ชิ้น') + '</row>');
   // แถว "เกณฑ์สี (ตามสีพื้นหลังแถว)" เอาออกแล้วตามที่ผู้ใช้ขอ (per user 2026-09-09)
 
-  const headerCells =['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'จำนวนที่ลาวรับจริง', 'สถานะ', 'หมายเหตุ', 'ระดับจำนวน'];
-  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+  // ตัดคอลัมน์ "ระดับจำนวน" ออกแล้วตามที่ผู้ใช้ขอ (per user 2026-09-10) — สีพื้นหลังแถวตามระดับจำนวนสั่ง
+  // ยังคงอยู่เหมือนเดิม (คำนวณจาก tierFor() ต่อไป) แค่ไม่มีคอลัมน์ข้อความบอกชื่อระดับแยกต่างหากแล้ว
+  const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'จำนวนที่ลาวรับจริง', 'สถานะ', 'หมายเหตุ'];
+  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
 
   function pushColumnHeaderRow() {
     const rr = nextRow();
@@ -2985,7 +2992,6 @@ function buildAllSkuSheetXml(company, items, notItems) {
         cellStr('I' + rr, (item.confirmedQty !== undefined && item.confirmedQty !== null && item.confirmedQty !== '') ? item.confirmedQty : '-', ts) +
         cellStr('J' + rr, item.orderStatus || 'ยังไม่สั่ง', ts) +
         cellStr('K' + rr, item.orderRemark || '-', ts) +
-        cellStr('L' + rr, tier.label, ts) +
         '</row>');
     });
   }
@@ -3098,7 +3104,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
     pushStockSubtotalRow(notLowList);
   }
 
-  const lastRef = 'L' + r;
+  const lastRef = 'K' + r;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
@@ -3114,11 +3120,10 @@ function buildAllSkuSheetXml(company, items, notItems) {
       { header: headerCells[7], values: items.map(function(it) { return it.orderQty; }) },
       { header: headerCells[8], values: items.map(function(it) { return it.confirmedQty; }) },
       { header: headerCells[9], values: items.map(function(it) { return it.orderStatus; }) },
-      { header: headerCells[10], values: items.map(function(it) { return it.orderRemark; }) },
-      { header: headerCells[11], values: items.map(function(it) { return tierFor(it.orderQty).label; }) }
+      { header: headerCells[10], values: items.map(function(it) { return it.orderRemark; }) }
     ])) +
     '<sheetData>' + rows.join('') + '</sheetData>' +
-    '<mergeCells count="1"><mergeCell ref="A1:L1"/></mergeCells>' +
+    '<mergeCells count="1"><mergeCell ref="A1:K1"/></mergeCells>' +
     '<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
     '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0" scale="100"/>' +
     (notList.length > 0 ? '<rowBreaks count="1" manualBreakCount="1"><brk id="' + totalRow + '" max="16383" man="1"/></rowBreaks>' : '') +
@@ -3217,6 +3222,34 @@ function buildOrderRowTr(r) {
   remarkInput.value = r.orderRemark;
   remarkInput.addEventListener('input', function() { r.orderRemark = this.value; });
   return tr;
+}
+
+// พิมพ์แผนของคนคนหนึ่งออกทางเครื่องพิมพ์ (per user 2026-09-10) — ใช้ #printArea ที่ปกติซ่อนไว้ (display:none)
+// พอสั่งพิมพ์ (@media print) จะซ่อนทุกอย่างในหน้ายกเว้น #printArea เพื่อให้กระดาษที่ออกมามีแค่ตารางนี้
+// ตารางเดียว ไม่ติดเมนู/แท็บ/ปุ่มอื่นๆ ของหน้าเว็บมาด้วย
+function printPersonPlan(person, company, items) {
+  const printArea = document.getElementById('printArea');
+  if (!printArea) return;
+  const rowsHtml = items.map(function(r, i) {
+    return '<tr>' +
+      '<td>' + (i + 1) + '</td>' +
+      '<td>' + xmlEscape(r.prefix) + '</td>' +
+      '<td>' + xmlEscape(r.sku) + '</td>' +
+      '<td style="text-align:right;">' + r.stock.toLocaleString('th-TH') + '</td>' +
+      '<td style="text-align:right;">' + r.wip.toLocaleString('th-TH') + '</td>' +
+      '<td style="text-align:right;">' + r.target12.toLocaleString('th-TH') + '</td>' +
+      '<td style="text-align:right;">' + r.orderQty.toLocaleString('th-TH') + '</td>' +
+      '</tr>';
+  }).join('');
+  const headerCells = ['#', 'รหัส', 'SKU', 'สต็อก', 'WIP', 'เป้าหมาย 12 วัน', 'สั่งเพิ่ม'];
+  printArea.innerHTML =
+    '<div style="font-family:\'Noto Sans Thai\',\'Leelawadee UI\',sans-serif;padding:24px;color:#111;">' +
+    '<h2 style="margin:0 0 4px;font-size:20px;">แผนสั่งซื้อ — ' + xmlEscape(company) + ' &middot; ' + xmlEscape(person) + '</h2>' +
+    '<p style="margin:0 0 16px;color:#444;font-size:13px;">พิมพ์เมื่อ ' + xmlEscape(thaiFullDate(new Date())) + ' &middot; ทั้งหมด ' + items.length.toLocaleString('th-TH') + ' รายการ</p>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:12.5px;">' +
+    '<thead><tr>' + headerCells.map(function(h) { return '<th style="border:1px solid #999;padding:4px 6px;text-align:left;background:#eee;">' + xmlEscape(h) + '</th>'; }).join('') + '</tr></thead>' +
+    '<tbody>' + rowsHtml + '</tbody></table></div>';
+  window.print();
 }
 
 function renderResults() {
@@ -3337,6 +3370,22 @@ function renderResults() {
       const blob = buildMrpWorkbook(groupKey, items, notItems);
       offerBinaryDownload('MRP_' + company + '_' + groupKey + '.xlsx', blob);
     });
+    // แก้บั๊กเดิม: ปุ่มนี้ถูกสร้างไว้แต่ไม่เคย appendChild เข้า btnRow เลย เลยไม่เคยโผล่ให้กดได้จริงมาก่อน
+    // (เจอระหว่างแก้เพิ่มปุ่มพิมพ์แผน per user 2026-09-10)
+    btnRow.appendChild(mrpBtn);
+
+    // ปุ่ม "พิมพ์แผนนี้" เฉพาะโหมด "แยกตามคน" เท่านั้น (per user 2026-09-10) — ใช้พิมพ์รายการที่คนนั้น
+    // รับผิดชอบทั้งหมดออกมาเป็นกระดาษ ให้คนคนนั้นถือไปทำงานได้เลย
+    if (isPersonMode) {
+      const printBtn = document.createElement('button');
+      printBtn.className = 'btn btn-ghost btn-sm';
+      printBtn.textContent = 'พิมพ์แผนนี้';
+      printBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        printPersonPlan(groupKey, company, items);
+      });
+      btnRow.appendChild(printBtn);
+    }
     body.appendChild(btnRow);
 
     const tableScroll = document.createElement('div');
@@ -3452,89 +3501,8 @@ document.getElementById('downloadAllXlsxBtn').addEventListener('click', function
   offerBinaryDownload('MRP_' + company + '_รวมทุกรหัส.xlsx', blob);
 });
 
-// บันทึก/โหลดสถานะ "สั่งแล้ว/ยังไม่สั่ง" + หมายเหตุ เป็นไฟล์ .json แยกต่างหาก
-// เหตุผล: หน้าเว็บนี้ไม่มีความจำถาวร รีเซ็ตสถานะทุกครั้งที่กด "ประมวลผล" ใหม่หรือปิดหน้าเว็บ
-// ไฟล์นี้เลยทำหน้าที่เป็น "ความจำ" แทน ย้ายเครื่อง/ส่งต่อให้คนอื่นเปิดก็ได้ (per user 2026-09-07)
-function buildStatusSnapshot() {
-  const rows = allRows().filter(function(r) { return r.needOrder; });
-  return {
-    savedAt: new Date().toISOString(),
-    company: state.selectedCompany,
-    items: rows.map(function(r) {
-      return { sku: r.sku, orderStatus: r.orderStatus || 'ยังไม่สั่ง', orderRemark: r.orderRemark || '', confirmedQty: r.confirmedQty || '' };
-    })
-  };
-}
-
-document.getElementById('saveStatusBtn').addEventListener('click', function(e) {
-  e.preventDefault();
-  const rows = allRows();
-  if (rows.length === 0) return;
-  const snapshot = buildStatusSnapshot();
-  const json = JSON.stringify(snapshot, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const dateStr = new Date().toISOString().slice(0, 10);
-  offerBinaryDownload('สถานะสั่งซื้อ_' + state.selectedCompany + '_' + dateStr + '.json', blob);
-});
-
-document.getElementById('loadStatusBtn').addEventListener('click', function(e) {
-  e.preventDefault();
-  document.getElementById('loadStatusInput').click();
-});
-
-document.getElementById('loadStatusInput').addEventListener('change', function(e) {
-  const file = e.target.files && e.target.files[0];
-  const resultEl = document.getElementById('loadStatusResult');
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function() {
-    let data;
-    try {
-      data = JSON.parse(reader.result);
-    } catch (err) {
-      if (resultEl) resultEl.textContent = 'ไฟล์นี้ไม่ใช่ไฟล์สถานะที่ถูกต้อง (อ่านค่า JSON ไม่ได้)';
-      e.target.value = '';
-      return;
-    }
-    const items = (data && Array.isArray(data.items)) ? data.items : null;
-    if (!items) {
-      if (resultEl) resultEl.textContent = 'ไฟล์นี้ไม่ใช่ไฟล์สถานะที่ถูกต้อง (ไม่พบรายการ items)';
-      e.target.value = '';
-      return;
-    }
-    const bySku = new Map();
-    items.forEach(function(it) { if (it && it.sku) bySku.set(String(it.sku).toUpperCase(), it); });
-    const needRows = allRows().filter(function(r) { return r.needOrder; });
-    let matched = 0;
-    needRows.forEach(function(r) {
-      const saved = bySku.get(r.sku.toUpperCase());
-      if (saved) {
-        r.orderStatus = saved.orderStatus || 'ยังไม่สั่ง';
-        r.orderRemark = saved.orderRemark || '';
-        r.confirmedQty = saved.confirmedQty || '';
-        matched++;
-      }
-    });
-    renderResults();
-    if (resultEl) {
-      let msg = 'โหลดสถานะแล้ว: ตรงกับรายการปัจจุบัน ' + matched.toLocaleString('th-TH') + ' จาก ' + items.length.toLocaleString('th-TH') + ' รายการในไฟล์';
-      if (data.savedAt) {
-        const d = new Date(data.savedAt);
-        if (!isNaN(d.getTime())) msg += ' (บันทึกไว้เมื่อ ' + d.toLocaleString('th-TH') + ')';
-      }
-      if (data.company && state.selectedCompany && data.company !== state.selectedCompany) {
-        msg += ' — หมายเหตุ: ไฟล์นี้บันทึกไว้จากบริษัท "' + data.company + '" แต่ตอนนี้กำลังดูบริษัท "' + state.selectedCompany + '" อยู่ ลองเช็คว่าเลือกไฟล์ถูกไหม';
-      }
-      resultEl.textContent = msg;
-    }
-    e.target.value = '';
-  };
-  reader.onerror = function() {
-    if (resultEl) resultEl.textContent = 'อ่านไฟล์ไม่สำเร็จ';
-    e.target.value = '';
-  };
-  reader.readAsText(file, 'utf-8');
-});
+// บันทึก/โหลดสถานะเป็นไฟล์ .json เอาออกแล้วตามที่ผู้ใช้ขอ (per user 2026-09-10) — ตอนนี้มีประวัติแผน MRP
+// ผ่าน Firestore ที่ถาวรและแชร์กันได้อยู่แล้ว ไม่จำเป็นต้องมีไฟล์สำรองแยกต่างหากแบบนี้อีกต่อไป
 
 // ---------- ประวัติแผน MRP (เก็บผ่าน Firestore — ใช้ได้ทุกที่ที่เปิดเว็บนี้ ยกเว้นหน้า Claude ที่บล็อก Firebase) ----------
 // เก็บแค่ "สรุปยอด" ของแต่ละแผน (ไม่เก็บรายการ SKU ทีละตัว) เพื่อเลี่ยงเอกสารใหญ่เกินไปและการยิง write ทีละร้อยครั้ง
