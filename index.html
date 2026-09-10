@@ -952,6 +952,9 @@
         <button type="button" class="btn btn-ghost btn-sm note-preset-btn" data-note="รอทางไทยคอนเฟิร์มว่าจะให้ทางลาวผลิตตัวไหนบ้าง">รอไทยคอนเฟิร์ม</button>
         <button type="button" class="btn btn-ghost btn-sm note-preset-btn" data-note="ทางไทยคอนเฟิร์มแล้ว ส่งให้ทางลาวพิจารณาว่าผลิตได้หรือไม่">ไทยคอนเฟิร์มแล้ว ส่งลาวพิจารณา</button>
       </div>
+      <label style="font-size:13px;color:var(--ink-muted);display:inline-flex;align-items:center;gap:6px;margin-right:8px;">วันที่บันทึกแผน
+        <input type="date" id="saveHistoryDateInput" style="font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);">
+      </label>
       <input type="text" id="saveHistoryNoteInput" class="history-note-input" placeholder='หมายเหตุแผนนี้ (ถ้ามี) เช่น "รอคอนเฟิร์มว่าจะให้ลาวผลิตตัวไหนบ้าง"'>
       <button type="button" class="btn btn-ghost btn-sm" id="saveHistoryBtn">บันทึกแผนนี้ลงประวัติ MRP</button>
       <span class="bulk-status-result" id="saveHistoryResult"></span>
@@ -3741,7 +3744,17 @@ document.getElementById('saveHistoryBtn').addEventListener('click', function(e) 
   const orderedCount = needRows.filter(function(r) { return r.orderStatus === 'สั่งแล้ว'; }).length;
   const totalQty = needRows.reduce(function(sum, r) { return sum + r.orderQty; }, 0);
   const company = state.selectedCompany;
+  // ใช้วันที่ที่เลือกจากช่อง #saveHistoryDateInput แทนวันนี้เสมอ (per user 2026-09-10 — เผื่อบันทึกย้อนหลัง
+  // ให้ตรงกับวันที่ทำงานจริง ไม่ใช่วันที่กดปุ่ม) ยังคงเวลานาฬิกาปัจจุบันไว้ (ชม./นาที/วินาที) เผื่อบันทึกหลาย
+  // แผนในวันเดียวกัน ลำดับเวลาจะได้ไม่ชนกัน (เรียง createdAt ยังถูกต้อง)
   const now = new Date();
+  const dateInput = document.getElementById('saveHistoryDateInput');
+  if (dateInput && dateInput.value) {
+    const parts = dateInput.value.split('-').map(Number); // YYYY-MM-DD
+    if (parts.length === 3 && !parts.some(isNaN)) {
+      now.setFullYear(parts[0], parts[1] - 1, parts[2]);
+    }
+  }
   const db = state.dbApi;
   // เก็บรายการแบบย่อ (ตัดชื่อสินค้า/เฉลี่ยใช้/เป้าหมาย/คงเหลือ/WIP ออก) เพื่อไม่ให้เอกสารใหญ่เกินลิมิต 256 KiB
   // ต่อเอกสาร แม้บริษัทจะมีหลายร้อย SKU ก็ตาม — ต้องการดูรายละเอียดเต็มๆ ให้เปิดไฟล์ Excel/PDF ของแผนนั้นแทน
@@ -4656,4 +4669,16 @@ renderHomeTab();
 
 renderFileList();
 updateUploadGate();
+
+// ตั้งค่าเริ่มต้นของช่อง "วันที่บันทึกแผน" เป็นวันนี้ (ตามเวลาเครื่อง ไม่ใช้ toISOString() เพราะเป็น UTC อาจ
+// เพี้ยนวันไปตอนดึกๆ ตามเขตเวลาไทย) — ผู้ใช้ยังกดเปลี่ยนเป็นวันอื่นเพื่อบันทึกย้อนหลังได้เสมอ (per user 2026-09-10)
+(function() {
+  const dateInput = document.getElementById('saveHistoryDateInput');
+  if (!dateInput) return;
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  dateInput.value = yyyy + '-' + mm + '-' + dd;
+})();
 </script>
