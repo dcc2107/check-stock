@@ -926,13 +926,20 @@
     </label>
     <ul class="file-list" id="fileList"></ul>
 
-    <div class="step-sub" style="margin-top:18px;">แนบไฟล์แผนผลิต/แผนส่งออก (WIP) — ไม่บังคับ อัปโหลดเพื่อเอายอดที่กำลังผลิตอยู่มาบวกกับคงเหลือตอนคำนวณจำนวนสั่ง</div>
-    <label class="dropzone" id="wipDropzone" for="wipFileInput">
-      <div><strong>แตะเพื่อเลือกไฟล์ WIP</strong> หรือลากไฟล์มาวางที่นี่</div>
+    <div class="step-sub" style="margin-top:18px;">แนบไฟล์แผนผลิต/แผนส่งออก (WIP) — ไม่บังคับ อัปโหลดเพื่อเอายอดที่กำลังผลิตอยู่มาบวกกับคงเหลือตอนคำนวณจำนวนสั่ง (แยกคันที่ 1 / คันที่ 2 ถ้ามีรถส่งของ 2 รอบ — ยอด WIP จะโชว์แยกคันในรีพอร์ตด้วย)</div>
+    <label class="dropzone" id="wipDropzone1" for="wipFileInput1">
+      <div><strong>แตะเพื่อเลือกไฟล์ WIP คันที่ 1</strong> หรือลากไฟล์มาวางที่นี่</div>
       <div style="font-size:12.5px;margin-top:4px;">รองรับ .CSV ที่ save จากไฟล์แผนผลิต/แผนส่งออก (ต้องมีคอลัมน์ "PARTNAME", "จำนวน", "ลูกค้า")</div>
-      <input type="file" id="wipFileInput" multiple accept=".csv,.CSV">
+      <input type="file" id="wipFileInput1" multiple accept=".csv,.CSV">
     </label>
-    <ul class="file-list" id="wipFileList"></ul>
+    <ul class="file-list" id="wipFileList1"></ul>
+
+    <label class="dropzone" id="wipDropzone2" for="wipFileInput2" style="margin-top:10px;">
+      <div><strong>แตะเพื่อเลือกไฟล์ WIP คันที่ 2</strong> หรือลากไฟล์มาวางที่นี่ (ไม่บังคับ)</div>
+      <div style="font-size:12.5px;margin-top:4px;">รองรับ .CSV แบบเดียวกัน — ใช้แยกรถส่งของรอบที่ 2</div>
+      <input type="file" id="wipFileInput2" multiple accept=".csv,.CSV">
+    </label>
+    <ul class="file-list" id="wipFileList2"></ul>
 
     <div class="row-actions">
       <button class="btn btn-primary" id="processBtn" disabled>ประมวลผล</button>
@@ -1844,7 +1851,10 @@ function countRecognizedSkus(stockMap, company) {
 const state = {
   selectedCompany: null,
   fileEntries: [], // { file, parsed:{stock,desc,diag}|null, recognized: number|null, error: string|null }
-  wipEntries: [], // { file, parsed:{wip:Map<sku,qty>,rowCount,excludedCount}|null, recognized: number|null, error: string|null } — ไฟล์แผนผลิต (WIP) ไม่บังคับ
+  // ไฟล์แผนผลิต (WIP) ไม่บังคับ — แยก 2 ชุด "คันที่ 1"/"คันที่ 2" เพราะบางรอบมีรถส่งของ 2 รอบ อยากเห็นยอด
+  // WIP แยกคันในรีพอร์ตด้วย (per user 2026-09-11) — แต่ละชุด: { file, parsed:{wip:Map<sku,qty>,rowCount,excludedCount}|null, recognized: number|null, error: string|null }
+  wipEntries1: [],
+  wipEntries2: [],
   companyResults: {}, // company -> array of computed rows (มีอยู่แค่ 1 คีย์เสมอ คือบริษัทที่เลือกไว้)
   diag: null, // parsing diagnostics for the last processed batch
   prefixFilter: '', // '' = ทั้งหมด — ใช้เป็นตัวกรองของทั้ง 2 มุมมอง (รหัส/คน) แล้วแต่ resultsGroupMode
@@ -1962,13 +1972,14 @@ function renderCompanyGrid() {
       if (state.selectedCompany === company) return;
       state.selectedCompany = company;
       state.fileEntries = [];
-      state.wipEntries = [];
+      state.wipEntries1 = [];
+      state.wipEntries2 = [];
       state.companyResults = {};
       state.diag = null;
       document.getElementById('processStatus').textContent = '';
       renderCompanyGrid();
       renderFileList();
-      renderWipFileList();
+      renderAllWipFileLists();
       renderResults();
       updateUploadGate();
     });
@@ -1981,10 +1992,11 @@ function updateUploadGate() {
   dz.style.opacity = enabled ? '' : '0.5';
   dz.style.pointerEvents = enabled ? '' : 'none';
   document.getElementById('fileInput').disabled = !enabled;
-  const wdz = document.getElementById('wipDropzone');
-  wdz.style.opacity = enabled ? '' : '0.5';
-  wdz.style.pointerEvents = enabled ? '' : 'none';
-  document.getElementById('wipFileInput').disabled = !enabled;
+  WIP_SLOTS.forEach(function(slot) {
+    slot.dropzone.style.opacity = enabled ? '' : '0.5';
+    slot.dropzone.style.pointerEvents = enabled ? '' : 'none';
+    slot.input.disabled = !enabled;
+  });
 }
 renderCompanyGrid();
 
@@ -2079,13 +2091,22 @@ dropzone.addEventListener('drop', function(e) {
 });
 
 // ---------- WIP file handling (ไฟล์แผนผลิต/แผนส่งออก — ไม่บังคับ, บวกเข้ากับคงเหลือตอนคำนวณจำนวนสั่ง per user 2026-09-04) ----------
-const wipFileInput = document.getElementById('wipFileInput');
-const wipDropzone = document.getElementById('wipDropzone');
-const wipFileListEl = document.getElementById('wipFileList');
+// แยก 2 ชุดกล่องอัปโหลด "คันที่ 1"/"คันที่ 2" เพราะบางรอบมีรถส่งของ 2 รอบ อยากเห็นยอด WIP แยกคันในรีพอร์ต
+// ด้วย (per user 2026-09-11) — โค้ดเหมือนเดิมทุกจุด แค่เขียนเป็นฟังก์ชันรับพารามิเตอร์ slot แทนการผูกกับ
+// ตัวแปร/element ตายตัวตัวเดียว เพื่อให้ใช้ซ้ำกับทั้ง 2 กล่องได้โดยไม่ต้องก็อปโค้ดซ้ำ
+const WIP_SLOTS = [1, 2].map(function(n) {
+  return {
+    n: n,
+    input: document.getElementById('wipFileInput' + n),
+    dropzone: document.getElementById('wipDropzone' + n),
+    listEl: document.getElementById('wipFileList' + n),
+    key: 'wipEntries' + n
+  };
+});
 
-function renderWipFileList() {
-  wipFileListEl.innerHTML = '';
-  state.wipEntries.forEach(function(entry, idx) {
+function renderWipFileList(slot) {
+  slot.listEl.innerHTML = '';
+  state[slot.key].forEach(function(entry, idx) {
     const li = document.createElement('li');
     const kb = (entry.file.size / 1024).toFixed(1);
     let tagHtml;
@@ -2107,20 +2128,21 @@ function renderWipFileList() {
     btn.setAttribute('aria-label', 'ลบไฟล์ ' + entry.file.name);
     btn.textContent = '×';
     btn.addEventListener('click', function() {
-      state.wipEntries.splice(idx, 1);
-      renderWipFileList();
+      state[slot.key].splice(idx, 1);
+      renderWipFileList(slot);
     });
     li.appendChild(btn);
-    wipFileListEl.appendChild(li);
+    slot.listEl.appendChild(li);
   });
 }
+function renderAllWipFileLists() { WIP_SLOTS.forEach(renderWipFileList); }
 
-async function addWipFiles(fileArr) {
-  const startIdx = state.wipEntries.length;
-  fileArr.forEach(function(f) { state.wipEntries.push({ file: f, parsed: null, recognized: null, error: null }); });
-  renderWipFileList();
+async function addWipFiles(slot, fileArr) {
+  const startIdx = state[slot.key].length;
+  fileArr.forEach(function(f) { state[slot.key].push({ file: f, parsed: null, recognized: null, error: null }); });
+  renderWipFileList(slot);
   for (let i = 0; i < fileArr.length; i++) {
-    const entry = state.wipEntries[startIdx + i];
+    const entry = state[slot.key][startIdx + i];
     try {
       const text = await readFileAsText874(entry.file);
       const parsed = parseWipCsv(text);
@@ -2130,29 +2152,30 @@ async function addWipFiles(fileArr) {
       entry.error = 'อ่านไฟล์ไม่สำเร็จ';
     }
   }
-  renderWipFileList();
+  renderWipFileList(slot);
 }
 
-wipFileInput.addEventListener('change', function(e) {
-  const files = Array.from(e.target.files);
-  wipFileInput.value = '';
-  addWipFiles(files);
-});
-
-['dragenter', 'dragover'].forEach(function(evt) {
-  wipDropzone.addEventListener(evt, function(e) {
-    e.preventDefault();
-    wipDropzone.classList.add('drag');
+WIP_SLOTS.forEach(function(slot) {
+  slot.input.addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    slot.input.value = '';
+    addWipFiles(slot, files);
   });
-});
-['dragleave', 'drop'].forEach(function(evt) {
-  wipDropzone.addEventListener(evt, function(e) {
-    e.preventDefault();
-    wipDropzone.classList.remove('drag');
+  ['dragenter', 'dragover'].forEach(function(evt) {
+    slot.dropzone.addEventListener(evt, function(e) {
+      e.preventDefault();
+      slot.dropzone.classList.add('drag');
+    });
   });
-});
-wipDropzone.addEventListener('drop', function(e) {
-  if (e.dataTransfer && e.dataTransfer.files) addWipFiles(Array.from(e.dataTransfer.files));
+  ['dragleave', 'drop'].forEach(function(evt) {
+    slot.dropzone.addEventListener(evt, function(e) {
+      e.preventDefault();
+      slot.dropzone.classList.remove('drag');
+    });
+  });
+  slot.dropzone.addEventListener('drop', function(e) {
+    if (e.dataTransfer && e.dataTransfer.files) addWipFiles(slot, Array.from(e.dataTransfer.files));
+  });
 });
 
 function updateProcessButton() {
@@ -2348,7 +2371,7 @@ function mergeEntries(entries) {
   return { merged: merged, mergedDesc: mergedDesc, diag: diag };
 }
 
-function computeRowsForCompany(company, merged, mergedDesc, diag, wipMap) {
+function computeRowsForCompany(company, merged, mergedDesc, diag, wip1Map, wip2Map) {
   // ใช้ computeEffectiveStandards() แทน STANDARDS ตรงๆ เพื่อให้ Standard ที่แก้ไข/เพิ่ม/ปิดใช้งาน
   // ผ่านแท็บ Standard (บันทึกลง db) มีผลกับการคำนวณจริงด้วย ไม่ใช่แค่โชว์ในหน้า Standard เฉยๆ (per user 2026-09-07)
   // ใช้ companiesOf(s) แทน s.company === company ตรงๆ เพราะบาง SKU (เช่นตระกูล MA/MIG/MI/MX) ผูกได้
@@ -2364,7 +2387,9 @@ function computeRowsForCompany(company, merged, mergedDesc, diag, wipMap) {
     // ไม่บวก WIP เพราะกลัวกระทบยอดสั่งจริง ตอนนี้ตัดสินใจเอา WIP มาบวกด้วยแล้ว)
     // เงื่อนไขสั่ง: Position < เป้าหมาย 12 วัน (ใช้ < ไม่ใช่ ≤)
     // จำนวนสั่ง: ปัดขึ้นหลัก 10, อย่างน้อย 10 — ไม่แตะ Standard Min/Max เลย
-    const wip = (wipMap && wipMap.has(s.sku)) ? wipMap.get(s.sku) : 0;
+    const wip1 = (wip1Map && wip1Map.has(s.sku)) ? wip1Map.get(s.sku) : 0;
+    const wip2 = (wip2Map && wip2Map.has(s.sku)) ? wip2Map.get(s.sku) : 0;
+    const wip = wip1 + wip2;
     const avgWeekly = Math.round((s.avg / 4) * 100) / 100;
     const target12 = Math.max(1, Math.round((s.avg * 3 / 7) * 100) / 100);
     const position = stock + wip;
@@ -2379,7 +2404,7 @@ function computeRowsForCompany(company, merged, mergedDesc, diag, wipMap) {
       sku: s.sku, prefix: s.prefix, person: s.person, company: company,
       min: s.min, max: s.max, lot: s.lot, avg: s.avg,
       avgWeekly: avgWeekly, target12: target12, desc: mergedDesc.get(s.sku) || '',
-      stock: stock, wip: wip, found: found, needOrder: needOrder,
+      stock: stock, wip: wip, wip1: wip1, wip2: wip2, found: found, needOrder: needOrder,
       orderQty: orderQty,
       // สถานะการสั่งจริง (แก้ไขได้จากตารางในหน้าเว็บ) — แยกจาก needOrder/orderQty ที่คำนวณจากสต็อก
       // เพราะบางรายการที่คำนวณว่า "ต้องสั่ง" โรงงานลาวอาจยังผลิตให้ไม่ทันทันที (per user 2026-09-03)
@@ -2419,9 +2444,11 @@ document.getElementById('processBtn').addEventListener('click', function() {
     const usable = state.fileEntries.filter(function(e) { return e.parsed && e.recognized > 0; });
     if (usable.length === 0) throw new Error('ไม่มีไฟล์ที่อ่านค่าได้');
     const m = mergeEntries(usable);
-    const usableWip = state.wipEntries.filter(function(e) { return e.parsed && e.recognized > 0; });
-    const wipMap = mergeWipEntries(usableWip);
-    const result = computeRowsForCompany(state.selectedCompany, m.merged, m.mergedDesc, m.diag, wipMap);
+    const usableWip1 = state.wipEntries1.filter(function(e) { return e.parsed && e.recognized > 0; });
+    const usableWip2 = state.wipEntries2.filter(function(e) { return e.parsed && e.recognized > 0; });
+    const wip1Map = mergeWipEntries(usableWip1);
+    const wip2Map = mergeWipEntries(usableWip2);
+    const result = computeRowsForCompany(state.selectedCompany, m.merged, m.mergedDesc, m.diag, wip1Map, wip2Map);
     state.companyResults = {};
     state.companyResults[state.selectedCompany] = result.rows;
     state.diag = m.diag;
@@ -2430,9 +2457,10 @@ document.getElementById('processBtn').addEventListener('click', function() {
     showToast('เช็คสต็อกเสร็จแล้ว: ' + state.selectedCompany);
     logStockCheck(state.selectedCompany);
     state.fileEntries = [];
-    state.wipEntries = [];
+    state.wipEntries1 = [];
+    state.wipEntries2 = [];
     renderFileList();
-    renderWipFileList();
+    renderAllWipFileLists();
     renderResults();
   } catch (err) {
     statusEl.textContent = '';
@@ -2795,8 +2823,8 @@ function buildMrpSheetXml(person, items, notItems) {
 
   // ตัดคอลัมน์ "ระดับจำนวน" ออกแล้วตามที่ผู้ใช้ขอ (per user 2026-09-10) — สีพื้นหลังแถวตามระดับจำนวนสั่ง
   // ยังคงอยู่เหมือนเดิม (คำนวณจาก tierFor() ต่อไป) แค่ไม่มีคอลัมน์ข้อความบอกชื่อระดับแยกต่างหากแล้ว
-  const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'จำนวนที่ลาวรับจริง', 'สถานะ', 'หมายเหตุ'];
-  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
+  const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP คันที่ 1', 'WIP คันที่ 2', 'จำนวนสั่ง (ชิ้น)', 'จำนวนที่ลาวรับจริง', 'สถานะ', 'หมายเหตุ'];
+  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
   function pushColumnHeaderRow() {
     const rr = nextRow();
@@ -2815,11 +2843,12 @@ function buildMrpSheetXml(person, items, notItems) {
         cellNum('D' + rr, item.avgWeekly, ts) +
         cellNum('E' + rr, item.target12, ts) +
         cellNum('F' + rr, item.stock, ts) +
-        cellNum('G' + rr, item.wip, ts) +
-        cellNum('H' + rr, item.orderQty, ts) +
-        cellStr('I' + rr, (item.confirmedQty !== undefined && item.confirmedQty !== null && item.confirmedQty !== '') ? item.confirmedQty : '-', ts) +
-        cellStr('J' + rr, item.orderStatus || 'ยังไม่สั่ง', ts) +
-        cellStr('K' + rr, item.orderRemark || '-', ts) +
+        cellNum('G' + rr, item.wip1, ts) +
+        cellNum('H' + rr, item.wip2, ts) +
+        cellNum('I' + rr, item.orderQty, ts) +
+        cellStr('J' + rr, (item.confirmedQty !== undefined && item.confirmedQty !== null && item.confirmedQty !== '') ? item.confirmedQty : '-', ts) +
+        cellStr('K' + rr, item.orderStatus || 'ยังไม่สั่ง', ts) +
+        cellStr('L' + rr, item.orderRemark || '-', ts) +
         '</row>');
     });
   }
@@ -2838,8 +2867,8 @@ function buildMrpSheetXml(person, items, notItems) {
     const rr = nextRow();
     rows.push('<row r="' + rr + '">' +
       cellStr('C' + rr, 'รวม', 1) +
-      cellNum('H' + rr, sum, 1) +
-      cellStr('I' + rr, 'ชิ้น', 1) +
+      cellNum('I' + rr, sum, 1) +
+      cellStr('J' + rr, 'ชิ้น', 1) +
       '</row>');
   }
 
@@ -2871,15 +2900,15 @@ function buildMrpSheetXml(person, items, notItems) {
   const totalRow = nextRow();
   rows.push('<row r="' + totalRow + '">' +
     cellStr('C' + totalRow, 'รวมทั้งหมด', 1) +
-    cellNum('H' + totalRow, totalQty, 1) +
-    cellStr('I' + totalRow, 'ชิ้น', 1) +
+    cellNum('I' + totalRow, totalQty, 1) +
+    cellStr('J' + totalRow, 'ชิ้น', 1) +
     '</row>');
 
   const notList = notItems || [];
-  const notHeaderCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)'];
+  const notHeaderCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP คันที่ 1', 'WIP คันที่ 2'];
   function pushNotColumnHeaderRow() {
     const rr = nextRow();
-    rows.push('<row r="' + rr + '">' + ['A','B','C','D','E','F','G'].map(function(col, i) { return cellStr(col + rr, notHeaderCells[i], col === 'A' ? HEADER_CENTER_STYLE : TABLE_HEADER_STYLE); }).join('') + '</row>');
+    rows.push('<row r="' + rr + '">' + ['A','B','C','D','E','F','G','H'].map(function(col, i) { return cellStr(col + rr, notHeaderCells[i], col === 'A' ? HEADER_CENTER_STYLE : TABLE_HEADER_STYLE); }).join('') + '</row>');
   }
   // ตาราง "ไม่ต้องสั่ง" ไม่มีคอลัมน์ "จำนวนสั่ง" (ไม่มีค่านี้จริง) — รวม "ยอดคงเหลือ ณ ตอนดึงข้อมูล" แทน
   // ตามที่หัวหน้าระบุ (per user 2026-09-09)
@@ -2901,7 +2930,8 @@ function buildMrpSheetXml(person, items, notItems) {
         cellNum('D' + rr, item.avgWeekly, TABLE_TIER_STYLE[0]) +
         cellNum('E' + rr, item.target12, TABLE_TIER_STYLE[0]) +
         cellNum('F' + rr, item.stock, TABLE_TIER_STYLE[0]) +
-        cellNum('G' + rr, item.wip, TABLE_TIER_STYLE[0]) +
+        cellNum('G' + rr, item.wip1, TABLE_TIER_STYLE[0]) +
+        cellNum('H' + rr, item.wip2, TABLE_TIER_STYLE[0]) +
         '</row>');
     });
   }
@@ -2932,7 +2962,7 @@ function buildMrpSheetXml(person, items, notItems) {
     pushStockSubtotalRow(notLowList);
   }
 
-  const lastRef = 'K' + r;
+  const lastRef = 'L' + r;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
@@ -2944,14 +2974,15 @@ function buildMrpSheetXml(person, items, notItems) {
       { header: headerCells[3], values: items.concat(notList).map(function(it) { return it.avgWeekly; }) },
       { header: headerCells[4], values: items.concat(notList).map(function(it) { return it.target12; }) },
       { header: headerCells[5], values: items.concat(notList).map(function(it) { return it.stock; }) },
-      { header: headerCells[6], values: items.concat(notList).map(function(it) { return it.wip; }) },
-      { header: headerCells[7], values: items.map(function(it) { return it.orderQty; }) },
-      { header: headerCells[8], values: items.map(function(it) { return it.confirmedQty; }) },
-      { header: headerCells[9], values: items.map(function(it) { return it.orderStatus; }) },
-      { header: headerCells[10], values: items.map(function(it) { return it.orderRemark; }) }
+      { header: headerCells[6], values: items.concat(notList).map(function(it) { return it.wip1; }) },
+      { header: headerCells[7], values: items.concat(notList).map(function(it) { return it.wip2; }) },
+      { header: headerCells[8], values: items.map(function(it) { return it.orderQty; }) },
+      { header: headerCells[9], values: items.map(function(it) { return it.confirmedQty; }) },
+      { header: headerCells[10], values: items.map(function(it) { return it.orderStatus; }) },
+      { header: headerCells[11], values: items.map(function(it) { return it.orderRemark; }) }
     ])) +
     '<sheetData>' + rows.join('') + '</sheetData>' +
-    '<mergeCells count="1"><mergeCell ref="A1:K1"/></mergeCells>' +
+    '<mergeCells count="1"><mergeCell ref="A1:L1"/></mergeCells>' +
     '<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
     '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0" scale="100"/>' +
     (notList.length > 0 ? '<rowBreaks count="1" manualBreakCount="1"><brk id="' + totalRow + '" max="16383" man="1"/></rowBreaks>' : '') +
@@ -3005,8 +3036,8 @@ function buildAllSkuSheetXml(company, items, notItems) {
 
   // ตัดคอลัมน์ "ระดับจำนวน" ออกแล้วตามที่ผู้ใช้ขอ (per user 2026-09-10) — สีพื้นหลังแถวตามระดับจำนวนสั่ง
   // ยังคงอยู่เหมือนเดิม (คำนวณจาก tierFor() ต่อไป) แค่ไม่มีคอลัมน์ข้อความบอกชื่อระดับแยกต่างหากแล้ว
-  const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)', 'จำนวนสั่ง (ชิ้น)', 'จำนวนที่ลาวรับจริง', 'สถานะ', 'หมายเหตุ'];
-  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
+  const headerCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP คันที่ 1', 'WIP คันที่ 2', 'จำนวนสั่ง (ชิ้น)', 'จำนวนที่ลาวรับจริง', 'สถานะ', 'หมายเหตุ'];
+  const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
   function pushColumnHeaderRow() {
     const rr = nextRow();
@@ -3025,11 +3056,12 @@ function buildAllSkuSheetXml(company, items, notItems) {
         cellNum('D' + rr, item.avgWeekly, ts) +
         cellNum('E' + rr, item.target12, ts) +
         cellNum('F' + rr, item.stock, ts) +
-        cellNum('G' + rr, item.wip, ts) +
-        cellNum('H' + rr, item.orderQty, ts) +
-        cellStr('I' + rr, (item.confirmedQty !== undefined && item.confirmedQty !== null && item.confirmedQty !== '') ? item.confirmedQty : '-', ts) +
-        cellStr('J' + rr, item.orderStatus || 'ยังไม่สั่ง', ts) +
-        cellStr('K' + rr, item.orderRemark || '-', ts) +
+        cellNum('G' + rr, item.wip1, ts) +
+        cellNum('H' + rr, item.wip2, ts) +
+        cellNum('I' + rr, item.orderQty, ts) +
+        cellStr('J' + rr, (item.confirmedQty !== undefined && item.confirmedQty !== null && item.confirmedQty !== '') ? item.confirmedQty : '-', ts) +
+        cellStr('K' + rr, item.orderStatus || 'ยังไม่สั่ง', ts) +
+        cellStr('L' + rr, item.orderRemark || '-', ts) +
         '</row>');
     });
   }
@@ -3043,14 +3075,14 @@ function buildAllSkuSheetXml(company, items, notItems) {
     const rr = nextRow();
     rows.push('<row r="' + rr + '">' +
       cellStr('C' + rr, 'รวม', 1) +
-      cellNum('H' + rr, sum, 1) +
-      cellStr('I' + rr, 'ชิ้น', 1) +
+      cellNum('I' + rr, sum, 1) +
+      cellStr('J' + rr, 'ชิ้น', 1) +
       '</row>');
   }
-  const notHeaderCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP (กำลังผลิต)'];
+  const notHeaderCells = ['ลำดับ', 'SKU', 'ชื่อสินค้า', 'เฉลี่ยใช้ต่อสัปดาห์ (Standard ÷ 4)', 'เป้าหมาย 12 วัน', 'ยอดคงเหลือ ณ ตอนดึงข้อมูล', 'WIP คันที่ 1', 'WIP คันที่ 2'];
   function pushNotColumnHeaderRow() {
     const rr = nextRow();
-    rows.push('<row r="' + rr + '">' + ['A','B','C','D','E','F','G'].map(function(col, i) { return cellStr(col + rr, notHeaderCells[i], col === 'A' ? HEADER_CENTER_STYLE : TABLE_HEADER_STYLE); }).join('') + '</row>');
+    rows.push('<row r="' + rr + '">' + ['A','B','C','D','E','F','G','H'].map(function(col, i) { return cellStr(col + rr, notHeaderCells[i], col === 'A' ? HEADER_CENTER_STYLE : TABLE_HEADER_STYLE); }).join('') + '</row>');
   }
   // ตาราง "ไม่ต้องสั่ง" ไม่มีคอลัมน์ "จำนวนสั่ง" (ไม่มีค่านี้จริง) — รวม "ยอดคงเหลือ ณ ตอนดึงข้อมูล" แทน
   // ตามที่หัวหน้าระบุ (per user 2026-09-09)
@@ -3072,7 +3104,8 @@ function buildAllSkuSheetXml(company, items, notItems) {
         cellNum('D' + rr, item.avgWeekly, TABLE_TIER_STYLE[0]) +
         cellNum('E' + rr, item.target12, TABLE_TIER_STYLE[0]) +
         cellNum('F' + rr, item.stock, TABLE_TIER_STYLE[0]) +
-        cellNum('G' + rr, item.wip, TABLE_TIER_STYLE[0]) +
+        cellNum('G' + rr, item.wip1, TABLE_TIER_STYLE[0]) +
+        cellNum('H' + rr, item.wip2, TABLE_TIER_STYLE[0]) +
         '</row>');
     });
   }
@@ -3113,8 +3146,8 @@ function buildAllSkuSheetXml(company, items, notItems) {
       const rr = nextRow();
       rows.push('<row r="' + rr + '">' +
         cellStr('C' + rr, 'รวมทั้งหมด', 1) +
-        cellNum('H' + rr, sectionTotalQty, 1) +
-        cellStr('I' + rr, 'ชิ้น', 1) +
+        cellNum('I' + rr, sectionTotalQty, 1) +
+        cellStr('J' + rr, 'ชิ้น', 1) +
         '</row>');
     }
 
@@ -3173,7 +3206,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
     buildOrderSection(items, notList);
   }
 
-  const lastRef = 'K' + r;
+  const lastRef = 'L' + r;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
@@ -3185,14 +3218,15 @@ function buildAllSkuSheetXml(company, items, notItems) {
       { header: headerCells[3], values: items.concat(notList).map(function(it) { return it.avgWeekly; }) },
       { header: headerCells[4], values: items.concat(notList).map(function(it) { return it.target12; }) },
       { header: headerCells[5], values: items.concat(notList).map(function(it) { return it.stock; }) },
-      { header: headerCells[6], values: items.concat(notList).map(function(it) { return it.wip; }) },
-      { header: headerCells[7], values: items.map(function(it) { return it.orderQty; }) },
-      { header: headerCells[8], values: items.map(function(it) { return it.confirmedQty; }) },
-      { header: headerCells[9], values: items.map(function(it) { return it.orderStatus; }) },
-      { header: headerCells[10], values: items.map(function(it) { return it.orderRemark; }) }
+      { header: headerCells[6], values: items.concat(notList).map(function(it) { return it.wip1; }) },
+      { header: headerCells[7], values: items.concat(notList).map(function(it) { return it.wip2; }) },
+      { header: headerCells[8], values: items.map(function(it) { return it.orderQty; }) },
+      { header: headerCells[9], values: items.map(function(it) { return it.confirmedQty; }) },
+      { header: headerCells[10], values: items.map(function(it) { return it.orderStatus; }) },
+      { header: headerCells[11], values: items.map(function(it) { return it.orderRemark; }) }
     ])) +
     '<sheetData>' + rows.join('') + '</sheetData>' +
-    '<mergeCells count="1"><mergeCell ref="A1:K1"/></mergeCells>' +
+    '<mergeCells count="1"><mergeCell ref="A1:L1"/></mergeCells>' +
     '<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
     '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0" scale="100"/>' +
     (breakRows.length > 0 ? '<rowBreaks count="' + breakRows.length + '" manualBreakCount="' + breakRows.length + '">' + breakRows.map(function(rb) { return '<brk id="' + rb + '" max="16383" man="1"/>'; }).join('') + '</rowBreaks>' : '') +
@@ -3279,7 +3313,8 @@ function buildOrderRowTr(r) {
     '<td data-label="Prefix">' + r.prefix + '</td>' +
     '<td data-label="SKU">' + r.sku + noteDot + '</td>' +
     '<td data-label="สต็อก" class="num">' + r.stock.toLocaleString('th-TH') + ' <span class="status-pill ' + pillClass + '">' + pillLabel + '</span></td>' +
-    '<td data-label="WIP" class="num">' + r.wip.toLocaleString('th-TH') + '</td>' +
+    '<td data-label="WIP คันที่ 1" class="num">' + r.wip1.toLocaleString('th-TH') + '</td>' +
+    '<td data-label="WIP คันที่ 2" class="num">' + r.wip2.toLocaleString('th-TH') + '</td>' +
     '<td data-label="เป้าหมาย 12 วัน" class="num">' + r.target12.toLocaleString('th-TH') + '</td>' +
     '<td data-label="สั่งเพิ่ม" class="num">' + r.orderQty.toLocaleString('th-TH') + '</td>' +
     '<td data-label="ลาวรับจริง"><input type="text" class="order-confirmed-input" placeholder="เช่น 30 (ถ้าลาวรับได้ไม่ครบ)"></td>' +
@@ -3309,12 +3344,13 @@ function printPersonPlan(person, company, items) {
       '<td>' + xmlEscape(r.prefix) + '</td>' +
       '<td>' + xmlEscape(r.sku) + '</td>' +
       '<td style="text-align:right;">' + r.stock.toLocaleString('th-TH') + '</td>' +
-      '<td style="text-align:right;">' + r.wip.toLocaleString('th-TH') + '</td>' +
+      '<td style="text-align:right;">' + r.wip1.toLocaleString('th-TH') + '</td>' +
+      '<td style="text-align:right;">' + r.wip2.toLocaleString('th-TH') + '</td>' +
       '<td style="text-align:right;">' + r.target12.toLocaleString('th-TH') + '</td>' +
       '<td style="text-align:right;">' + r.orderQty.toLocaleString('th-TH') + '</td>' +
       '</tr>';
   }).join('');
-  const headerCells = ['#', 'รหัส', 'SKU', 'สต็อก', 'WIP', 'เป้าหมาย 12 วัน', 'สั่งเพิ่ม'];
+  const headerCells = ['#', 'รหัส', 'SKU', 'สต็อก', 'WIP คันที่ 1', 'WIP คันที่ 2', 'เป้าหมาย 12 วัน', 'สั่งเพิ่ม'];
   printArea.innerHTML =
     '<div style="font-family:\'Noto Sans Thai\',\'Leelawadee UI\',sans-serif;padding:24px;color:#111;">' +
     '<h2 style="margin:0 0 4px;font-size:20px;">แผนสั่งซื้อ — ' + xmlEscape(company) + ' &middot; ' + xmlEscape(person) + '</h2>' +
@@ -3364,7 +3400,7 @@ function renderResults() {
       const table = document.createElement('table');
       table.className = 'order-table';
       table.innerHTML =
-        '<thead><tr><th>Prefix</th><th>SKU</th><th class="num">สต็อก</th><th class="num">WIP</th><th class="num">เป้าหมาย 12 วัน</th><th class="num">สั่งเพิ่ม</th><th>ลาวรับจริง</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>';
+        '<thead><tr><th>Prefix</th><th>SKU</th><th class="num">สต็อก</th><th class="num">WIP1</th><th class="num">WIP2</th><th class="num">เป้าหมาย 12 วัน</th><th class="num">สั่งเพิ่ม</th><th>ลาวรับจริง</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>';
       const tbody = document.createElement('tbody');
       combinedItems.forEach(function(r) { tbody.appendChild(buildOrderRowTr(r)); });
       table.appendChild(tbody);
@@ -3466,7 +3502,7 @@ function renderResults() {
     const table = document.createElement('table');
     table.className = 'order-table';
     table.innerHTML =
-      '<thead><tr><th>Prefix</th><th>SKU</th><th class="num">สต็อก</th><th class="num">WIP</th><th class="num">เป้าหมาย 12 วัน</th><th class="num">สั่งเพิ่ม</th><th>ลาวรับจริง</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>';
+      '<thead><tr><th>Prefix</th><th>SKU</th><th class="num">สต็อก</th><th class="num">WIP1</th><th class="num">WIP2</th><th class="num">เป้าหมาย 12 วัน</th><th class="num">สั่งเพิ่ม</th><th>ลาวรับจริง</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>';
     const tbody = document.createElement('tbody');
     items.forEach(function(r) { tbody.appendChild(buildOrderRowTr(r)); });
     table.appendChild(tbody);
