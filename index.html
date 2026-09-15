@@ -2853,12 +2853,14 @@ function buildMrpSheetXml(person, items, notItems) {
     });
   }
 
-  // แบ่งเป็น 4 ตารางย่อยตามเฉลี่ยใช้ต่อสัปดาห์ (ต้องสั่ง/ไม่ต้องสั่ง × มากกว่าหรือเท่ากับ10/น้อยกว่า10)
+  // แบ่งเป็น 4 ตารางย่อยตามเฉลี่ยใช้ต่อสัปดาห์ (ต้องสั่ง/ไม่ต้องสั่ง × มากกว่าหรือเท่ากับ5/น้อยกว่า5)
+  // เกณฑ์เปลี่ยนจาก 10 เป็น 5 ตามที่ผู้ใช้ขอ (per user 2026-09-15) — ยังคงกฎเกณฑ์พอดี (5) นับเข้ากลุ่ม
+  // "มากกว่าหรือเท่ากับ" เหมือนเดิม แค่เปลี่ยนตัวเลขเกณฑ์
   // ตามที่หัวหน้าสั่งให้แก้ (per user 2026-09-09) — เกณฑ์ 10 พอดีนับเข้ากลุ่ม "มากกว่าหรือเท่ากับ 10" เสมอ
   // (สลับจากเดิมที่เกณฑ์ 10 พอดีเคยถูกจัดไว้กลุ่ม "น้อยกว่า/10 หรือน้อยกว่า" ตอน 2026-09-04 — ตอนนี้เปลี่ยนแล้ว
   // และเพิ่มการแบ่งแบบเดียวกันนี้ให้ฝั่ง "ไม่ต้องสั่ง" ด้วย ซึ่งเดิมมีแค่ตารางเดียวรวมกันไม่แยก)
-  const highList = items.filter(function(it) { return it.avgWeekly >= 10; });
-  const lowList = items.filter(function(it) { return it.avgWeekly < 10; });
+  const highList = items.filter(function(it) { return it.avgWeekly >= 5; });
+  const lowList = items.filter(function(it) { return it.avgWeekly < 5; });
 
   // แถว "รวม" ท้ายตารางแต่ละตาราง (คนละตัวกับ totalRow ด้านล่างที่รวมทั้ง 2 กลุ่ม "ต้องสั่ง" เข้าด้วยกัน)
   // ตามที่หัวหน้าขอเพิ่ม (per user 2026-09-09) — ตาราง "ต้องสั่ง" รวมคอลัมน์ "จำนวนสั่ง (ชิ้น)"
@@ -2875,7 +2877,7 @@ function buildMrpSheetXml(person, items, notItems) {
   if (highList.length > 0) {
     const rr = nextRow();
     rows.push('<row r="' + rr + '">' +
-      cellStr('A' + rr, 'รายการที่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์มากกว่าหรือเท่ากับ 10', GROUP_TITLE_WRAP_STYLE) +
+      cellStr('A' + rr, 'รายการที่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์มากกว่าหรือเท่ากับ 5', GROUP_TITLE_WRAP_STYLE) +
       cellNum('B' + rr, highList.length, 1) +
       cellStr('C' + rr, 'SKU', 1) +
       '</row>');
@@ -2887,7 +2889,7 @@ function buildMrpSheetXml(person, items, notItems) {
     if (highList.length > 0) nextRow(); // เว้น 1 แถวคั่นระหว่าง 2 กลุ่มย่อย
     const rr = nextRow();
     rows.push('<row r="' + rr + '">' +
-      cellStr('A' + rr, 'รายการที่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์น้อยกว่า 10', GROUP_TITLE_WRAP_STYLE) +
+      cellStr('A' + rr, 'รายการที่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์น้อยกว่า 5', GROUP_TITLE_WRAP_STYLE) +
       cellNum('B' + rr, lowList.length, 1) +
       cellStr('C' + rr, 'SKU', 1) +
       '</row>');
@@ -2935,13 +2937,13 @@ function buildMrpSheetXml(person, items, notItems) {
         '</row>');
     });
   }
-  const notHighList = notList.filter(function(it) { return it.avgWeekly >= 10; });
-  const notLowList = notList.filter(function(it) { return it.avgWeekly < 10; });
+  const notHighList = notList.filter(function(it) { return it.avgWeekly >= 5; });
+  const notLowList = notList.filter(function(it) { return it.avgWeekly < 5; });
   if (notList.length > 0) nextRow(); // เว้น 1 แถวก่อนขึ้นหัวข้อกลุ่มแรกของ "ไม่ต้องสั่ง"
   if (notHighList.length > 0) {
     const rr = nextRow();
     rows.push('<row r="' + rr + '">' +
-      cellStr('A' + rr, 'รายการที่ไม่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์มากกว่าหรือเท่ากับ 10', GROUP_TITLE_WRAP_STYLE) +
+      cellStr('A' + rr, 'รายการที่ไม่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์มากกว่าหรือเท่ากับ 5', GROUP_TITLE_WRAP_STYLE) +
       cellNum('B' + rr, notHighList.length, 1) +
       cellStr('C' + rr, 'SKU', 1) +
       '</row>');
@@ -2953,7 +2955,7 @@ function buildMrpSheetXml(person, items, notItems) {
     if (notHighList.length > 0) nextRow(); // เว้น 1 แถวคั่นระหว่าง 2 กลุ่มย่อย
     const rr = nextRow();
     rows.push('<row r="' + rr + '">' +
-      cellStr('A' + rr, 'รายการที่ไม่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์น้อยกว่า 10', GROUP_TITLE_WRAP_STYLE) +
+      cellStr('A' + rr, 'รายการที่ไม่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์น้อยกว่า 5', GROUP_TITLE_WRAP_STYLE) +
       cellNum('B' + rr, notLowList.length, 1) +
       cellStr('C' + rr, 'SKU', 1) +
       '</row>');
@@ -3066,7 +3068,9 @@ function buildAllSkuSheetXml(company, items, notItems) {
     });
   }
 
-  // แบ่งเป็น 4 ตารางย่อยตามเฉลี่ยใช้ต่อสัปดาห์ (ต้องสั่ง/ไม่ต้องสั่ง × มากกว่าหรือเท่ากับ10/น้อยกว่า10)
+  // แบ่งเป็น 4 ตารางย่อยตามเฉลี่ยใช้ต่อสัปดาห์ (ต้องสั่ง/ไม่ต้องสั่ง × มากกว่าหรือเท่ากับ5/น้อยกว่า5)
+  // เกณฑ์เปลี่ยนจาก 10 เป็น 5 ตามที่ผู้ใช้ขอ (per user 2026-09-15) — ยังคงกฎเกณฑ์พอดี (5) นับเข้ากลุ่ม
+  // "มากกว่าหรือเท่ากับ" เหมือนเดิม แค่เปลี่ยนตัวเลขเกณฑ์
   // ห่อเป็นฟังก์ชัน buildOrderSection() ให้เรียกซ้ำได้ เพราะตอนนี้ต้องแยกรหัสมิยาโมโตะออกเป็นอีกชุดตาราง
   // ต่างหากตอนประมวลผลบริษัทปีเตอร์ (per user 2026-09-10) — โครงสร้างตารางเหมือนเดิมทุกอย่าง (per user
   // 2026-09-09) แค่เรียกซ้ำ 2 รอบ (รหัสปีเตอร์เอง / รหัสมิยาโมโตะที่ใช้ร่วม) แทนเรียกครั้งเดียวรวมกันหมด
@@ -3115,12 +3119,12 @@ function buildAllSkuSheetXml(company, items, notItems) {
   const breakRows = [];
 
   function buildOrderSection(sectionItems, sectionNotItems) {
-    const sHigh = sectionItems.filter(function(it) { return it.avgWeekly >= 10; });
-    const sLow = sectionItems.filter(function(it) { return it.avgWeekly < 10; });
+    const sHigh = sectionItems.filter(function(it) { return it.avgWeekly >= 5; });
+    const sLow = sectionItems.filter(function(it) { return it.avgWeekly < 5; });
     if (sHigh.length > 0) {
       const rr = nextRow();
       rows.push('<row r="' + rr + '">' +
-        cellStr('A' + rr, 'รายการที่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์มากกว่าหรือเท่ากับ 10', GROUP_TITLE_WRAP_STYLE) +
+        cellStr('A' + rr, 'รายการที่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์มากกว่าหรือเท่ากับ 5', GROUP_TITLE_WRAP_STYLE) +
         cellNum('B' + rr, sHigh.length, 1) +
         cellStr('C' + rr, 'SKU', 1) +
         '</row>');
@@ -3132,7 +3136,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
       if (sHigh.length > 0) nextRow(); // เว้น 1 แถวคั่นระหว่าง 2 กลุ่มย่อย
       const rr = nextRow();
       rows.push('<row r="' + rr + '">' +
-        cellStr('A' + rr, 'รายการที่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์น้อยกว่า 10', GROUP_TITLE_WRAP_STYLE) +
+        cellStr('A' + rr, 'รายการที่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์น้อยกว่า 5', GROUP_TITLE_WRAP_STYLE) +
         cellNum('B' + rr, sLow.length, 1) +
         cellStr('C' + rr, 'SKU', 1) +
         '</row>');
@@ -3151,8 +3155,8 @@ function buildAllSkuSheetXml(company, items, notItems) {
         '</row>');
     }
 
-    const sNotHigh = (sectionNotItems || []).filter(function(it) { return it.avgWeekly >= 10; });
-    const sNotLow = (sectionNotItems || []).filter(function(it) { return it.avgWeekly < 10; });
+    const sNotHigh = (sectionNotItems || []).filter(function(it) { return it.avgWeekly >= 5; });
+    const sNotLow = (sectionNotItems || []).filter(function(it) { return it.avgWeekly < 5; });
     if ((sectionNotItems || []).length > 0) {
       breakRows.push(r); // แถวสุดท้ายก่อนขึ้น "ไม่ต้องสั่ง" — ใช้ตัดหน้าพิมพ์
       nextRow();
@@ -3160,7 +3164,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
     if (sNotHigh.length > 0) {
       const rr = nextRow();
       rows.push('<row r="' + rr + '">' +
-        cellStr('A' + rr, 'รายการที่ไม่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์มากกว่าหรือเท่ากับ 10', GROUP_TITLE_WRAP_STYLE) +
+        cellStr('A' + rr, 'รายการที่ไม่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์มากกว่าหรือเท่ากับ 5', GROUP_TITLE_WRAP_STYLE) +
         cellNum('B' + rr, sNotHigh.length, 1) +
         cellStr('C' + rr, 'SKU', 1) +
         '</row>');
@@ -3172,7 +3176,7 @@ function buildAllSkuSheetXml(company, items, notItems) {
       if (sNotHigh.length > 0) nextRow(); // เว้น 1 แถวคั่นระหว่าง 2 กลุ่มย่อย
       const rr = nextRow();
       rows.push('<row r="' + rr + '">' +
-        cellStr('A' + rr, 'รายการที่ไม่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์น้อยกว่า 10', GROUP_TITLE_WRAP_STYLE) +
+        cellStr('A' + rr, 'รายการที่ไม่ต้องสั่ง\nเฉลี่ยใช้ต่อสัปดาห์น้อยกว่า 5', GROUP_TITLE_WRAP_STYLE) +
         cellNum('B' + rr, sNotLow.length, 1) +
         cellStr('C' + rr, 'SKU', 1) +
         '</row>');
