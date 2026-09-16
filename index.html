@@ -1848,6 +1848,28 @@ function countRecognizedSkus(stockMap, company) {
   return count;
 }
 
+// รหัสสต็อกบางตัวมีวงเล็บอักษรย่อชื่อลูกค้าต่อท้าย (เช่น "FD-12-505(ท)" = สต็อกที่จองไว้ให้ลูกค้ารายหนึ่งแล้ว
+// ไม่ใช่ของว่างพร้อมขาย) ต่างจาก SKU ที่บังเอิญมีวงเล็บอยู่ในชื่อจริงๆ ซึ่งมี Standard แยกเป็นของตัวเองอยู่แล้ว
+// (เช่น "TR3-28-506O(อา)") — วิธีแยก 2 แบบนี้: ถ้ารหัสเต็ม (พร้อมวงเล็บ) มี Standard อยู่แล้ว ก็ถือเป็น SKU
+// จริงตามปกติ ไม่ต้องยุ่ง แต่ถ้ารหัสเต็มไม่มี ในขณะที่รหัสฐาน (ตัดวงเล็บออก) มี Standard อยู่แล้ว แปลว่าเป็น
+// สต็อกจองของลูกค้าของสินค้าที่รู้จักอยู่แล้ว (per user 2026-09-16: ไม่นับรวมเป็นสต็อกพร้อมขายของรหัสฐาน
+// และไม่ควรเสนอให้เพิ่มเป็น Standard ใหม่ เพราะไม่ใช่สินค้าใหม่ แค่ยังไม่เคยแยกสถานะสต็อกจองไว้)
+function customerTagBaseSku(sku) {
+  const m = sku.match(/^(.+)\(([ก-๙]{1,4})\)$/);
+  return m ? m[1] : null;
+}
+
+// นับรหัสที่เป็น "สต็อกจองลูกค้า" ของสินค้าที่มี Standard อยู่แล้ว (ไม่ว่าบริษัทไหน) — ใช้บอกผู้ใช้เวลาไฟล์นี้
+// recognized=0 ว่าไม่ใช่ไฟล์อ่านผิดพลาด แค่เป็นไฟล์ที่มีแต่สต็อกจองลูกค้าล้วนๆ (per user 2026-09-16)
+function countCustomerTaggedSkus(stockMap) {
+  let count = 0;
+  stockMap.forEach(function(qty, sku) {
+    const base = customerTagBaseSku(sku);
+    if (base && skuToCompanies[base]) count++;
+  });
+  return count;
+}
+
 const state = {
   selectedCompany: null,
   fileEntries: [], // { file, parsed:{stock,desc,diag}|null, recognized: number|null, error: string|null }
@@ -2023,6 +2045,10 @@ function renderFileList() {
     let tagHtml;
     if (entry.error) {
       tagHtml = '<span class="done-badge" style="color:var(--critical);background:var(--critical-soft);">อ่านไฟล์ไม่สำเร็จ</span>';
+    } else if (entry.recognized === 0 && entry.customerTaggedCount > 0) {
+      // ไฟล์นี้อ่านออกปกติ แค่รหัสทั้งหมด (หรือเกือบทั้งหมด) เป็นสต็อกจองลูกค้าแล้ว (วงเล็บ "(ท)" ฯลฯ)
+      // ไม่ใช่ไฟล์อ่านผิดพลาด เลยไม่ใช้ป้ายสีแดง (per user 2026-09-16)
+      tagHtml = '<span class="done-badge" style="color:var(--warn);background:var(--warn-soft);">พบ ' + entry.customerTaggedCount.toLocaleString('th-TH') + ' รหัสที่จองให้ลูกค้าแล้ว (ไม่นับรวมสั่งซื้อ)</span>';
     } else if (entry.recognized === 0) {
       tagHtml = '<span class="done-badge" style="color:var(--critical);background:var(--critical-soft);">ไม่รู้จักไฟล์นี้</span>';
     } else if (typeof entry.recognized === 'number') {
@@ -2061,6 +2087,7 @@ async function addFiles(fileArr) {
       const parsed = parseStockText(text);
       entry.parsed = parsed;
       entry.recognized = countRecognizedSkus(parsed.stock, state.selectedCompany);
+      entry.customerTaggedCount = countCustomerTaggedSkus(parsed.stock);
     } catch (err) {
       entry.error = 'อ่านไฟล์ไม่สำเร็จ';
     }
@@ -2425,14 +2452,22 @@ function computeRowsForCompany(company, merged, mergedDesc, diag, wip1Map, wip2M
   // เก็บลิสต์จริงของ SKU ที่ไม่มี Standard ไว้ด้วย (ไม่ใช่แค่นับจำนวน) เพื่อให้กดจาก KPI "ไม่มี Standard"
   // หน้าหลักแล้วดูรายชื่อจริงๆ ได้เลย ไม่ต้องไล่หาเองจากไฟล์สต็อก (per user 2026-09-08)
   const unmatchedSkus = [];
+  // รหัสที่เป็นสต็อกจองลูกค้าของสินค้าที่มี Standard อยู่แล้ว (ดู customerTagBaseSku ด้านบน) — แยกออกจาก
+  // unmatchedSkus เพราะไม่ใช่ SKU ใหม่ที่ต้องเพิ่ม Standard แค่ยังไม่นับเป็นสต็อกพร้อมขายเฉยๆ (per user 2026-09-16)
+  const customerTaggedSkus = [];
   merged.forEach(function(qty, sku) {
-    if (!allEffectiveSkus.has(sku)) {
-      unmatchedStandardCount++;
-      unmatchedSkus.push({ sku: sku, qty: qty });
+    if (allEffectiveSkus.has(sku)) return;
+    const base = customerTagBaseSku(sku);
+    if (base && allEffectiveSkus.has(base)) {
+      customerTaggedSkus.push({ sku: sku, base: base, qty: qty });
+      return;
     }
+    unmatchedStandardCount++;
+    unmatchedSkus.push({ sku: sku, qty: qty });
   });
   diag.unmatchedStandardCount = unmatchedStandardCount;
   diag.unmatchedSkus = unmatchedSkus;
+  diag.customerTaggedSkus = customerTaggedSkus;
   return { rows: rows, diag: diag };
 }
 
@@ -3301,6 +3336,14 @@ function renderDiagnostics(rows) {
       parts.push('<div style="font-size:12.5px;color:var(--critical);margin-bottom:4px;">คำเตือนที่ Express ใส่ไว้ในไฟล์เอง (เช่น ยอดล็อตไม่ตรงกับยอดคงเหลือ) — ควรเปิดไฟล์ต้นฉบับเช็คมือ:</div>');
       parts.push('<ul style="margin:0 0 10px;padding-left:18px;font-size:11.5px;font-family:\'IBM Plex Mono\',monospace;color:var(--ink-muted);">' +
         diag.anomalyFlags.map(function(s) { return '<li>[' + xmlEscape(s.file) + '] SKU ' + xmlEscape(s.sku) + '</li>'; }).join('') +
+        '</ul>');
+    }
+    if (diag.customerTaggedSkus && diag.customerTaggedSkus.length > 0) {
+      parts.push('<div style="font-size:12.5px;font-weight:600;margin:10px 0 4px;">รหัสที่เป็นสต็อกจองลูกค้าแล้ว (ไม่นับรวมในการคำนวณสั่งซื้อ): ' + diag.customerTaggedSkus.length.toLocaleString('th-TH') + '</div>');
+      parts.push('<div style="font-size:12px;color:var(--ink-muted);margin-bottom:6px;">รหัสที่มีวงเล็บอักษรย่อลูกค้าต่อท้าย (เช่น "(ท)") ของสินค้าที่มี Standard อยู่แล้ว — ถือว่าจองให้ลูกค้าไปแล้ว ไม่ใช่สต็อกพร้อมขาย จึงไม่เอามารวมกับรหัสฐาน และไม่เสนอให้เพิ่มเป็น Standard ใหม่</div>');
+      parts.push('<ul style="margin:0 0 10px;padding-left:18px;font-size:11.5px;font-family:\'IBM Plex Mono\',monospace;color:var(--ink-muted);">' +
+        diag.customerTaggedSkus.slice(0, 30).map(function(s) { return '<li>' + xmlEscape(s.sku) + ' (รหัสฐาน ' + xmlEscape(s.base) + ') คงเหลือ ' + s.qty.toLocaleString('th-TH') + '</li>'; }).join('') +
+        (diag.customerTaggedSkus.length > 30 ? '<li>… อีก ' + (diag.customerTaggedSkus.length - 30) + ' รายการ</li>' : '') +
         '</ul>');
     }
   }
