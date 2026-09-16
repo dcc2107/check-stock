@@ -806,6 +806,7 @@
         <div><span class="home-today-label">ภาพรวมวันนี้</span><strong id="homeTodayDate">—</strong></div>
         <span class="home-lean-badge">&bull; LEAN</span>
       </div>
+      <div id="homeAlertsBox" style="margin-top:14px;"></div>
       <div class="home-kpi-grid" id="homeKpiGrid"></div>
       <div class="home-shortcuts">
         <button type="button" class="home-shortcut" id="homeGoPlanBtn">
@@ -2812,6 +2813,15 @@ function thaiShortDate(d) {
   return d.getDate() + ' ' + THAI_MONTHS_ABBR[d.getMonth()] + ' ' + (beYear < 10 ? '0' + beYear : beYear);
 }
 
+// จำนวนวันเต็มระหว่าง 2 วันที่ (ปัดเป็นจำนวนเต็ม ไม่สนเวลาในวัน) — ใช้กับ badge แจ้งเตือนหน้าหลัก
+// (per user 2026-09-16) เช่น "ค้างมาแล้ว N วัน"
+function daysBetween(fromDate, toDate) {
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+  const a = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
+  const b = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate());
+  return Math.round((b - a) / MS_PER_DAY);
+}
+
 function nextMrpPlanNumber(d) {
   state.mrpCounter = (state.mrpCounter || 0) + 1;
   const beYY = ((d.getFullYear() + 543) % 100);
@@ -3945,8 +3955,11 @@ document.getElementById('saveHistoryBtn').addEventListener('click', function(e) 
   // เก็บรายการแบบย่อ (ตัดชื่อสินค้า/เฉลี่ยใช้/เป้าหมาย/คงเหลือ/WIP ออก) เพื่อไม่ให้เอกสารใหญ่เกินลิมิต 256 KiB
   // ต่อเอกสาร แม้บริษัทจะมีหลายร้อย SKU ก็ตาม — ต้องการดูรายละเอียดเต็มๆ ให้เปิดไฟล์ Excel/PDF ของแผนนั้นแทน
   // ตัดชื่อผู้รับผิดชอบออกด้วยแล้ว เพราะตอนนี้ใช้เว็บนี้คนเดียว ไม่ต้องเก็บว่าใครดูแล (per user 2026-09-07)
+  // z = 1 ถ้าสต็อก ณ ตอนบันทึกแผนนี้ = 0 (เพิ่มมาใหม่ per user 2026-09-16) — ใช้คำนวณ badge "หมดสต็อกและ
+  // ยังไม่ได้สั่ง ค้างมานานกี่วัน" บนหน้าหลัก โดยเทียบ z=1+st!=='สั่งแล้ว' ต่อเนื่องข้ามหลายแผน แผนเก่าก่อน
+  // ฟีเจอร์นี้จะไม่มีฟิลด์นี้ (ไม่ใช่ปัญหา แค่จะยังคำนวณ streak ย้อนไปไม่ถึงแผนนั้น)
   const compactItems = needRows.map(function(r) {
-    return { sku: r.sku, q: r.orderQty, st: r.orderStatus || 'ยังไม่สั่ง', cf: r.confirmedQty || '', rm: r.orderRemark || '' };
+    return { sku: r.sku, q: r.orderQty, st: r.orderStatus || 'ยังไม่สั่ง', cf: r.confirmedQty || '', rm: r.orderRemark || '', z: r.stock <= 0 ? 1 : 0 };
   });
   const noteInput = document.getElementById('saveHistoryNoteInput');
   const note = noteInput ? noteInput.value.trim() : '';
@@ -3966,6 +3979,11 @@ document.getElementById('saveHistoryBtn').addEventListener('click', function(e) 
     else if (r.stock > r.max) stockHealth.overMax++;
     else stockHealth.normal++;
   });
+  // สรุปจำนวน/ยอดรหัสสต็อกจองลูกค้า (ดู customerTagBaseSku) ของรอบนี้ไว้ในแผนด้วย เพื่อใช้เทียบรอบก่อน-หลัง
+  // ตอนคำนวณ badge "สต็อกจองลูกค้าเพิ่มขึ้นผิดปกติ" บนหน้าหลัก (per user 2026-09-16)
+  const customerTaggedList = (state.diag && Array.isArray(state.diag.customerTaggedSkus)) ? state.diag.customerTaggedSkus : [];
+  const customerTaggedCount = customerTaggedList.length;
+  const customerTaggedQty = customerTaggedList.reduce(function(sum, s) { return sum + (s.qty || 0); }, 0);
   if (resultEl) resultEl.textContent = 'กำลังบันทึก...';
   nextHistoryPlanNo(db, company, now).then(function(planNo) {
     return db.doc('mrp_plans/' + planNo).set({
@@ -3978,6 +3996,8 @@ document.getElementById('saveHistoryBtn').addEventListener('click', function(e) 
       unmatchedStandardCount: unmatchedStandardCount,
       unmatchedSkus: unmatchedSkus,
       stockHealth: stockHealth,
+      customerTaggedCount: customerTaggedCount,
+      customerTaggedQty: customerTaggedQty,
       cancelled: false,
       note: note,
       items: compactItems
@@ -4333,7 +4353,133 @@ function renderHomeTab() {
       // โหลดไม่สำเร็จ — ปล่อยค่าที่คำนวณสดของรอบนี้ที่แสดงอยู่แล้วไว้เฉยๆ
     });
   }
+  loadHomeAlerts();
 }
+
+// ---------- แจ้งเตือนหน้าหลัก (per user 2026-09-16) — 4 เรื่องที่ผู้ใช้เลือกไว้:
+// 1) SKU หมดสต็อกและยังไม่ได้สั่ง ค้างมานานกี่วัน 2) ครบกำหนดอัปเดต Standard รอบ 6 เดือน
+// 3) แผน MRP ค้างสถานะ "ยังไม่สั่ง"/"สั่งบางส่วน" นานเกินไป 4) สต็อกจองลูกค้าเพิ่มขึ้นผิดปกติ
+// แยกเป็นฟังก์ชันคำนวณล้วนๆ (computeHomeAlerts) รับข้อมูลที่โหลดมาแล้วเป็นพารามิเตอร์ ไม่แตะ state/db ตรงๆ
+// เพื่อให้เทสต์ได้ง่ายโดยไม่ต้องมี Firestore จริง — ส่วนที่คุยกับ db แยกไว้ใน loadHomeAlerts ต่างหาก
+const HOME_ALERT_STALE_PLAN_DAYS = 5; // แผนค้างสถานะยังไม่ปิดงานเกินกี่วันถึงเตือน
+const HOME_ALERT_ZERO_STOCK_DAYS = 3; // SKU หมดสต็อก+ยังไม่สั่ง ค้างเกินกี่วันถึงเตือน
+const HOME_ALERT_STANDARD_STALE_DAYS = 180; // ไม่มีการแก้ Standard เลยเกินกี่วันถึงเตือน (~6 เดือน)
+
+function computeHomeAlerts(plans, lastStandardEditIso, today) {
+  const alerts = [];
+  const now = today || new Date();
+
+  // 1) ครบกำหนดอัปเดต Standard รอบ 6 เดือน — ใช้บันทึกล่าสุดใน "standard_edits" เป็นตัวแทนวันที่แก้ไขล่าสุด
+  // (หมายเหตุ: นับเฉพาะการแก้ผ่านหน้าเว็บ Standard เท่านั้น ถ้าไม่เคยมีบันทึกเลยจะไม่ฟันธงว่าเกินกำหนด เพราะ
+  // อาจจะยังไม่เคยครบ 6 เดือนจริงๆ ก็ได้)
+  if (lastStandardEditIso) {
+    const days = daysBetween(new Date(lastStandardEditIso), now);
+    if (days >= HOME_ALERT_STANDARD_STALE_DAYS) {
+      alerts.push({ severity: 'warn', text: 'ยังไม่ได้แก้ไข Standard (min/max/lot/avg) มา ' + days.toLocaleString('th-TH') + ' วันแล้ว — ปกติควรอัปเดตทุก 6 เดือน' });
+    }
+  }
+
+  const byCompany = {};
+  (plans || []).forEach(function(p) {
+    if (!byCompany[p.company]) byCompany[p.company] = [];
+    byCompany[p.company].push(p);
+  });
+  // plans ที่ส่งเข้ามาเรียง createdAt ล่าสุดมาก่อนอยู่แล้ว (ตาม query ต้นทาง) — sort ซ้ำเผื่อกันพลาด
+  Object.keys(byCompany).forEach(function(company) {
+    byCompany[company].sort(function(a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+  });
+
+  COMPANY_ORDER.forEach(function(company) {
+    const companyPlans = byCompany[company] || [];
+    const latest = companyPlans[0];
+    if (!latest) return;
+
+    // 2) แผน MRP ค้างสถานะ "ยังไม่สั่ง"/"สั่งบางส่วน" นานเกินไป
+    if (!latest.cancelled) {
+      const status = computeHistoryStatus(latest.orderedCount || 0, latest.itemCount || 0, false);
+      if ((status === 'ยังไม่สั่ง' || status === 'สั่งบางส่วน') && latest.itemCount > 0) {
+        const days = daysBetween(new Date(latest.createdAt), now);
+        if (days >= HOME_ALERT_STALE_PLAN_DAYS) {
+          alerts.push({ severity: 'warn', text: company + ': แผน ' + latest.planNo + ' (' + status + ') ค้างมา ' + days.toLocaleString('th-TH') + ' วันแล้ว ยังไม่ปิดงาน' });
+        }
+      }
+    }
+
+    // 3) สต็อกจองลูกค้าเพิ่มขึ้นผิดปกติเทียบรอบก่อนหน้า (ต้องมีทั้ง 2 แผนที่มีฟิลด์นี้ — แผนเก่าก่อนฟีเจอร์นี้จะไม่มี)
+    const prev = companyPlans[1];
+    if (typeof latest.customerTaggedCount === 'number') {
+      if (prev && typeof prev.customerTaggedCount === 'number' && prev.customerTaggedCount > 0) {
+        const grew = latest.customerTaggedCount - prev.customerTaggedCount;
+        if (latest.customerTaggedCount >= prev.customerTaggedCount * 1.5 && grew >= 5) {
+          alerts.push({ severity: 'info', text: company + ': รหัสสต็อกจองลูกค้าเพิ่มขึ้นผิดปกติ (' + prev.customerTaggedCount.toLocaleString('th-TH') + ' → ' + latest.customerTaggedCount.toLocaleString('th-TH') + ' รหัส)' });
+        }
+      } else if (!prev && latest.customerTaggedCount >= 20) {
+        alerts.push({ severity: 'info', text: company + ': พบรหัสสต็อกจองลูกค้า ' + latest.customerTaggedCount.toLocaleString('th-TH') + ' รหัสในแผนล่าสุด' });
+      }
+    }
+
+    // 4) SKU หมดสต็อกและยังไม่ได้สั่ง ค้างมานานกี่วัน — เดินย้อนดูแผนก่อนหน้าทีละแผน นับต่อเนื่องจนกว่าจะไม่ตรง
+    // เงื่อนไข (หมด+ยังไม่สั่ง) อีกต่อไป — ใช้ได้เฉพาะแผนที่มีฟิลด์ "z" (เพิ่มมาใหม่ ยังไม่มีในแผนเก่า)
+    const zeroUnordered = (latest.items || []).filter(function(it) { return it.z === 1 && it.st !== 'สั่งแล้ว'; });
+    if (zeroUnordered.length > 0) {
+      let maxDays = 0, worstSku = null;
+      zeroUnordered.forEach(function(it) {
+        let streakStartIso = latest.createdAt;
+        for (let i = 1; i < companyPlans.length; i++) {
+          const p = companyPlans[i];
+          const match = (p.items || []).find(function(x) { return x.sku === it.sku; });
+          if (match && match.z === 1 && match.st !== 'สั่งแล้ว') {
+            streakStartIso = p.createdAt;
+          } else {
+            break;
+          }
+        }
+        const days = daysBetween(new Date(streakStartIso), now);
+        if (days > maxDays) { maxDays = days; worstSku = it.sku; }
+      });
+      if (maxDays >= HOME_ALERT_ZERO_STOCK_DAYS) {
+        alerts.push({ severity: 'critical', text: company + ': มี ' + zeroUnordered.length.toLocaleString('th-TH') + ' รหัสหมดสต็อกและยังไม่สั่ง (ค้างนานสุด ' + maxDays.toLocaleString('th-TH') + ' วัน ที่ ' + worstSku + ')' });
+      }
+    }
+  });
+
+  // เรียงความรุนแรงมาก่อน (critical > warn > info) ให้เรื่องเร่งด่วนเห็นก่อน
+  const order = { critical: 0, warn: 1, info: 2 };
+  alerts.sort(function(a, b) { return order[a.severity] - order[b.severity]; });
+  return alerts;
+}
+
+function renderHomeAlerts(alerts) {
+  const box = document.getElementById('homeAlertsBox');
+  if (!box) return;
+  if (!alerts || alerts.length === 0) { box.innerHTML = ''; return; }
+  const colorFor = { critical: ['var(--critical)', 'var(--critical-soft)'], warn: ['var(--warn)', 'var(--warn-soft)'], info: ['var(--accent)', 'var(--accent-soft)'] };
+  box.innerHTML = alerts.map(function(a) {
+    const c = colorFor[a.severity] || colorFor.info;
+    return '<div style="display:flex;align-items:flex-start;gap:8px;background:' + c[1] + ';color:' + c[0] + ';border-radius:10px;padding:9px 12px;margin-bottom:6px;font-size:12.5px;line-height:1.5;">' +
+      '<span style="flex-shrink:0;">&#9888;</span><span>' + xmlEscape(a.text) + '</span></div>';
+  }).join('');
+}
+
+// ดึงข้อมูลที่ต้องใช้คำนวณ alert จากฐานข้อมูล (แผน MRP ล่าสุดของทุกบริษัท + วันที่แก้ Standard ล่าสุด) แล้ว
+// ค่อยเรียก computeHomeAlerts (ฟังก์ชันคำนวณล้วนๆ) ต่อ — เรียกทุกครั้งที่ renderHomeTab() ทำงาน
+function loadHomeAlerts() {
+  if (!state.dbApi) { renderHomeAlerts([]); return; }
+  Promise.all([
+    state.dbApi.collection('mrp_plans').orderBy('createdAt', 'desc').limit(200).get().then(function(snap) {
+      return snap.docs.map(function(d) { return d.data(); });
+    }).catch(function() { return []; }),
+    state.dbApi.collection('standard_edits').orderBy('createdAt', 'desc').limit(1).get().then(function(snap) {
+      return snap.docs.length > 0 ? snap.docs[0].data().createdAt : null;
+    }).catch(function() { return null; })
+  ]).then(function(results) {
+    const alerts = computeHomeAlerts(results[0], results[1], new Date());
+    renderHomeAlerts(alerts);
+  }).catch(function() {
+    renderHomeAlerts([]);
+  });
+}
+
 // กด KPI แต่ละช่องแล้วพาไปแท็บ "แหล่งที่มา" ของตัวเลขนั้น — ผูก listener แบบ delegation ไว้ที่ตัว grid
 // (ไม่ใช่ทีละ tile) เพราะ grid.innerHTML ถูกสร้างใหม่ทุกครั้งที่ renderHomeTab() ทำงาน (per user 2026-09-07)
 document.getElementById('homeKpiGrid').addEventListener('click', function(e) {
