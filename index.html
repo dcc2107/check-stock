@@ -906,7 +906,14 @@
       <input type="text" id="standardSearchInput" placeholder="ค้นหา SKU หรือ Prefix">
       <label class="standard-check"><input type="checkbox" id="standardShowInactive"> แสดงที่ปิดใช้งานด้วย</label>
       <button type="button" class="btn btn-primary btn-sm" id="standardAddNewBtn">+ เพิ่ม SKU ใหม่</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="standardQualityCheckBtn">ตรวจสอบคุณภาพข้อมูล</button>
     </div>
+    <details class="person-panel" id="standardQualityPanel" style="display:none;margin-bottom:14px;">
+      <summary><span>ผลตรวจสอบคุณภาพข้อมูล Standard <span class="psub">(ช่วยดูจุดที่ควรเช็คมือ ไม่ใช่ฟันธงว่าผิดแน่นอน)</span></span>
+        <span class="pmeta"><span class="count-badge" id="standardQualityCountBadge">0 รายการ</span><span class="chev">&#8250;</span></span>
+      </summary>
+      <div class="person-body" id="standardQualityBody"></div>
+    </details>
     <div class="bulk-status-result" id="standardResultCount" style="margin-bottom:10px;display:block;"></div>
     <div id="standardTableWrap"></div>
   </section>
@@ -4895,6 +4902,146 @@ function openStandardForm(existingSku) {
   form.style.display = '';
 }
 document.getElementById('standardAddNewBtn').addEventListener('click', function() { openStandardForm(null); });
+
+// ---------- เช็คคุณภาพข้อมูล Standard (per user 2026-09-16) ----------
+// 4 เรื่องที่ผู้ใช้เลือก: (1) SKU หน้าตาคล้าย typo, (2) ค่า min/max/lot ผิดปกติ, (3) SKU ซ้ำ,
+// (4) พรีฟิกซ์เดียวกันแต่บางตัวไม่มีสะกดที่คาด (เช่น -XT) — แยกเป็นฟังก์ชันคำนวณล้วนๆ ไม่แตะ DOM
+// เพื่อให้เทสต์ได้ตรงไปตรงมา ส่วนที่วาดผลแยกไว้ต่างหาก (renderStandardQualityResults)
+
+// (1) SKU หน้าตาคล้าย typo: เจอเฉพาะกรณี SKU ตัวหนึ่งเป็น "คำนำหน้า" (prefix string) ของอีกตัวพอดี และ
+// ยาวกว่ากันแค่ 1 ตัวอักษร (เช่น "MA-16-506-X" กับ "MA-16-506-XT") — ตั้งใจให้แคบแบบนี้ ไม่ใช้ edit-distance
+// ทั่วไป เพราะ SKU จริงที่ต่างกันแค่ตัวเลข (เช่น MA-16-505 กับ MA-16-506) ก็มี edit-distance แค่ 1 เหมือนกัน
+// แต่เป็นคนละสินค้าจริง ไม่ใช่ typo — เช็คแบบ "ตัดท้ายแล้วเหลือเท่ากันเป๊ะ" กันเคสแบบนั้นได้
+// เทียบเฉพาะภายในตระกูล (prefix) เดียวกันเท่านั้น (คนละตระกูลไม่มีทางสะกดพลาดมาคล้ายกันได้จริง) และที่สำคัญ:
+// ถ้ารูปแบบ "เพิ่มตัวอักษรตัวเดียวกันท้าย" นี้เกิดซ้ำหลายคู่ในตระกูลเดียวกัน (เจอจริง: ตระกูล AP มีคู่
+// xxx/xxxP เกือบทุกตัว 36 คู่ — เป็นธรรมเนียมตั้งชื่อจริงของบริษัท ไม่ใช่ typo) ให้ข้ามทั้งกลุ่มนั้นไป
+// เตือนเฉพาะรูปแบบที่เกิดแค่ 1-2 ครั้งในตระกูล (เหมือน MA-16-506-X ซึ่งเป็นเคสเดียวโดดๆ ไม่มีคู่อื่นคล้ายกัน)
+function checkStandardTypos(standards) {
+  const findings = [];
+  const byPrefix = {};
+  standards.forEach(function(s) { (byPrefix[s.prefix] = byPrefix[s.prefix] || []).push(s.sku); });
+  Object.keys(byPrefix).forEach(function(prefix) {
+    const skus = byPrefix[prefix];
+    const pairs = [];
+    for (let i = 0; i < skus.length; i++) {
+      for (let j = 0; j < skus.length; j++) {
+        if (i === j) continue;
+        const a = skus[i], b = skus[j];
+        if (b.length === a.length + 1 && b.indexOf(a) === 0) pairs.push({ short: a, long: b, addedChar: b.charAt(b.length - 1) });
+      }
+    }
+    const byAddedChar = {};
+    pairs.forEach(function(p) { (byAddedChar[p.addedChar] = byAddedChar[p.addedChar] || []).push(p); });
+    Object.keys(byAddedChar).forEach(function(ch) {
+      const group = byAddedChar[ch];
+      if (group.length >= 3) return; // เกิดซ้ำเยอะ = ธรรมเนียมตั้งชื่อจริง ไม่ใช่ typo
+      group.forEach(function(p) {
+        findings.push({ type: 'possible-typo', sku: p.short, detail: 'สะกดคล้าย "' + p.long + '" มาก (ต่างกันแค่ตัวท้าย 1 ตัว) — เช็คว่าตกตัวอักษรไปหรือเปล่า' });
+      });
+    });
+  });
+  return findings;
+}
+
+// (2) ค่า min/max/lot/avg ผิดปกติเชิงตรรกะ (ไม่ใช่ typo แต่ค่าขัดแย้งกันทางคณิตศาสตร์)
+function checkStandardRanges(standards) {
+  const findings = [];
+  standards.forEach(function(s) {
+    if (typeof s.min === 'number' && typeof s.max === 'number' && s.min > s.max) {
+      findings.push({ type: 'invalid-range', sku: s.sku, detail: 'min (' + s.min + ') มากกว่า max (' + s.max + ') — ต้องเป็น min ≤ max เสมอ' });
+    }
+    if (typeof s.min === 'number' && s.min < 0) findings.push({ type: 'invalid-range', sku: s.sku, detail: 'min ติดลบ (' + s.min + ')' });
+    if (typeof s.max === 'number' && s.max < 0) findings.push({ type: 'invalid-range', sku: s.sku, detail: 'max ติดลบ (' + s.max + ')' });
+    if (typeof s.lot === 'number' && s.lot <= 0) findings.push({ type: 'invalid-range', sku: s.sku, detail: 'lot ไม่มากกว่า 0 (' + s.lot + ')' });
+  });
+  return findings;
+}
+
+// (3) SKU ซ้ำ — บันทึกซ้อนกันโดยไม่ตั้งใจ (เช็คเฉพาะ STANDARDS ที่ฝังในโค้ด เพราะของที่แก้ผ่าน db ใช้ sku
+// เป็น doc id อยู่แล้ว ซ้ำไม่ได้โดยธรรมชาติ)
+function checkStandardDuplicates(rawStandardsArray) {
+  const findings = [];
+  const counts = {};
+  rawStandardsArray.forEach(function(s) { counts[s.sku] = (counts[s.sku] || 0) + 1; });
+  Object.keys(counts).forEach(function(sku) {
+    if (counts[sku] > 1) findings.push({ type: 'duplicate-sku', sku: sku, detail: 'มีอยู่ในข้อมูล ' + counts[sku] + ' ครั้ง (ควรมีแค่ 1)' });
+  });
+  return findings;
+}
+
+// (4) พรีฟิกซ์เดียวกันแต่บางตัวไม่มีสะกดที่คาด — เช่นตระกูล MA ส่วนใหญ่ลงท้าย "-XT" แต่บางตัวไม่มี
+// เช็คจากส่วนท้ายที่เป็นตัวอักษร/ขีด หลังตัวเลขตัวสุดท้ายของ SKU แล้วดูว่าแบบไหนเป็นส่วนใหญ่ (≥80%) ในกลุ่ม
+// พรีฟิกซ์เดียวกัน (อย่างน้อย 5 ตัวถึงจะนับ ไม่งั้นกลุ่มเล็กเกินไปจะฟันธงมั่ว)
+function standardSkuTail(sku) {
+  const m = sku.match(/[0-9]([A-Za-z\-]*)$/);
+  return m ? m[1] : '';
+}
+function checkStandardSuffixConsistency(standards) {
+  const findings = [];
+  const byPrefix = {};
+  standards.forEach(function(s) { (byPrefix[s.prefix] = byPrefix[s.prefix] || []).push(s); });
+  Object.keys(byPrefix).forEach(function(prefix) {
+    const list = byPrefix[prefix];
+    if (list.length < 5) return;
+    const counts = {};
+    list.forEach(function(s) { const t = standardSkuTail(s.sku); counts[t] = (counts[t] || 0) + 1; });
+    const entries = Object.keys(counts).map(function(t) { return [t, counts[t]]; }).sort(function(a, b) { return b[1] - a[1]; });
+    const dominantTail = entries[0][0], dominantCount = entries[0][1];
+    const total = list.length;
+    if (dominantTail && dominantCount / total >= 0.8 && dominantCount < total) {
+      list.forEach(function(s) {
+        if (standardSkuTail(s.sku) !== dominantTail) {
+          findings.push({ type: 'suffix-mismatch', sku: s.sku, detail: 'ตระกูล ' + prefix + ' ส่วนใหญ่ (' + dominantCount + '/' + total + ') ลงท้าย "' + dominantTail + '" แต่ตัวนี้ไม่ตรง' });
+        }
+      });
+    }
+  });
+  return findings;
+}
+
+// รวม 4 เช็คเข้าด้วยกัน — ใช้ computeEffectiveStandards() (รวม override จาก db แล้ว) สำหรับเช็คที่ 1/2/4
+// เพราะอยากเช็คข้อมูลที่ "ใช้งานจริง" ตอนนี้ ส่วนเช็คซ้ำ (3) ต้องใช้ STANDARDS ดิบเท่านั้น (ดูเหตุผลด้านบน)
+function checkStandardsQuality() {
+  const effective = computeEffectiveStandards();
+  return [].concat(
+    checkStandardTypos(effective),
+    checkStandardRanges(effective),
+    checkStandardDuplicates(STANDARDS),
+    checkStandardSuffixConsistency(effective)
+  );
+}
+
+const STANDARD_QUALITY_TYPE_LABELS = {
+  'possible-typo': 'สะกดคล้าย SKU อื่นมาก (เสี่ยง typo)',
+  'invalid-range': 'ค่า min/max/lot ผิดปกติ',
+  'duplicate-sku': 'SKU ซ้ำในข้อมูล',
+  'suffix-mismatch': 'สะกดไม่ตรงกับตระกูลเดียวกัน'
+};
+function renderStandardQualityResults(findings) {
+  const panel = document.getElementById('standardQualityPanel');
+  const badge = document.getElementById('standardQualityCountBadge');
+  const body = document.getElementById('standardQualityBody');
+  if (!panel || !body) return;
+  badge.textContent = findings.length.toLocaleString('th-TH') + ' รายการ';
+  if (findings.length === 0) {
+    body.innerHTML = '<div class="empty-state">ตรวจแล้ว ไม่พบจุดที่น่าสงสัยตอนนี้</div>';
+  } else {
+    const byType = {};
+    findings.forEach(function(f) { (byType[f.type] = byType[f.type] || []).push(f); });
+    body.innerHTML = Object.keys(byType).map(function(type) {
+      const list = byType[type];
+      return '<div style="font-size:13px;font-weight:600;margin:10px 0 4px;">' + xmlEscape(STANDARD_QUALITY_TYPE_LABELS[type] || type) + ' (' + list.length.toLocaleString('th-TH') + ')</div>' +
+        '<ul style="margin:0 0 6px;padding-left:18px;font-size:12px;color:var(--ink-muted);">' +
+        list.map(function(f) { return '<li><strong style="color:var(--ink);">' + xmlEscape(f.sku) + '</strong> — ' + xmlEscape(f.detail) + '</li>'; }).join('') +
+        '</ul>';
+    }).join('');
+  }
+  panel.style.display = '';
+  panel.open = true;
+}
+document.getElementById('standardQualityCheckBtn').addEventListener('click', function() {
+  renderStandardQualityResults(checkStandardsQuality());
+});
 document.getElementById('standardFormCancelBtn').addEventListener('click', function() {
   document.getElementById('standardEditForm').style.display = 'none';
 });
