@@ -4406,14 +4406,18 @@ function computeHomeAlerts(plans, lastStandardEditIso, today) {
     }
 
     // 3) สต็อกจองลูกค้าเพิ่มขึ้นผิดปกติเทียบรอบก่อนหน้า (ต้องมีทั้ง 2 แผนที่มีฟิลด์นี้ — แผนเก่าก่อนฟีเจอร์นี้จะไม่มี)
+    // "ไม่มีรอบก่อนให้เทียบ" หมายถึงทั้งกรณีไม่มีแผนก่อนหน้าเลย และกรณีมีแผนก่อนหน้าแต่เก่ากว่าฟีเจอร์นี้
+    // (เลยไม่มีฟิลด์นี้) — เดิมเช็คแค่ !prev ตัวเดียว ทำให้กรณีหลังไม่เข้าเงื่อนไขไหนเลย พลาดไป (เจอจาก
+    // ผู้ใช้ทดสอบจริง 2026-09-16: บันทึกแผนแรกที่มีฟิลด์นี้ แต่ไม่มีทางเตือนได้เพราะแผนก่อนหน้าไม่มีฟิลด์นี้)
     const prev = companyPlans[1];
+    const prevHasField = prev && typeof prev.customerTaggedCount === 'number';
     if (typeof latest.customerTaggedCount === 'number') {
-      if (prev && typeof prev.customerTaggedCount === 'number' && prev.customerTaggedCount > 0) {
+      if (prevHasField && prev.customerTaggedCount > 0) {
         const grew = latest.customerTaggedCount - prev.customerTaggedCount;
         if (latest.customerTaggedCount >= prev.customerTaggedCount * 1.5 && grew >= 5) {
           alerts.push({ severity: 'info', text: company + ': รหัสสต็อกจองลูกค้าเพิ่มขึ้นผิดปกติ (' + prev.customerTaggedCount.toLocaleString('th-TH') + ' → ' + latest.customerTaggedCount.toLocaleString('th-TH') + ' รหัส)' });
         }
-      } else if (!prev && latest.customerTaggedCount >= 20) {
+      } else if (!prevHasField && latest.customerTaggedCount >= 20) {
         alerts.push({ severity: 'info', text: company + ': พบรหัสสต็อกจองลูกค้า ' + latest.customerTaggedCount.toLocaleString('th-TH') + ' รหัสในแผนล่าสุด' });
       }
     }
@@ -4449,10 +4453,19 @@ function computeHomeAlerts(plans, lastStandardEditIso, today) {
   return alerts;
 }
 
-function renderHomeAlerts(alerts) {
+// checked=true หมายถึง "เช็คจริงแล้ว ไม่เจออะไรต้องเตือน" (โชว์ป้าย "เรียบร้อยดี" ให้รู้ว่าฟีเจอร์นี้ทำงาน
+// อยู่จริง) ต่างจาก checked=false ที่แปลว่า "ยังไม่ได้เช็ค" (ไม่มี db/โหลดพลาด) ซึ่งไม่ควรอ้างว่าเรียบร้อยดี
+// เพราะยังไม่รู้จริงๆ — เดิมทั้ง 2 กรณีนี้แสดงผลเหมือนกันคือกล่องว่างเปล่า ทำให้ผู้ใช้แยกไม่ออกว่าฟีเจอร์นี้
+// ทำงานจริงไหม หรือพังไปแล้ว (per user 2026-09-16 หลังอัปขึ้น GitHub แล้วไม่เห็นกล่องแจ้งเตือนเลย)
+function renderHomeAlerts(alerts, checked) {
   const box = document.getElementById('homeAlertsBox');
   if (!box) return;
-  if (!alerts || alerts.length === 0) { box.innerHTML = ''; return; }
+  if (!alerts || alerts.length === 0) {
+    box.innerHTML = checked
+      ? '<div style="display:flex;align-items:center;gap:8px;background:var(--ok-soft);color:var(--ok);border-radius:10px;padding:9px 12px;margin-bottom:6px;font-size:12.5px;">&#10003; ตรวจแล้ว ไม่มีอะไรต้องแจ้งเตือนตอนนี้</div>'
+      : '';
+    return;
+  }
   const colorFor = { critical: ['var(--critical)', 'var(--critical-soft)'], warn: ['var(--warn)', 'var(--warn-soft)'], info: ['var(--accent)', 'var(--accent-soft)'] };
   box.innerHTML = alerts.map(function(a) {
     const c = colorFor[a.severity] || colorFor.info;
@@ -4464,7 +4477,7 @@ function renderHomeAlerts(alerts) {
 // ดึงข้อมูลที่ต้องใช้คำนวณ alert จากฐานข้อมูล (แผน MRP ล่าสุดของทุกบริษัท + วันที่แก้ Standard ล่าสุด) แล้ว
 // ค่อยเรียก computeHomeAlerts (ฟังก์ชันคำนวณล้วนๆ) ต่อ — เรียกทุกครั้งที่ renderHomeTab() ทำงาน
 function loadHomeAlerts() {
-  if (!state.dbApi) { renderHomeAlerts([]); return; }
+  if (!state.dbApi) { renderHomeAlerts([], false); return; }
   Promise.all([
     state.dbApi.collection('mrp_plans').orderBy('createdAt', 'desc').limit(200).get().then(function(snap) {
       return snap.docs.map(function(d) { return d.data(); });
@@ -4474,9 +4487,9 @@ function loadHomeAlerts() {
     }).catch(function() { return null; })
   ]).then(function(results) {
     const alerts = computeHomeAlerts(results[0], results[1], new Date());
-    renderHomeAlerts(alerts);
+    renderHomeAlerts(alerts, true);
   }).catch(function() {
-    renderHomeAlerts([]);
+    renderHomeAlerts([], false);
   });
 }
 
