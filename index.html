@@ -5713,7 +5713,7 @@ function renderSalesRequestsList() {
   tableScroll.className = 'table-scroll';
   const table = document.createElement('table');
   table.className = 'order-table';
-  table.innerHTML = '<thead><tr><th>วันที่</th><th>ผู้แจ้ง</th><th>รหัส</th><th class="num">จำนวน</th><th>หมายเหตุ</th><th>สถานะ</th></tr></thead>';
+  table.innerHTML = '<thead><tr><th>วันที่</th><th>ผู้แจ้ง</th><th>รหัส</th><th class="num">จำนวน</th><th>หมายเหตุ</th><th>สถานะ</th><th></th></tr></thead>';
   const tbody = document.createElement('tbody');
   filtered.forEach(function(r) {
     const tr = document.createElement('tr');
@@ -5753,6 +5753,43 @@ function renderSalesRequestsList() {
       });
     });
     statusCell.appendChild(statusSelect);
+
+    // ปุ่มลบ: กดยืนยัน 2 ครั้งเหมือนปุ่มลบแผน MRP ในหน้าประวัติ (กันลบพลาด แทน window.confirm() ที่มักถูก
+    // บล็อกตอนรันในหน้าที่ฝังอยู่ใน iframe ของ claude.ai) — เอาไว้ให้ลบรหัสที่เทสหรือกรอกผิดออกก่อนเทียบจริง
+    // (per user 2026-09-17)
+    const deleteCell = document.createElement('td');
+    deleteCell.setAttribute('data-label', 'ลบ');
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'btn btn-danger btn-sm';
+    deleteBtn.textContent = 'ลบ';
+    let deleteArmed = false;
+    let deleteArmTimer = null;
+    deleteBtn.addEventListener('click', function() {
+      if (!deleteArmed) {
+        deleteArmed = true;
+        deleteBtn.textContent = 'ยืนยันลบ?';
+        deleteArmTimer = setTimeout(function() {
+          deleteArmed = false;
+          deleteBtn.textContent = 'ลบ';
+        }, 4000);
+        return;
+      }
+      clearTimeout(deleteArmTimer);
+      deleteBtn.disabled = true;
+      state.dbApi.doc('sales_requests/' + r._id).delete().then(function() {
+        salesReqCache = salesReqCache.filter(function(x) { return x._id !== r._id; });
+        showToast('ลบรายการแล้ว: ' + r.sku);
+        renderSalesRequestsList();
+      }).catch(function(err) {
+        deleteBtn.disabled = false;
+        deleteArmed = false;
+        deleteBtn.textContent = 'ลบ';
+        showToast('ลบไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ'));
+      });
+    });
+    deleteCell.appendChild(deleteBtn);
+    tr.appendChild(deleteCell);
     tbody.appendChild(tr);
   });
   table.appendChild(tbody);
