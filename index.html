@@ -5521,7 +5521,7 @@ const SALES_REQ_ITEM_ROWS = 10;
   let html = '<span style="display:block;font-size:13px;color:var(--ink-muted);margin-bottom:6px;">รายการรหัสสินค้า (กรอกได้สูงสุด ' + SALES_REQ_ITEM_ROWS + ' รายการ ไม่ต้องกรอกครบทุกช่อง)</span>';
   for (let i = 0; i < SALES_REQ_ITEM_ROWS; i++) {
     html +=
-      '<div style="display:flex;gap:8px;margin-bottom:6px;">' +
+      '<div style="display:flex;gap:8px;margin-bottom:6px;align-items:flex-start;">' +
       '<div style="flex:1 1 auto;min-width:0;">' +
       '<input type="text" id="salesReqSku' + i + '" list="salesReqSkuList" placeholder="รหัสสินค้า #' + (i + 1) + '" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:15px;text-transform:uppercase;">' +
       '<div id="salesReqSkuHint' + i + '" style="font-size:11px;margin-top:3px;min-height:14px;"></div>' +
