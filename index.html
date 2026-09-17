@@ -1073,6 +1073,21 @@
     <div id="dashContent"></div>
   </section>
 
+  <section class="tab-panel" id="tab-salesreq">
+    <div class="step-head"><span class="step-title">คำขอจากเซลล์</span></div>
+    <p class="lede" style="margin-top:-6px;">รายการรหัสที่เซลล์แจ้งขอสั่งของเข้ามา (ผ่านลิงก์ฟอร์มแยกต่างหาก) เทียบกับรีพอร์ตแล้วอัปเดตสถานะได้เลย — เซลล์เห็นแค่รายการของตัวเองในหน้าฟอร์ม</p>
+    <div class="row-actions" style="margin-top:0;margin-bottom:14px;flex-wrap:wrap;">
+      <label style="font-size:13px;color:var(--ink-muted);display:inline-flex;align-items:center;gap:6px;">สถานะ
+        <select id="salesReqStatusFilter" style="font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);">
+          <option value="">ทุกสถานะ</option>
+        </select>
+      </label>
+      <button type="button" class="btn btn-ghost btn-sm" id="salesReqRefreshBtn">รีเฟรช</button>
+    </div>
+    <div class="stat-strip" id="salesReqStatStrip"></div>
+    <div id="salesReqListWrap" style="margin-top:14px;"></div>
+  </section>
+
 </main>
 
 <nav class="bottom-nav">
@@ -1082,7 +1097,41 @@
   <button type="button" class="nav-btn" id="nav-bom" data-tab="bom"><span class="nav-icon">▦</span>BOM</button>
   <button type="button" class="nav-btn" id="nav-history" data-tab="history"><span class="nav-icon">▤</span>แผน MRP</button>
   <button type="button" class="nav-btn" id="nav-dashboard" data-tab="dashboard"><span class="nav-icon">▥</span>แดชบอร์ด</button>
+  <button type="button" class="nav-btn" id="nav-salesreq" data-tab="salesreq"><span class="nav-icon">✉</span>คำขอเซลล์</button>
 </nav>
+
+<!-- หน้าฟอร์มแจ้งขอสั่งของสำหรับเซลล์ (per user 2026-09-17) — เข้าผ่านลิงก์แยกต่างหาก ?request=1 เท่านั้น
+     (ดูโค้ดสลับโหมดใน <script> ด้านล่าง) ไม่ต้องผ่านแท็บ/เมนูของแอปหลักเลย เพื่อให้เซลล์กดลิงก์เดียวใช้ได้ทันที
+     ไม่ต้องรู้จักหน้าตาแอปหลักหรือกดหลายขั้นตอน -->
+<div id="salesRequestPage" style="display:none;background:var(--bg);min-height:100vh;">
+  <div style="max-width:480px;margin:0 auto;padding:28px 18px 60px;">
+    <div class="eyebrow" style="margin-bottom:4px;">เครืออามาด้า เอ็กซ์ตรีม</div>
+    <h1 style="font-family:'Kanit',sans-serif;font-weight:700;font-size:26px;margin:0 0 6px;">แจ้งขอสั่งของ</h1>
+    <p class="lede" style="margin-bottom:22px;">กรอกรหัสสินค้าที่ลูกค้าต้องการ ทีมงานจะเช็คกับรีพอร์ตแล้วดำเนินการให้ ไม่ต้องพิมพ์ในไลน์กลุ่มแล้ว</p>
+    <label style="display:block;margin-bottom:14px;">
+      <span style="display:block;font-size:13px;color:var(--ink-muted);margin-bottom:5px;">ชื่อผู้แจ้ง</span>
+      <input type="text" id="salesReqName" list="salesReqNameList" placeholder="พิมพ์หรือเลือกชื่อ" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;">
+      <datalist id="salesReqNameList"></datalist>
+    </label>
+    <label style="display:block;margin-bottom:14px;">
+      <span style="display:block;font-size:13px;color:var(--ink-muted);margin-bottom:5px;">รหัสสินค้า</span>
+      <input type="text" id="salesReqSku" list="salesReqSkuList" placeholder="เช่น MA-22-502-XT" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;text-transform:uppercase;">
+      <datalist id="salesReqSkuList"></datalist>
+      <div id="salesReqSkuHint" style="font-size:12.5px;margin-top:5px;min-height:16px;"></div>
+    </label>
+    <label style="display:block;margin-bottom:14px;">
+      <span style="display:block;font-size:13px;color:var(--ink-muted);margin-bottom:5px;">จำนวน</span>
+      <input type="number" id="salesReqQty" min="1" step="1" inputmode="numeric" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;">
+    </label>
+    <label style="display:block;margin-bottom:18px;">
+      <span style="display:block;font-size:13px;color:var(--ink-muted);margin-bottom:5px;">หมายเหตุ (ถ้ามี)</span>
+      <input type="text" id="salesReqNote" placeholder="เช่น ลูกค้ารอด่วน" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;">
+    </label>
+    <button type="button" class="btn btn-primary" id="salesReqSubmitBtn" style="width:100%;justify-content:center;padding:15px;font-size:16px;">ส่งคำขอ</button>
+    <div id="salesReqResult" style="margin-top:10px;font-size:13.5px;min-height:18px;"></div>
+    <div id="salesReqRecent" style="margin-top:30px;"></div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 <div id="printArea" style="display:none;"></div>
@@ -4294,7 +4343,7 @@ document.getElementById('exportHistoryBtn').addEventListener('click', function(e
 // ---------- app shell: แท็บเนวิเกชัน 5 ปุ่ม (หน้าหลัก/Standard/สร้างแผน/BOM/แผน MRP) ----------
 // เดิมหน้านี้เป็นหน้าเดียวยาวๆ เปลี่ยนมาแบ่งเป็นแท็บให้ใช้งานคล้ายแอปมือถือ (per user 2026-09-07)
 // ทุก id ของ element เดิมยังอยู่ครบ แค่ย้ายไปอยู่ในกล่อง tab-panel เฉยๆ ตรรกะข้างในไม่ได้แก้อะไรเลย
-const TABS = ['home', 'standard', 'plan', 'bom', 'history', 'dashboard'];
+const TABS = ['home', 'standard', 'plan', 'bom', 'history', 'dashboard', 'salesreq'];
 function showTab(tab) {
   // บั๊กเดิม: เคยตั้งแค่ panel.style.display ล้าง inline style เฉยๆ แต่ .tab-panel { display:none }
   // เป็น class-level rule อยู่แล้ว การล้าง inline ไม่ได้ทำให้โผล่ขึ้นมา ต้องเติม/เอาคลาส "active" ออก
@@ -4319,6 +4368,7 @@ function showTab(tab) {
   // แดชบอร์ดโหลดข้อมูลใหม่ทุกครั้งที่เข้าแท็บ (เหมือน renderHomeTab ที่ดึงใหม่ทุกครั้ง) เพื่อให้เห็นแผน
   // ล่าสุดที่เพิ่งบันทึกจากที่อื่นเสมอ ไม่ต้องกดรีเฟรชหน้าเว็บ (per user 2026-09-09)
   if (tab === 'dashboard') loadDashboardData();
+  if (tab === 'salesreq') loadSalesRequests();
   window.scrollTo(0, 0);
 }
 TABS.forEach(function(t) {
@@ -5433,4 +5483,240 @@ updateUploadGate();
   const dd = String(d.getDate()).padStart(2, '0');
   dateInput.value = yyyy + '-' + mm + '-' + dd;
 })();
+
+// ---------- คำขอสั่งของจากเซลล์ (per user 2026-09-17) ----------
+// ปัญหาที่แก้: เซลล์เดิมพิมพ์รหัส+จำนวนในไลน์กลุ่ม แต่ข้อความจมหายไปกับข้อความอื่นระหว่างวัน ตามย้อนหลังยาก
+// แถมรหัสที่เซลล์ส่งมาไม่ได้แปลว่าต้องสั่งทันที (อาจสั่งผลิตไปแล้ว/ลาวกำลังส่งของอยู่) ต้องเอามาเทียบกับ
+// รีพอร์ตก่อนเสมอ — เก็บเป็นรายการถาวรใน Firestore (collection "sales_requests") พร้อมสถานะติดตามแทน
+const SALES_REQ_STATUSES = ['ใหม่', 'กำลังเช็ค', 'มีอยู่แล้ว/สั่งผลิตไปแล้ว', 'สั่งซื้อไปแล้ว'];
+
+// ---------- ส่วนที่ 1: หน้าฟอร์มสำหรับเซลล์ (โหมดแยก เข้าผ่าน ?request=1 เท่านั้น) ----------
+// ตรวจจาก query string ไม่ใช่ path เพราะเป็นไฟล์ HTML ไฟล์เดียว (ไม่มี routing จริง) — ใช้ query string
+// ทำให้ได้ URL แยกที่แชร์ให้เซลล์กดตรงๆ ได้เลย (เช่น .../index.html?request=1) โดยไม่ต้องมีไฟล์ที่ 2
+// ให้ดูแลคู่กับ index.html (ผิดพลาดง่ายกว่าเยอะถ้าต้องแก้ 2 ไฟล์พร้อมกันทุกครั้ง)
+const isSalesRequestMode = new URLSearchParams(window.location.search).get('request') === '1';
+if (isSalesRequestMode) {
+  const topbarEl = document.querySelector('header.topbar');
+  const mainEl = document.querySelector('main.tab-content');
+  const navEl = document.querySelector('nav.bottom-nav');
+  if (topbarEl) topbarEl.style.display = 'none';
+  if (mainEl) mainEl.style.display = 'none';
+  if (navEl) navEl.style.display = 'none';
+  document.getElementById('salesRequestPage').style.display = '';
+}
+
+// ตัวเลือกรหัสสินค้า (datalist) — ใช้รายชื่อ SKU ที่รู้จักอยู่แล้วในเครื่องทั้งหมด ไม่ต้องรอโหลดจาก db
+(function populateSalesReqSkuDatalist() {
+  const list = document.getElementById('salesReqSkuList');
+  if (!list) return;
+  Object.keys(skuToCompanies).sort().forEach(function(sku) {
+    const opt = document.createElement('option');
+    opt.value = sku;
+    list.appendChild(opt);
+  });
+})();
+
+// ชื่อผู้แจ้ง (datalist) — ดึงจากชื่อที่เคยมีคนพิมพ์มาก่อนหน้านี้ใน sales_requests เอง (ไม่ต้องมีใครมาตั้ง
+// รายชื่อล่วงหน้า) รวมกับจำชื่อล่าสุดของเครื่องนี้ไว้ใน localStorage ให้กรอกครั้งต่อไปไม่ต้องพิมพ์ใหม่
+function loadSalesReqNameDatalist() {
+  if (!state.dbApi) return;
+  state.dbApi.collection('sales_requests').orderBy('createdAt', 'desc').limit(200).get().then(function(snap) {
+    const names = new Set();
+    snap.docs.forEach(function(d) { const n = d.data().salesperson; if (n) names.add(n); });
+    const list = document.getElementById('salesReqNameList');
+    if (!list) return;
+    list.innerHTML = '';
+    Array.from(names).sort().forEach(function(n) {
+      const opt = document.createElement('option');
+      opt.value = n;
+      list.appendChild(opt);
+    });
+  }).catch(function() {});
+}
+
+// รหัสที่พิมพ์มา รู้จักในระบบไหม — ไม่บล็อกการส่ง (เผื่อเป็นสินค้าใหม่จริงๆ ที่ยังไม่มี Standard) แค่เตือนไว้
+// กันเซลล์พิมพ์รหัสผิด
+function updateSalesReqSkuHint() {
+  const input = document.getElementById('salesReqSku');
+  const hint = document.getElementById('salesReqSkuHint');
+  if (!input || !hint) return;
+  const val = input.value.trim().toUpperCase();
+  if (!val) { hint.textContent = ''; return; }
+  const companies = skuToCompanies[val];
+  if (companies) {
+    hint.style.color = 'var(--ok)';
+    hint.textContent = '✓ รู้จักรหัสนี้ (' + companies.join(', ') + ')';
+  } else {
+    hint.style.color = 'var(--warn)';
+    hint.textContent = '⚠ ยังไม่มีรหัสนี้ในระบบ ตรวจให้แน่ใจว่าพิมพ์ถูกก่อนส่ง';
+  }
+}
+
+// รายการล่าสุดที่ชื่อนี้เคยส่งมา — ให้เซลล์เห็นเองว่าคำขอที่ส่งไปก่อนหน้าเข้าระบบจริงหรือยัง (แก้ปัญหาเดิม
+// ที่พิมพ์ในไลน์แล้วไม่รู้ว่ามีใครเห็นหรือเปล่า) ดึงแบบ orderBy เดียว (createdAt) แล้วกรองชื่อฝั่ง client
+// เพื่อไม่ต้องสร้าง composite index ใน Firestore (เหมือนแพทเทิร์นที่ใช้กับแดชบอร์ดเดิม)
+function loadSalesReqRecent(name) {
+  const el = document.getElementById('salesReqRecent');
+  if (!el) return;
+  if (!state.dbApi || !name) { el.innerHTML = ''; return; }
+  state.dbApi.collection('sales_requests').orderBy('createdAt', 'desc').limit(100).get().then(function(snap) {
+    const mine = snap.docs.map(function(d) { return d.data(); }).filter(function(r) { return r.salesperson === name; }).slice(0, 10);
+    if (mine.length === 0) { el.innerHTML = ''; return; }
+    el.innerHTML = '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">คำขอล่าสุดของคุณ</div>' +
+      mine.map(function(r) {
+        return '<div class="history-card" style="padding:10px 12px;">' +
+          '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-weight:600;">' + xmlEscape(r.sku) + ' &times; ' + (r.qty || 0).toLocaleString('th-TH') + '</span>' +
+          '<span class="history-badge pending">' + xmlEscape(r.status || 'ใหม่') + '</span>' +
+          '</div><div style="font-size:11.5px;color:var(--ink-muted);margin-top:3px;">' + xmlEscape(thaiHistoryDate(r.createdAt)) + '</div></div>';
+      }).join('');
+  }).catch(function() { el.innerHTML = ''; });
+}
+
+// ผูก event listener ไว้เสมอ (ไม่ต้องเช็ค isSalesRequestMode) เหมือนปุ่มอื่นๆ ในเว็บนี้ที่ผูกไว้ตั้งแต่ต้น
+// แม้แท็บ/หน้านั้นจะยังไม่ได้เปิดโชว์อยู่ก็ตาม — ส่วนที่ดึงข้อมูลจริงจาก db (ชื่อ/รายการล่าสุด) ค่อยแยกไป
+// เรียกเฉพาะตอนอยู่ในโหมดนี้จริงๆ ด้านล่าง เพื่อไม่ให้แอปหลักยิง query ที่ไม่จำเป็นทุกครั้งที่โหลดหน้า
+if (isSalesRequestMode) {
+  loadSalesReqNameDatalist();
+  const savedName = localStorage.getItem('salesReqLastName');
+  if (savedName) {
+    document.getElementById('salesReqName').value = savedName;
+    loadSalesReqRecent(savedName);
+  }
+}
+document.getElementById('salesReqSku').addEventListener('input', updateSalesReqSkuHint);
+document.getElementById('salesReqSubmitBtn').addEventListener('click', function() {
+  const resultEl = document.getElementById('salesReqResult');
+  const name = document.getElementById('salesReqName').value.trim();
+  const sku = document.getElementById('salesReqSku').value.trim().toUpperCase();
+  const qty = Number(document.getElementById('salesReqQty').value);
+  const note = document.getElementById('salesReqNote').value.trim();
+  if (!name) { resultEl.style.color = 'var(--critical)'; resultEl.textContent = 'กรุณากรอกชื่อผู้แจ้ง'; return; }
+  if (!sku) { resultEl.style.color = 'var(--critical)'; resultEl.textContent = 'กรุณากรอกรหัสสินค้า'; return; }
+  if (!qty || qty <= 0) { resultEl.style.color = 'var(--critical)'; resultEl.textContent = 'กรุณากรอกจำนวนให้ถูกต้อง (มากกว่า 0)'; return; }
+  if (!state.dbApi) { resultEl.style.color = 'var(--critical)'; resultEl.textContent = state.dbChecked ? DB_UNAVAILABLE_MSG : 'กำลังเช็คระบบ ลองใหม่อีกครั้งใน 2-3 วินาที'; return; }
+  resultEl.style.color = 'var(--ink-muted)';
+  resultEl.textContent = 'กำลังส่ง...';
+  document.getElementById('salesReqSubmitBtn').disabled = true;
+  state.dbApi.collection('sales_requests').add({
+    salesperson: name, sku: sku, qty: qty, note: note,
+    status: 'ใหม่', createdAt: new Date().toISOString()
+  }).then(function() {
+    resultEl.style.color = 'var(--ok)';
+    resultEl.textContent = '✓ ส่งคำขอแล้ว ทีมงานจะเช็คให้';
+    document.getElementById('salesReqSku').value = '';
+    document.getElementById('salesReqQty').value = '';
+    document.getElementById('salesReqNote').value = '';
+    document.getElementById('salesReqSkuHint').textContent = '';
+    localStorage.setItem('salesReqLastName', name);
+    loadSalesReqRecent(name);
+    loadSalesReqNameDatalist();
+  }).catch(function(err) {
+    resultEl.style.color = 'var(--critical)';
+    resultEl.textContent = 'ส่งไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ');
+  }).finally(function() {
+    document.getElementById('salesReqSubmitBtn').disabled = false;
+  });
+});
+
+// ---------- ส่วนที่ 2: แท็บ "คำขอเซลล์" สำหรับทีมงานดู/อัปเดตสถานะ ----------
+let salesReqCache = null;
+(function populateSalesReqStatusFilter() {
+  const sel = document.getElementById('salesReqStatusFilter');
+  if (!sel) return;
+  SALES_REQ_STATUSES.forEach(function(s) {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    sel.appendChild(opt);
+  });
+})();
+
+function loadSalesRequests() {
+  const wrap = document.getElementById('salesReqListWrap');
+  if (!wrap) return;
+  if (!state.dbApi) { wrap.innerHTML = '<div class="empty-state">' + (state.dbChecked ? DB_UNAVAILABLE_MSG : 'กำลังเช็คฟีเจอร์นี้...') + '</div>'; return; }
+  wrap.innerHTML = '<div class="empty-state">กำลังโหลด...</div>';
+  state.dbApi.collection('sales_requests').orderBy('createdAt', 'desc').limit(300).get().then(function(snap) {
+    salesReqCache = snap.docs.map(function(d) { return Object.assign({ _id: d.id }, d.data()); });
+    renderSalesRequestsList();
+  }).catch(function(err) {
+    wrap.innerHTML = '<div class="empty-state">โหลดไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ') + '</div>';
+  });
+}
+
+function renderSalesRequestsList() {
+  const wrap = document.getElementById('salesReqListWrap');
+  const stripEl = document.getElementById('salesReqStatStrip');
+  if (!wrap || !salesReqCache) return;
+
+  const counts = {};
+  SALES_REQ_STATUSES.forEach(function(s) { counts[s] = 0; });
+  salesReqCache.forEach(function(r) { counts[r.status] = (counts[r.status] || 0) + 1; });
+  if (stripEl) {
+    stripEl.innerHTML = SALES_REQ_STATUSES.map(function(s) {
+      const warnClass = s === 'ใหม่' ? ' warn' : '';
+      return '<div class="stat-tile' + warnClass + '"><div class="stat-label">' + xmlEscape(s) + '</div><div class="stat-value">' + (counts[s] || 0).toLocaleString('th-TH') + '</div></div>';
+    }).join('');
+  }
+
+  const filterVal = document.getElementById('salesReqStatusFilter').value;
+  const filtered = filterVal ? salesReqCache.filter(function(r) { return r.status === filterVal; }) : salesReqCache;
+  if (filtered.length === 0) { wrap.innerHTML = '<div class="empty-state">ไม่มีรายการ</div>'; return; }
+
+  const tableScroll = document.createElement('div');
+  tableScroll.className = 'table-scroll';
+  const table = document.createElement('table');
+  table.className = 'order-table';
+  table.innerHTML = '<thead><tr><th>วันที่</th><th>ผู้แจ้ง</th><th>รหัส</th><th class="num">จำนวน</th><th>หมายเหตุ</th><th>สถานะ</th></tr></thead>';
+  const tbody = document.createElement('tbody');
+  filtered.forEach(function(r) {
+    const tr = document.createElement('tr');
+    // เตือนไว้เฉยๆ ถ้ารหัสนี้ไม่มีใน Standard เลย (เผื่อเซลล์พิมพ์รหัสผิด) — ไม่บล็อกอะไร แค่ขึ้นสีแดงเตือน
+    const unknownFlag = skuToCompanies[r.sku] ? '' : ' <span style="color:var(--critical);font-size:11px;">(ไม่รู้จักรหัสนี้)</span>';
+    // ตั้งใจไม่ใส่ <td> คอลัมน์สถานะไว้ในสตริง innerHTML นี้ (ต่างจากคอลัมน์อื่น) แล้วค่อย appendChild
+    // ทีหลังแทนการอ้าง tr.lastChild — กัน tr.lastChild ชี้ผิด element ถ้าเรียงลำดับผิดหรือ browser
+    // จัดการ text node แทรกเองระหว่าง element (เจอจริงตอนเขียนเทสต์ 2026-09-17)
+    tr.innerHTML =
+      '<td data-label="วันที่">' + xmlEscape(thaiHistoryDate(r.createdAt)) + '</td>' +
+      '<td data-label="ผู้แจ้ง">' + xmlEscape(r.salesperson || '-') + '</td>' +
+      '<td data-label="รหัส">' + xmlEscape(r.sku) + unknownFlag + '</td>' +
+      '<td data-label="จำนวน" class="num">' + (r.qty || 0).toLocaleString('th-TH') + '</td>' +
+      '<td data-label="หมายเหตุ">' + xmlEscape(r.note || '-') + '</td>';
+    const statusCell = document.createElement('td');
+    statusCell.setAttribute('data-label', 'สถานะ');
+    tr.appendChild(statusCell);
+    const statusSelect = document.createElement('select');
+    statusSelect.className = 'order-status-select';
+    SALES_REQ_STATUSES.forEach(function(s) {
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      statusSelect.appendChild(opt);
+    });
+    statusSelect.value = r.status || 'ใหม่';
+    statusSelect.addEventListener('change', function() {
+      const newStatus = this.value;
+      const prevStatus = r.status;
+      r.status = newStatus; // อัปเดต cache ทันทีให้ UI ไว ก่อนรอ db ตอบกลับ
+      state.dbApi.doc('sales_requests/' + r._id).update({ status: newStatus, updatedAt: new Date().toISOString() }).then(function() {
+        showToast('อัปเดตสถานะแล้ว: ' + r.sku + ' → ' + newStatus);
+        renderSalesRequestsList();
+      }).catch(function(err) {
+        r.status = prevStatus; // ย้อนกลับถ้าบันทึกไม่สำเร็จ
+        statusSelect.value = prevStatus;
+        showToast('อัปเดตไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ'));
+      });
+    });
+    statusCell.appendChild(statusSelect);
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  tableScroll.appendChild(table);
+  wrap.innerHTML = '';
+  wrap.appendChild(tableScroll);
+}
+
+const salesReqStatusFilterEl = document.getElementById('salesReqStatusFilter');
+if (salesReqStatusFilterEl) salesReqStatusFilterEl.addEventListener('change', renderSalesRequestsList);
+const salesReqRefreshBtnEl = document.getElementById('salesReqRefreshBtn');
+if (salesReqRefreshBtnEl) salesReqRefreshBtnEl.addEventListener('click', loadSalesRequests);
 </script>
