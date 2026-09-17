@@ -907,6 +907,8 @@
       <label class="standard-check"><input type="checkbox" id="standardShowInactive"> แสดงที่ปิดใช้งานด้วย</label>
       <button type="button" class="btn btn-primary btn-sm" id="standardAddNewBtn">+ เพิ่ม SKU ใหม่</button>
       <button type="button" class="btn btn-ghost btn-sm" id="standardQualityCheckBtn">ตรวจสอบคุณภาพข้อมูล</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="standardBulkUpdateBtn">อัปโหลดไฟล์อัปเดต Standard</button>
+      <input type="file" id="standardBulkUpdateInput" accept=".csv,.CSV" style="display:none;">
     </div>
     <details class="person-panel" id="standardQualityPanel" style="display:none;margin-bottom:14px;">
       <summary><span>ผลตรวจสอบคุณภาพข้อมูล Standard <span class="psub">(ช่วยดูจุดที่ควรเช็คมือ ไม่ใช่ฟันธงว่าผิดแน่นอน)</span></span>
@@ -914,6 +916,17 @@
       </summary>
       <div class="person-body" id="standardQualityBody"></div>
     </details>
+    <div class="standard-form" id="standardBulkUpdatePanel" style="display:none;margin-bottom:14px;">
+      <h4>พรีวิวอัปเดต Standard จากไฟล์ (min/max/lot/avg)</h4>
+      <p class="lede" style="margin:-6px 0 10px;font-size:12.5px;">รองรับไฟล์ .csv ที่มีคอลัมน์หัวตาราง SKU/รหัส + Min/Max/Lot/Avg (จะมีคอลัมน์ไหนก็ได้ ไม่บังคับครบ) — ยังไม่มีการบันทึกจนกว่าจะกด "ยืนยันอัปเดต" ด้านล่าง</p>
+      <div class="bulk-status-hint" id="standardBulkUpdateSummary"></div>
+      <div id="standardBulkUpdateTableWrap" style="max-height:50vh;overflow-y:auto;margin-bottom:10px;"></div>
+      <div class="standard-form-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="standardBulkUpdateConfirmBtn">ยืนยันอัปเดต</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="standardBulkUpdateCancelBtn">ยกเลิก</button>
+        <span class="bulk-status-result" id="standardBulkUpdateResult"></span>
+      </div>
+    </div>
     <div class="bulk-status-result" id="standardResultCount" style="margin-bottom:10px;display:block;"></div>
     <div id="standardTableWrap"></div>
   </section>
@@ -5042,6 +5055,198 @@ function renderStandardQualityResults(findings) {
 document.getElementById('standardQualityCheckBtn').addEventListener('click', function() {
   renderStandardQualityResults(checkStandardsQuality());
 });
+
+// ---------- อัปโหลดไฟล์อัปเดต Standard ทีเดียว (min/max/lot/avg) — per user 2026-09-17 ----------
+// รองรับเฉพาะ .csv (เว็บนี้เขียน .xlsx ได้แต่ยังไม่มีตัวอ่าน zip/inflate จริง — ถ้ามีไฟล์ .xlsx ให้ Save As
+// เป็น .csv ก่อนแล้วค่อยอัปโหลด) หาคอลัมน์จากชื่อหัวตาราง ไม่ยึดตำแหน่งตายตัว (แบบเดียวกับ parseWipCsv)
+// รองรับชื่อหัวได้หลายแบบ (ไทย/อังกฤษ) — ไฟล์จะมีคอลัมน์ไหนก็ได้ ไม่บังคับครบทั้ง 4 (ช่องที่ไม่มีคอลัมน์ใน
+// ไฟล์เลย หรือแถวไหนที่ช่องนั้นว่างเปล่า จะไม่ไปแตะค่าเดิมของ SKU นั้น กันไฟล์ไม่ครบมาลบล้างค่าดีๆ โดยไม่ตั้งใจ)
+const STANDARD_UPDATE_COL_ALIASES = {
+  sku: ['sku', 'รหัส', 'รหัสสินค้า'],
+  min: ['min', 'มินิมั่ม', 'มิน'],
+  max: ['max', 'แม็กซิมั่ม', 'แม็ก'],
+  lot: ['lot', 'ล็อต', 'ลอต'],
+  avg: ['avg', 'average', 'เฉลี่ย', 'เฉลี่ยใช้/เดือน', 'เฉลี่ยใช้ต่อเดือน']
+};
+function findStandardUpdateCol(headerCells, aliases) {
+  for (let i = 0; i < headerCells.length; i++) {
+    const norm = headerCells[i].trim().toLowerCase().replace(/\s+/g, '');
+    if (aliases.some(function(a) { return norm === a.toLowerCase().replace(/\s+/g, ''); })) return i;
+  }
+  return -1;
+}
+function parseStandardUpdateCsv(text) {
+  const lines = text.split(/\r?\n/).filter(function(l) { return l.trim() !== ''; });
+  let headerIdx = -1, cols = null;
+  for (let i = 0; i < Math.min(lines.length, 10); i++) {
+    const cells = splitCsvLine(lines[i]);
+    const skuCol = findStandardUpdateCol(cells, STANDARD_UPDATE_COL_ALIASES.sku);
+    if (skuCol !== -1) {
+      cols = {
+        sku: skuCol,
+        min: findStandardUpdateCol(cells, STANDARD_UPDATE_COL_ALIASES.min),
+        max: findStandardUpdateCol(cells, STANDARD_UPDATE_COL_ALIASES.max),
+        lot: findStandardUpdateCol(cells, STANDARD_UPDATE_COL_ALIASES.lot),
+        avg: findStandardUpdateCol(cells, STANDARD_UPDATE_COL_ALIASES.avg)
+      };
+      headerIdx = i;
+      break;
+    }
+  }
+  const rows = [];
+  const errors = [];
+  if (headerIdx === -1) {
+    errors.push('หาคอลัมน์ SKU/รหัส ไม่เจอในไฟล์นี้ — ตรวจว่าแถวหัวตารางมีคำว่า "SKU" หรือ "รหัส" หรือเปล่า');
+    return { rows: rows, cols: null, errors: errors };
+  }
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const cells = splitCsvLine(lines[i]);
+    const sku = (cells[cols.sku] || '').trim();
+    if (!sku) continue;
+    const row = { sku: sku };
+    ['min', 'max', 'lot', 'avg'].forEach(function(field) {
+      const colIdx = cols[field];
+      if (colIdx === -1 || colIdx === undefined) return;
+      const raw = (cells[colIdx] || '').trim();
+      if (raw === '') return;
+      const num = Number(raw.replace(/,/g, ''));
+      if (isNaN(num)) { errors.push('แถวที่ ' + (i + 1) + ' (' + sku + '): ค่า "' + field + '" = "' + raw + '" ไม่ใช่ตัวเลข ข้ามช่องนี้'); return; }
+      row[field] = num;
+    });
+    rows.push(row);
+  }
+  return { rows: rows, cols: cols, errors: errors };
+}
+
+// เทียบค่าที่อ่านจากไฟล์ กับ Standard ที่ใช้งานจริงตอนนี้ (รวม override จาก db แล้ว) — คืนรายการที่จับคู่ได้
+// (พร้อมรายละเอียดว่าฟิลด์ไหนเปลี่ยนบ้าง) แยกจากรายการที่ไม่พบ SKU นี้ในระบบเลย (จะข้าม ไม่สร้างใหม่ให้ —
+// ถ้าอยากเพิ่ม SKU ใหม่ต้องผ่านฟอร์ม "+ เพิ่ม SKU ใหม่" เพราะต้องกรอก prefix/บริษัท/ผู้รับผิดชอบด้วย)
+function buildStandardUpdatePreview(parsedRows) {
+  const bySku = {};
+  computeEffectiveStandards().forEach(function(s) { bySku[s.sku] = s; });
+  const matched = [];
+  const notFound = [];
+  parsedRows.forEach(function(row) {
+    const existing = bySku[row.sku];
+    if (!existing) { notFound.push(row); return; }
+    const changes = [];
+    ['min', 'max', 'lot', 'avg'].forEach(function(field) {
+      if (row[field] === undefined) return;
+      if (row[field] !== existing[field]) changes.push({ field: field, oldValue: existing[field], newValue: row[field] });
+    });
+    matched.push({ sku: row.sku, existing: existing, changes: changes });
+  });
+  return { matched: matched, notFound: notFound };
+}
+
+const STANDARD_UPDATE_FIELD_LABELS = { min: 'Min', max: 'Max', lot: 'Lot', avg: 'Avg' };
+let standardBulkUpdatePreviewCache = null; // เก็บผลพรีวิวล่าสุดไว้ใช้ตอนกด "ยืนยันอัปเดต"
+
+function renderStandardBulkUpdatePreview(preview, parseErrors) {
+  standardBulkUpdatePreviewCache = preview;
+  const panel = document.getElementById('standardBulkUpdatePanel');
+  const summaryEl = document.getElementById('standardBulkUpdateSummary');
+  const tableWrap = document.getElementById('standardBulkUpdateTableWrap');
+  const confirmBtn = document.getElementById('standardBulkUpdateConfirmBtn');
+  const changedRows = preview.matched.filter(function(m) { return m.changes.length > 0; });
+  summaryEl.innerHTML =
+    'จะอัปเดตจริง <strong>' + changedRows.length.toLocaleString('th-TH') + '</strong> รายการ' +
+    ' &middot; ตรงกันแต่ค่าเหมือนเดิมอยู่แล้ว ' + (preview.matched.length - changedRows.length).toLocaleString('th-TH') + ' รายการ' +
+    ' &middot; ไม่พบ SKU นี้ในระบบ (จะข้าม) ' + preview.notFound.length.toLocaleString('th-TH') + ' รายการ' +
+    (parseErrors.length > 0 ? ' &middot; <span style="color:var(--critical);">อ่านค่าไม่ได้ ' + parseErrors.length.toLocaleString('th-TH') + ' ช่อง</span>' : '');
+  const rowsHtml = preview.matched.map(function(m) {
+    const cellsHtml = ['min', 'max', 'lot', 'avg'].map(function(field) {
+      const change = m.changes.find(function(c) { return c.field === field; });
+      if (!change) return '<td style="color:var(--ink-muted);">' + xmlEscape(String(m.existing[field])) + '</td>';
+      return '<td><span style="color:var(--ink-muted);text-decoration:line-through;">' + xmlEscape(String(change.oldValue)) + '</span> → <strong style="color:var(--accent);">' + xmlEscape(String(change.newValue)) + '</strong></td>';
+    }).join('');
+    return '<tr>' +
+      '<td>' + xmlEscape(m.sku) + '</td>' + cellsHtml +
+      '<td>' + (m.changes.length > 0 ? '<span class="status-pill low">จะอัปเดต</span>' : '<span style="color:var(--ink-muted);">เหมือนเดิม</span>') + '</td>' +
+      '</tr>';
+  }).concat(preview.notFound.map(function(row) {
+    return '<tr style="opacity:0.6;"><td>' + xmlEscape(row.sku) + '</td><td colspan="4">—</td><td><span class="status-pill zero">ไม่พบใน Standard (ข้าม)</span></td></tr>';
+  })).join('');
+  tableWrap.innerHTML =
+    '<table class="order-table"><thead><tr><th>SKU</th><th>Min</th><th>Max</th><th>Lot</th><th>Avg</th><th>สถานะ</th></tr></thead>' +
+    '<tbody>' + rowsHtml + '</tbody></table>';
+  confirmBtn.disabled = changedRows.length === 0;
+  document.getElementById('standardBulkUpdateResult').textContent = '';
+  panel.style.display = '';
+}
+
+document.getElementById('standardBulkUpdateBtn').addEventListener('click', function() {
+  document.getElementById('standardBulkUpdateInput').click();
+});
+document.getElementById('standardBulkUpdateInput').addEventListener('change', function(e) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function() {
+    const parsed = parseStandardUpdateCsv(String(reader.result));
+    if (!parsed.cols) {
+      showToast(parsed.errors[0] || 'อ่านไฟล์ไม่สำเร็จ');
+      return;
+    }
+    const preview = buildStandardUpdatePreview(parsed.rows);
+    renderStandardBulkUpdatePreview(preview, parsed.errors);
+  };
+  reader.onerror = function() { showToast('อ่านไฟล์ไม่สำเร็จ'); };
+  reader.readAsText(file);
+});
+document.getElementById('standardBulkUpdateCancelBtn').addEventListener('click', function() {
+  standardBulkUpdatePreviewCache = null;
+  document.getElementById('standardBulkUpdatePanel').style.display = 'none';
+});
+document.getElementById('standardBulkUpdateConfirmBtn').addEventListener('click', function() {
+  const resultEl = document.getElementById('standardBulkUpdateResult');
+  if (!state.dbApi) {
+    resultEl.textContent = state.dbChecked ? DB_UNAVAILABLE_MSG : 'กำลังเช็คฟีเจอร์นี้ ลองใหม่อีกครั้งใน 2-3 วินาที';
+    return;
+  }
+  const preview = standardBulkUpdatePreviewCache;
+  if (!preview) return;
+  const changedRows = preview.matched.filter(function(m) { return m.changes.length > 0; });
+  if (changedRows.length === 0) return;
+  resultEl.textContent = 'กำลังบันทึก... (' + changedRows.length.toLocaleString('th-TH') + ' รายการ)';
+  document.getElementById('standardBulkUpdateConfirmBtn').disabled = true;
+  // Firestore batch จำกัด 500 คำสั่งต่อ batch — แบ่งเป็นก้อนละ 450 กันชนขอบ
+  const CHUNK_SIZE = 450;
+  const chunks = [];
+  for (let i = 0; i < changedRows.length; i += CHUNK_SIZE) chunks.push(changedRows.slice(i, i + CHUNK_SIZE));
+  const db = state.dbApi;
+  chunks.reduce(function(promiseChain, chunk) {
+    return promiseChain.then(function() {
+      const batch = db.batch();
+      chunk.forEach(function(m) {
+        const data = { sku: m.sku };
+        m.changes.forEach(function(c) { data[c.field] = c.newValue; });
+        batch.set(db.doc('standards/' + standardDocId(m.sku)), data, { merge: true });
+        // อัปเดต cache ในเครื่องด้วย ให้หน้าตารางรีเฟรชเห็นค่าใหม่ทันทีโดยไม่ต้องโหลด db ใหม่
+        const prevOverride = state.standardOverrides.get(m.sku) || {};
+        state.standardOverrides.set(m.sku, Object.assign({}, prevOverride, data));
+      });
+      return batch.commit();
+    });
+  }, Promise.resolve()).then(function() {
+    // บันทึกเหตุการณ์ "อัปเดตทีเดียว" ไว้ 1 รายการ (ไม่ต้อง log ทีละ SKU เป็นร้อยๆ ครั้ง) ให้ badge
+    // "ครบกำหนดอัปเดต Standard 6 เดือน" หน้าหลักเห็นว่ามีการอัปเดตล่าสุดเมื่อไหร่ (per user 2026-09-16)
+    return db.collection('standard_edits').add({ bulk: true, count: changedRows.length, createdAt: new Date().toISOString() }).catch(function() {});
+  }).then(function() {
+    resultEl.textContent = 'อัปเดตสำเร็จ ' + changedRows.length.toLocaleString('th-TH') + ' รายการ';
+    showToast('อัปเดต Standard สำเร็จ ' + changedRows.length.toLocaleString('th-TH') + ' รายการ');
+    standardBulkUpdatePreviewCache = null;
+    document.getElementById('standardBulkUpdatePanel').style.display = 'none';
+    renderHomeTab();
+    renderStandardTable();
+  }).catch(function(err) {
+    resultEl.textContent = 'บันทึกไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ');
+  }).finally(function() {
+    document.getElementById('standardBulkUpdateConfirmBtn').disabled = false;
+  });
+});
+
 document.getElementById('standardFormCancelBtn').addEventListener('click', function() {
   document.getElementById('standardEditForm').style.display = 'none';
 });
