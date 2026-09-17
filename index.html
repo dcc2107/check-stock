@@ -1113,16 +1113,8 @@
       <input type="text" id="salesReqName" list="salesReqNameList" placeholder="พิมพ์หรือเลือกชื่อ" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;">
       <datalist id="salesReqNameList"></datalist>
     </label>
-    <label style="display:block;margin-bottom:14px;">
-      <span style="display:block;font-size:13px;color:var(--ink-muted);margin-bottom:5px;">รหัสสินค้า</span>
-      <input type="text" id="salesReqSku" list="salesReqSkuList" placeholder="เช่น MA-22-502-XT" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;text-transform:uppercase;">
-      <datalist id="salesReqSkuList"></datalist>
-      <div id="salesReqSkuHint" style="font-size:12.5px;margin-top:5px;min-height:16px;"></div>
-    </label>
-    <label style="display:block;margin-bottom:14px;">
-      <span style="display:block;font-size:13px;color:var(--ink-muted);margin-bottom:5px;">จำนวน</span>
-      <input type="number" id="salesReqQty" min="1" step="1" inputmode="numeric" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;">
-    </label>
+    <datalist id="salesReqSkuList"></datalist>
+    <div id="salesReqItemsWrap" style="margin-bottom:14px;"></div>
     <label style="display:block;margin-bottom:18px;">
       <span style="display:block;font-size:13px;color:var(--ink-muted);margin-bottom:5px;">หมายเหตุ (ถ้ามี)</span>
       <input type="text" id="salesReqNote" placeholder="เช่น ลูกค้ารอด่วน" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;">
@@ -5506,6 +5498,8 @@ if (isSalesRequestMode) {
 }
 
 // ตัวเลือกรหัสสินค้า (datalist) — ใช้รายชื่อ SKU ที่รู้จักอยู่แล้วในเครื่องทั้งหมด ไม่ต้องรอโหลดจาก db
+// อินพุตหลายช่อง (ดู SALES_REQ_ITEM_ROWS) อ้างอิง datalist เดียวกันนี้ร่วมกันได้ (attribute "list" อ้าง id
+// ซ้ำกันได้หลาย element ตามสเปก HTML ปกติ ไม่ต้องสร้างแยกต่อช่อง)
 (function populateSalesReqSkuDatalist() {
   const list = document.getElementById('salesReqSkuList');
   if (!list) return;
@@ -5514,6 +5508,28 @@ if (isSalesRequestMode) {
     opt.value = sku;
     list.appendChild(opt);
   });
+})();
+
+// เซลล์เดิมพิมพ์หลายรหัสในข้อความเดียวกันบ่อยๆ (เช่นสรุปยอดทั้งวันส่งทีเดียว) — เปิดช่องกรอกได้สูงสุด 10
+// รายการต่อการส่ง 1 ครั้ง แทนที่จะมีแค่ช่องเดียว (per user 2026-09-17) ไม่บังคับกรอกครบทุกช่อง ช่องไหนไม่
+// กรอกรหัสจะถูกข้ามไปตอนส่ง — สร้างเป็นเอกสารแยกใน sales_requests ทีละรหัส (ใช้ salesperson/note/เวลา
+// เดียวกันทั้งชุด) เพื่อให้แท็บ "คำขอเซลล์" ของทีมงานอัปเดตสถานะเป็นรายรหัสได้อิสระต่อกัน
+const SALES_REQ_ITEM_ROWS = 10;
+(function buildSalesReqItemRows() {
+  const wrap = document.getElementById('salesReqItemsWrap');
+  if (!wrap) return;
+  let html = '<span style="display:block;font-size:13px;color:var(--ink-muted);margin-bottom:6px;">รายการรหัสสินค้า (กรอกได้สูงสุด ' + SALES_REQ_ITEM_ROWS + ' รายการ ไม่ต้องกรอกครบทุกช่อง)</span>';
+  for (let i = 0; i < SALES_REQ_ITEM_ROWS; i++) {
+    html +=
+      '<div style="display:flex;gap:8px;margin-bottom:6px;">' +
+      '<div style="flex:1 1 auto;min-width:0;">' +
+      '<input type="text" id="salesReqSku' + i + '" list="salesReqSkuList" placeholder="รหัสสินค้า #' + (i + 1) + '" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:15px;text-transform:uppercase;">' +
+      '<div id="salesReqSkuHint' + i + '" style="font-size:11px;margin-top:3px;min-height:14px;"></div>' +
+      '</div>' +
+      '<input type="number" id="salesReqQty' + i + '" min="1" step="1" inputmode="numeric" placeholder="จำนวน" style="width:88px;flex-shrink:0;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:15px;">' +
+      '</div>';
+  }
+  wrap.innerHTML = html;
 })();
 
 // ชื่อผู้แจ้ง (datalist) — ดึงจากชื่อที่เคยมีคนพิมพ์มาก่อนหน้านี้ใน sales_requests เอง (ไม่ต้องมีใครมาตั้ง
@@ -5535,20 +5551,20 @@ function loadSalesReqNameDatalist() {
 }
 
 // รหัสที่พิมพ์มา รู้จักในระบบไหม — ไม่บล็อกการส่ง (เผื่อเป็นสินค้าใหม่จริงๆ ที่ยังไม่มี Standard) แค่เตือนไว้
-// กันเซลล์พิมพ์รหัสผิด
-function updateSalesReqSkuHint() {
-  const input = document.getElementById('salesReqSku');
-  const hint = document.getElementById('salesReqSkuHint');
+// กันเซลล์พิมพ์รหัสผิด — เช็คทีละแถว (index i) เพราะตอนนี้มีได้สูงสุด 10 ช่อง
+function updateSalesReqSkuHintRow(i) {
+  const input = document.getElementById('salesReqSku' + i);
+  const hint = document.getElementById('salesReqSkuHint' + i);
   if (!input || !hint) return;
   const val = input.value.trim().toUpperCase();
   if (!val) { hint.textContent = ''; return; }
   const companies = skuToCompanies[val];
   if (companies) {
     hint.style.color = 'var(--ok)';
-    hint.textContent = '✓ รู้จักรหัสนี้ (' + companies.join(', ') + ')';
+    hint.textContent = '✓ รู้จัก (' + companies.join(', ') + ')';
   } else {
     hint.style.color = 'var(--warn)';
-    hint.textContent = '⚠ ยังไม่มีรหัสนี้ในระบบ ตรวจให้แน่ใจว่าพิมพ์ถูกก่อนส่ง';
+    hint.textContent = '⚠ ยังไม่มีรหัสนี้ในระบบ';
   }
 }
 
@@ -5584,30 +5600,60 @@ if (isSalesRequestMode) {
     loadSalesReqRecent(savedName);
   }
 }
-document.getElementById('salesReqSku').addEventListener('input', updateSalesReqSkuHint);
+for (let i = 0; i < SALES_REQ_ITEM_ROWS; i++) {
+  (function(idx) {
+    const skuInput = document.getElementById('salesReqSku' + idx);
+    if (skuInput) skuInput.addEventListener('input', function() { updateSalesReqSkuHintRow(idx); });
+  })(i);
+}
+
+// อ่านทุกแถวที่กรอกรหัสไว้ (ข้ามแถวว่าง) คืนเป็น [{sku, qty, rowNum}] — ใช้ทั้งตอน validate และตอนส่งจริง
+function collectSalesReqItemRows() {
+  const items = [];
+  for (let i = 0; i < SALES_REQ_ITEM_ROWS; i++) {
+    const skuEl = document.getElementById('salesReqSku' + i);
+    const qtyEl = document.getElementById('salesReqQty' + i);
+    if (!skuEl) continue;
+    const sku = skuEl.value.trim().toUpperCase();
+    if (!sku) continue;
+    items.push({ sku: sku, qty: qtyEl ? Number(qtyEl.value) : NaN, rowNum: i + 1 });
+  }
+  return items;
+}
+
 document.getElementById('salesReqSubmitBtn').addEventListener('click', function() {
   const resultEl = document.getElementById('salesReqResult');
   const name = document.getElementById('salesReqName').value.trim();
-  const sku = document.getElementById('salesReqSku').value.trim().toUpperCase();
-  const qty = Number(document.getElementById('salesReqQty').value);
   const note = document.getElementById('salesReqNote').value.trim();
   if (!name) { resultEl.style.color = 'var(--critical)'; resultEl.textContent = 'กรุณากรอกชื่อผู้แจ้ง'; return; }
-  if (!sku) { resultEl.style.color = 'var(--critical)'; resultEl.textContent = 'กรุณากรอกรหัสสินค้า'; return; }
-  if (!qty || qty <= 0) { resultEl.style.color = 'var(--critical)'; resultEl.textContent = 'กรุณากรอกจำนวนให้ถูกต้อง (มากกว่า 0)'; return; }
+  const items = collectSalesReqItemRows();
+  if (items.length === 0) { resultEl.style.color = 'var(--critical)'; resultEl.textContent = 'กรุณากรอกรหัสสินค้าอย่างน้อย 1 ช่อง'; return; }
+  const badRow = items.find(function(it) { return !it.qty || it.qty <= 0; });
+  if (badRow) { resultEl.style.color = 'var(--critical)'; resultEl.textContent = 'ช่องที่ ' + badRow.rowNum + ' (' + badRow.sku + ') กรุณากรอกจำนวนให้ถูกต้อง (มากกว่า 0)'; return; }
   if (!state.dbApi) { resultEl.style.color = 'var(--critical)'; resultEl.textContent = state.dbChecked ? DB_UNAVAILABLE_MSG : 'กำลังเช็คระบบ ลองใหม่อีกครั้งใน 2-3 วินาที'; return; }
   resultEl.style.color = 'var(--ink-muted)';
-  resultEl.textContent = 'กำลังส่ง...';
+  resultEl.textContent = 'กำลังส่ง... (' + items.length + ' รายการ)';
   document.getElementById('salesReqSubmitBtn').disabled = true;
-  state.dbApi.collection('sales_requests').add({
-    salesperson: name, sku: sku, qty: qty, note: note,
-    status: 'ใหม่', createdAt: new Date().toISOString()
-  }).then(function() {
+  const nowIso = new Date().toISOString();
+  // ทุกรายการในการส่งครั้งนี้ใช้ salesperson/note/เวลาเดียวกัน แต่บันทึกเป็นเอกสารแยกทีละรหัส เพื่อให้
+  // ทีมงานอัปเดตสถานะเป็นรายรหัสได้อิสระในแท็บ "คำขอเซลล์" (ไม่ผูกสถานะรวมกันทั้งชุด)
+  Promise.all(items.map(function(item) {
+    return state.dbApi.collection('sales_requests').add({
+      salesperson: name, sku: item.sku, qty: item.qty, note: note,
+      status: 'ใหม่', createdAt: nowIso
+    });
+  })).then(function() {
     resultEl.style.color = 'var(--ok)';
-    resultEl.textContent = '✓ ส่งคำขอแล้ว ทีมงานจะเช็คให้';
-    document.getElementById('salesReqSku').value = '';
-    document.getElementById('salesReqQty').value = '';
+    resultEl.textContent = '✓ ส่ง ' + items.length + ' รายการแล้ว ทีมงานจะเช็คให้';
+    for (let i = 0; i < SALES_REQ_ITEM_ROWS; i++) {
+      const skuEl = document.getElementById('salesReqSku' + i);
+      const qtyEl = document.getElementById('salesReqQty' + i);
+      const hintEl = document.getElementById('salesReqSkuHint' + i);
+      if (skuEl) skuEl.value = '';
+      if (qtyEl) qtyEl.value = '';
+      if (hintEl) hintEl.textContent = '';
+    }
     document.getElementById('salesReqNote').value = '';
-    document.getElementById('salesReqSkuHint').textContent = '';
     localStorage.setItem('salesReqLastName', name);
     loadSalesReqRecent(name);
     loadSalesReqNameDatalist();
