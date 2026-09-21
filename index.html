@@ -469,6 +469,7 @@
   }
   @media (max-width: 560px) {
     .stat-strip { grid-template-columns: 1fr; }
+    #salesReqStatStrip { grid-template-columns: 1fr 1fr; } /* 6 สถานะ — 2 คอลัมน์บนมือถือไม่ให้ยาวเกิน */
   }
   .stat-tile {
     background: var(--surface);
@@ -5525,7 +5526,15 @@ updateUploadGate();
 // ปัญหาที่แก้: เซลล์เดิมพิมพ์รหัส+จำนวนในไลน์กลุ่ม แต่ข้อความจมหายไปกับข้อความอื่นระหว่างวัน ตามย้อนหลังยาก
 // แถมรหัสที่เซลล์ส่งมาไม่ได้แปลว่าต้องสั่งทันที (อาจสั่งผลิตไปแล้ว/ลาวกำลังส่งของอยู่) ต้องเอามาเทียบกับ
 // รีพอร์ตก่อนเสมอ — เก็บเป็นรายการถาวรใน Firestore (collection "sales_requests") พร้อมสถานะติดตามแทน
-const SALES_REQ_STATUSES = ['ใหม่', 'กำลังเช็ค', 'มีอยู่แล้ว/สั่งผลิตไปแล้ว', 'สั่งซื้อไปแล้ว'];
+const SALES_REQ_STATUSES = ['ใหม่', 'รอเช็ค', 'กำลังเช็ค', 'มีในสต็อค', 'ของกำลังมา', 'สั่งแล้ว'];
+// สถานะที่ยังต้องเทียบ/ตัดสินใจ (ใช้เป็นค่าเริ่มต้นของรายงาน "เซลล์แจ้งขอสั่งของ")
+const SALES_REQ_PENDING_STATUSES = ['ใหม่', 'รอเช็ค', 'กำลังเช็ค'];
+// คำขอที่บันทึกไว้ก่อนเปลี่ยนชุดสถานะ (2026-09-21) ยังมีชื่อสถานะเดิมค้างใน db — แปลงตอนอ่านอย่างเดียว ไม่เขียนทับ db
+const SALES_REQ_LEGACY_STATUS = { 'มีอยู่แล้ว/สั่งผลิตไปแล้ว': 'มีในสต็อค', 'สั่งซื้อไปแล้ว': 'สั่งแล้ว' };
+function normalizeSalesReqStatus(s) {
+  if (!s) return 'ใหม่';
+  return SALES_REQ_LEGACY_STATUS[s] || s;
+}
 
 // ---------- ส่วนที่ 1: หน้าฟอร์มสำหรับเซลล์ (โหมดแยก เข้าผ่าน ?request=1 เท่านั้น) ----------
 // ตรวจจาก query string ไม่ใช่ path เพราะเป็นไฟล์ HTML ไฟล์เดียว (ไม่มี routing จริง) — ใช้ query string
@@ -5628,7 +5637,7 @@ function loadSalesReqRecent(name) {
         return '<div class="history-card" style="padding:10px 12px;">' +
           '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">' +
           '<span style="font-family:\'IBM Plex Mono\',monospace;font-weight:600;">' + xmlEscape(r.sku) + ' &times; ' + (r.qty || 0).toLocaleString('th-TH') + '</span>' +
-          '<span class="history-badge pending">' + xmlEscape(r.status || 'ใหม่') + '</span>' +
+          '<span class="history-badge pending">' + xmlEscape(normalizeSalesReqStatus(r.status)) + '</span>' +
           '</div><div style="font-size:11.5px;color:var(--ink-muted);margin-top:3px;">' + xmlEscape(thaiHistoryDate(r.createdAt)) + '</div></div>';
       }).join('');
   }).catch(function() { el.innerHTML = ''; });
@@ -5729,7 +5738,11 @@ function loadSalesRequests() {
   if (!state.dbApi) { wrap.innerHTML = '<div class="empty-state">' + (state.dbChecked ? DB_UNAVAILABLE_MSG : 'กำลังเช็คฟีเจอร์นี้...') + '</div>'; return; }
   wrap.innerHTML = '<div class="empty-state">กำลังโหลด...</div>';
   state.dbApi.collection('sales_requests').orderBy('createdAt', 'desc').limit(300).get().then(function(snap) {
-    salesReqCache = snap.docs.map(function(d) { return Object.assign({ _id: d.id }, d.data()); });
+    salesReqCache = snap.docs.map(function(d) {
+      const r = Object.assign({ _id: d.id }, d.data());
+      r.status = normalizeSalesReqStatus(r.status);
+      return r;
+    });
     renderSalesRequestsList();
   }).catch(function(err) {
     wrap.innerHTML = '<div class="empty-state">โหลดไม่สำเร็จ: ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ') + '</div>';
@@ -5857,7 +5870,7 @@ if (salesReqRefreshBtnEl) salesReqRefreshBtnEl.addEventListener('click', loadSal
 // อยู่หมวดท้ายสุดพร้อมบอกเหตุผล (เช่น ยังไม่ได้ประมวลผลบริษัทนั้น)
 const SALES_REQ_REPORT_SPLIT = 5; // เกณฑ์เดียวกับตารางแบ่งกลุ่มในรีพอร์ต Excel
 const SALES_REQ_REPORT_SCOPES = [
-  { key: 'pending', label: 'ใหม่ + กำลังเช็ค (แนะนำ)', statuses: ['ใหม่', 'กำลังเช็ค'] },
+  { key: 'pending', label: 'ใหม่ + รอเช็ค + กำลังเช็ค (แนะนำ)', statuses: SALES_REQ_PENDING_STATUSES },
   { key: 'all', label: 'ทุกสถานะ', statuses: null }
 ].concat(SALES_REQ_STATUSES.map(function(s) { return { key: 's:' + s, label: 'เฉพาะ "' + s + '"', statuses: [s] }; }));
 const SALES_REQ_REPORT_CATS = [
@@ -6000,7 +6013,7 @@ document.getElementById('salesReqReportBtn').addEventListener('click', function(
   if (!salesReqCache) { resultEl.textContent = 'ยังไม่ได้โหลดรายการคำขอ — เปิดแท็บนี้ใหม่หรือกด "รีเฟรช" ก่อน'; return; }
   const scopeKey = document.getElementById('salesReqReportScope').value;
   const scope = SALES_REQ_REPORT_SCOPES.find(function(sc) { return sc.key === scopeKey; }) || SALES_REQ_REPORT_SCOPES[0];
-  const reqs = salesReqCache.filter(function(r) { return !scope.statuses || scope.statuses.indexOf(r.status || 'ใหม่') !== -1; });
+  const reqs = salesReqCache.filter(function(r) { return !scope.statuses || scope.statuses.indexOf(normalizeSalesReqStatus(r.status)) !== -1; });
   const headerLine = document.getElementById('salesReqReportHeader').value.trim();
   const includeExtras = document.getElementById('salesReqReportExtras').checked;
   resultEl.textContent = 'กำลังดึงข้อมูลสต็อก/WIP ล่าสุด...';
