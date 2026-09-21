@@ -1085,6 +1085,28 @@
       <button type="button" class="btn btn-ghost btn-sm" id="salesReqRefreshBtn">รีเฟรช</button>
     </div>
     <div class="stat-strip" id="salesReqStatStrip"></div>
+
+    <div class="standard-form" style="margin-top:14px;">
+      <h4>สร้างข้อความรายงาน "เซลล์แจ้งขอสั่งของ" (เทียบกับสต็อก/WIP)</h4>
+      <p class="lede" style="margin:-6px 0 10px;font-size:12.5px;">จัดกลุ่มตามชื่อเซลล์ แล้วแยกตาม 4 หมวด (ต้องสั่ง/ไม่ต้องสั่ง × เฉลี่ยใช้ต่อสัปดาห์ ≥5 / &lt;5) พร้อมสต็อกและ WIP — ใช้ข้อมูลจากที่ประมวลผลไว้ในหน้า "สร้างแผน" รอบนี้ (ต้องประมวลผลบริษัทที่เกี่ยวข้องก่อน)</p>
+      <div class="bulk-status-hint" id="salesReqReportCompaniesHint"></div>
+      <div class="standard-form-grid">
+        <label>คำขอที่จะรวมในรายงาน
+          <select id="salesReqReportScope"></select>
+        </label>
+        <label>บรรทัดหัวรายงาน (แก้ได้)
+          <input type="text" id="salesReqReportHeader" placeholder="เช่น ดึงสต็อคเมื่อเช้าวันที่ 21/9/69 / WIP38">
+        </label>
+        <label class="standard-check-label"><input type="checkbox" id="salesReqReportExtras" checked> แนบข้อมูลเพิ่ม (หมายเหตุจากเซลล์ / จำนวนที่ระบบแนะนำสั่ง)</label>
+      </div>
+      <div class="standard-form-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="salesReqReportBtn">สร้างข้อความ</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="salesReqReportCopyBtn">คัดลอก</button>
+        <span class="bulk-status-result" id="salesReqReportResult"></span>
+      </div>
+      <textarea id="salesReqReportText" readonly rows="14" style="width:100%;box-sizing:border-box;margin-top:10px;font-family:'IBM Plex Mono','Noto Sans Thai',monospace;font-size:12.5px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);"></textarea>
+    </div>
+
     <div id="salesReqListWrap" style="margin-top:14px;"></div>
   </section>
 
@@ -1949,6 +1971,9 @@ const state = {
   wipEntries1: [],
   wipEntries2: [],
   companyResults: {}, // company -> array of computed rows (มีอยู่แค่ 1 คีย์เสมอ คือบริษัทที่เลือกไว้)
+  // company -> array of computed rows ของ "ทุกบริษัทที่เคยประมวลผลไว้ในรอบเปิดเว็บนี้" (ต่างจาก companyResults ที่
+  // ถูกล้างทุกครั้งที่สลับบริษัท) — ใช้กับรายงานเทียบคำขอเซลล์ ให้เทียบข้ามหลายบริษัทได้ในรอบเดียว (per user 2026-09-21)
+  rowsCacheByCompany: {},
   diag: null, // parsing diagnostics for the last processed batch
   prefixFilter: '', // '' = ทั้งหมด — ใช้เป็นตัวกรองของทั้ง 2 มุมมอง (รหัส/คน) แล้วแต่ resultsGroupMode
   resultsGroupMode: 'prefix', // 'prefix' | 'person' — มุมมองการจัดกลุ่มรายการที่ต้องสั่งในหน้าผลลัพธ์ (per user 2026-09-10)
@@ -2560,6 +2585,7 @@ document.getElementById('processBtn').addEventListener('click', function() {
     const result = computeRowsForCompany(state.selectedCompany, m.merged, m.mergedDesc, m.diag, wip1Map, wip2Map);
     state.companyResults = {};
     state.companyResults[state.selectedCompany] = result.rows;
+    state.rowsCacheByCompany[state.selectedCompany] = result.rows;
     state.diag = m.diag;
     const totalNeed = result.rows.filter(function(r){return r.needOrder;}).length;
     statusEl.textContent = 'เสร็จแล้ว: ' + state.selectedCompany + ' — ต้องสั่งเพิ่มรวม ' + totalNeed + ' รายการ';
@@ -5689,6 +5715,7 @@ let salesReqCache = null;
 function loadSalesRequests() {
   const wrap = document.getElementById('salesReqListWrap');
   if (!wrap) return;
+  refreshSalesReqReportPanel(); // อัปเดตข้อความบอกว่าประมวลผลบริษัทไหนไว้แล้วบ้าง ทุกครั้งที่เปิดแท็บ
   if (!state.dbApi) { wrap.innerHTML = '<div class="empty-state">' + (state.dbChecked ? DB_UNAVAILABLE_MSG : 'กำลังเช็คฟีเจอร์นี้...') + '</div>'; return; }
   wrap.innerHTML = '<div class="empty-state">กำลังโหลด...</div>';
   state.dbApi.collection('sales_requests').orderBy('createdAt', 'desc').limit(300).get().then(function(snap) {
@@ -5811,4 +5838,141 @@ const salesReqStatusFilterEl = document.getElementById('salesReqStatusFilter');
 if (salesReqStatusFilterEl) salesReqStatusFilterEl.addEventListener('change', renderSalesRequestsList);
 const salesReqRefreshBtnEl = document.getElementById('salesReqRefreshBtn');
 if (salesReqRefreshBtnEl) salesReqRefreshBtnEl.addEventListener('click', loadSalesRequests);
+
+// ---------- ส่วนที่ 3: รายงานข้อความ "เซลล์แจ้งขอสั่งของ" เทียบสต็อก/WIP (per user 2026-09-21) ----------
+// เดิมทีมงานพิมพ์รายงานนี้เองหลังเอาคำขอเซลล์มาเทียบรีพอร์ต — สร้างให้อัตโนมัติ: จัดกลุ่มตามชื่อเซลล์ แล้วแยก
+// 4 หมวดเดียวกับตารางในรีพอร์ต Excel (ต้องสั่ง/ไม่ต้องสั่ง × เฉลี่ยใช้ต่อสัปดาห์ ≥5 / <5) บรรทัดละรหัส:
+// "รหัส ขอจำนวน N / ในสต็อคเหลือ S [/ WIP W]" (WIP โชว์เฉพาะเมื่อ > 0) — ใช้ผลประมวลผลที่ค้างอยู่ในหน้าเว็บ
+// (state.rowsCacheByCompany) จึงต้องประมวลผลบริษัทที่เกี่ยวข้องก่อน รหัสที่หาข้อมูลเทียบไม่ได้จะไม่ถูกทิ้ง แต่แยกไป
+// อยู่หมวดท้ายสุดพร้อมบอกเหตุผล (เช่น ยังไม่ได้ประมวลผลบริษัทนั้น)
+const SALES_REQ_REPORT_SPLIT = 5; // เกณฑ์เดียวกับตารางแบ่งกลุ่มในรีพอร์ต Excel
+const SALES_REQ_REPORT_SCOPES = [
+  { key: 'pending', label: 'ใหม่ + กำลังเช็ค (แนะนำ)', statuses: ['ใหม่', 'กำลังเช็ค'] },
+  { key: 'all', label: 'ทุกสถานะ', statuses: null }
+].concat(SALES_REQ_STATUSES.map(function(s) { return { key: 's:' + s, label: 'เฉพาะ "' + s + '"', statuses: [s] }; }));
+const SALES_REQ_REPORT_CATS = [
+  { key: 'needHigh', title: 'รายการที่ต้องสั่งเฉลี่ยใช้ต่อสัปดาห์มากกว่าหรือเท่ากับ ' + SALES_REQ_REPORT_SPLIT },
+  { key: 'needLow', title: 'รายการที่ต้องสั่งเฉลี่ยใช้ต่อสัปดาห์น้อยกว่า ' + SALES_REQ_REPORT_SPLIT },
+  { key: 'notHigh', title: 'รายการที่ไม่ต้องสั่งเฉลี่ยใช้ต่อสัปดาห์มากกว่าหรือเท่ากับ ' + SALES_REQ_REPORT_SPLIT },
+  { key: 'notLow', title: 'รายการที่ไม่ต้องสั่งเฉลี่ยใช้ต่อสัปดาห์น้อยกว่า ' + SALES_REQ_REPORT_SPLIT }
+];
+
+// วันที่แบบ "21/9/69" (วัน/เดือนไม่เติมศูนย์ ปี พ.ศ. 2 หลัก) ตรงกับที่ทีมงานพิมพ์เองในรายงานเดิม
+function slashThaiDate(d) {
+  const yy = (d.getFullYear() + 543) % 100;
+  return d.getDate() + '/' + (d.getMonth() + 1) + '/' + (yy < 10 ? '0' + yy : yy);
+}
+
+function buildSalesRequestReportText(requests, rowsByCompany, headerLine, includeExtras) {
+  if (!requests || requests.length === 0) return 'ไม่มีคำขอในสถานะที่เลือก';
+  const fmt = function(n) { return Number(n || 0).toLocaleString('th-TH'); };
+
+  const rowIndex = {}; // บริษัท -> Map(sku -> row) ของบริษัทที่ประมวลผลไว้แล้ว
+  Object.keys(rowsByCompany || {}).forEach(function(c) {
+    const m = new Map();
+    (rowsByCompany[c] || []).forEach(function(r) { m.set(r.sku, r); });
+    rowIndex[c] = m;
+  });
+  // ใช้ Standard ที่ "ใช้งานอยู่จริง" (รวมที่แก้/เพิ่มผ่าน db แล้ว) หาว่ารหัสนี้เป็นของบริษัทไหน
+  const effCompanies = {};
+  computeEffectiveStandards().forEach(function(s) { effCompanies[s.sku] = companiesOf(s); });
+
+  function lookup(sku) {
+    const companies = effCompanies[sku];
+    if (!companies) return { row: null, reason: 'ไม่มี Standard ที่ใช้งานอยู่' };
+    for (let i = 0; i < companies.length; i++) {
+      const m = rowIndex[companies[i]];
+      if (m && m.has(sku)) return { row: m.get(sku), reason: null };
+    }
+    return { row: null, reason: 'ยังไม่ได้ประมวลผลบริษัท ' + companies.join('/') };
+  }
+
+  const bySales = {};
+  requests.forEach(function(r) {
+    const n = r.salesperson || '(ไม่ระบุชื่อ)';
+    (bySales[n] = bySales[n] || []).push(r);
+  });
+  const names = Object.keys(bySales).sort(function(a, b) { return a.localeCompare(b, 'th'); });
+
+  const blocks = names.map(function(name) {
+    const reqs = bySales[name].slice().sort(function(a, b) { return String(a.createdAt || '').localeCompare(String(b.createdAt || '')); });
+    const buckets = { needHigh: [], needLow: [], notHigh: [], notLow: [], unmatched: [] };
+    reqs.forEach(function(r) {
+      const found = lookup(r.sku);
+      const noteText = (includeExtras && r.note) ? ' (หมายเหตุ: ' + r.note + ')' : '';
+      if (!found.row) {
+        buckets.unmatched.push(r.sku + ' ขอจำนวน ' + fmt(r.qty) + ' (' + found.reason + ')' + noteText);
+        return;
+      }
+      const row = found.row;
+      let line = r.sku + ' ขอจำนวน ' + fmt(r.qty) + ' / ในสต็อคเหลือ ' + fmt(row.stock);
+      if (row.wip > 0) line += ' / WIP ' + fmt(row.wip);
+      if (includeExtras && row.needOrder && row.orderQty > 0) line += ' / ระบบแนะนำสั่ง ' + fmt(row.orderQty);
+      line += noteText;
+      const key = (row.needOrder ? 'need' : 'not') + (row.avgWeekly >= SALES_REQ_REPORT_SPLIT ? 'High' : 'Low');
+      buckets[key].push(line);
+    });
+    const sections = [];
+    SALES_REQ_REPORT_CATS.forEach(function(cat) {
+      if (buckets[cat.key].length > 0) sections.push(cat.title + '\n' + buckets[cat.key].join('\n'));
+    });
+    if (buckets.unmatched.length > 0) sections.push('ยังไม่มีข้อมูลเทียบสต็อก\n' + buckets.unmatched.join('\n'));
+    return name + '\n' + sections.join('\n\n');
+  });
+
+  const SEP = '---------------------';
+  const head = ['เซลล์แจ้งขอสั่งของ', ''];
+  if (headerLine) head.push(headerLine);
+  return head.join('\n') + '\n' + SEP + '\n' + blocks.join('\n' + SEP + '\n');
+}
+
+function refreshSalesReqReportPanel() {
+  const scopeSel = document.getElementById('salesReqReportScope');
+  if (scopeSel && scopeSel.children.length === 0) {
+    SALES_REQ_REPORT_SCOPES.forEach(function(sc) {
+      const opt = document.createElement('option');
+      opt.value = sc.key; opt.textContent = sc.label;
+      scopeSel.appendChild(opt);
+    });
+    scopeSel.value = SALES_REQ_REPORT_SCOPES[0].key;
+  }
+  const hintEl = document.getElementById('salesReqReportCompaniesHint');
+  if (hintEl) {
+    const processed = Object.keys(state.rowsCacheByCompany);
+    hintEl.textContent = processed.length > 0
+      ? 'ข้อมูลสต็อก/WIP ที่ประมวลผลไว้รอบนี้: ' + processed.join(', ')
+      : 'ยังไม่ได้ประมวลผลบริษัทไหนเลยในรอบนี้ — ไปที่แท็บ "สร้างแผน" อัปโหลดไฟล์สต็อก/WIP แล้วกดประมวลผลก่อน รายงานถึงจะมีสต็อกให้เทียบ';
+  }
+  const headerInput = document.getElementById('salesReqReportHeader');
+  if (headerInput && !headerInput.value) headerInput.value = 'ดึงสต็อคเมื่อเช้าวันที่ ' + slashThaiDate(new Date()) + ' / WIP';
+}
+refreshSalesReqReportPanel();
+
+document.getElementById('salesReqReportBtn').addEventListener('click', function() {
+  const resultEl = document.getElementById('salesReqReportResult');
+  if (!salesReqCache) { resultEl.textContent = 'ยังไม่ได้โหลดรายการคำขอ — เปิดแท็บนี้ใหม่หรือกด "รีเฟรช" ก่อน'; return; }
+  refreshSalesReqReportPanel();
+  const scopeKey = document.getElementById('salesReqReportScope').value;
+  const scope = SALES_REQ_REPORT_SCOPES.find(function(sc) { return sc.key === scopeKey; }) || SALES_REQ_REPORT_SCOPES[0];
+  const reqs = salesReqCache.filter(function(r) { return !scope.statuses || scope.statuses.indexOf(r.status || 'ใหม่') !== -1; });
+  const headerLine = document.getElementById('salesReqReportHeader').value.trim();
+  const includeExtras = document.getElementById('salesReqReportExtras').checked;
+  document.getElementById('salesReqReportText').value = buildSalesRequestReportText(reqs, state.rowsCacheByCompany, headerLine, includeExtras);
+  resultEl.textContent = 'สร้างจาก ' + reqs.length.toLocaleString('th-TH') + ' คำขอแล้ว';
+});
+document.getElementById('salesReqReportCopyBtn').addEventListener('click', function() {
+  const resultEl = document.getElementById('salesReqReportResult');
+  const ta = document.getElementById('salesReqReportText');
+  const text = ta.value;
+  if (!text) { resultEl.textContent = 'ยังไม่มีข้อความ — กด "สร้างข้อความ" ก่อน'; return; }
+  function fallbackCopy() {
+    try { ta.select(); document.execCommand('copy'); resultEl.textContent = 'คัดลอกแล้ว'; }
+    catch (err) { resultEl.textContent = 'คัดลอกอัตโนมัติไม่ได้ — ลากเลือกข้อความในช่องแล้วกด Ctrl+C เอง'; }
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() { resultEl.textContent = 'คัดลอกแล้ว'; }).catch(fallbackCopy);
+  } else {
+    fallbackCopy();
+  }
+});
 </script>
