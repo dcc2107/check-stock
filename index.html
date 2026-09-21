@@ -4080,6 +4080,15 @@ document.getElementById('saveHistoryBtn').addEventListener('click', function(e) 
   const customerTaggedList = (state.diag && Array.isArray(state.diag.customerTaggedSkus)) ? state.diag.customerTaggedSkus : [];
   const customerTaggedCount = customerTaggedList.length;
   const customerTaggedQty = customerTaggedList.reduce(function(sum, s) { return sum + (s.qty || 0); }, 0);
+  // ภาพสต็อก/WIP ของ "ทุกรหัส" ณ ตอนบันทึก (ไม่ใช่แค่รายการต้องสั่งเหมือน compactItems) เก็บแบบย่อคีย์สั้น
+  // s=รหัส k=สต็อก w=WIP n=ต้องสั่งไหม(1/0) a=เฉลี่ยใช้ต่อสัปดาห์ q=จำนวนที่ระบบแนะนำสั่ง (เฉพาะที่ >0) —
+  // ให้รายงาน "เซลล์แจ้งขอสั่งของ" ในแท็บคำขอเซลล์ดึงกลับมาเทียบได้แม้รีเฟรชหน้าเว็บแล้ว (per user 2026-09-21)
+  // ขนาดโดยประมาณ ~40 ไบต์ต่อรหัส (หลักร้อยรหัส/บริษัท = ไม่กี่สิบ KB) ไม่ชนลิมิตเอกสารที่ระบุไว้ด้านบน
+  const snap = rows.map(function(r) {
+    const o = { s: r.sku, k: r.stock, w: r.wip, n: r.needOrder ? 1 : 0, a: r.avgWeekly };
+    if (r.orderQty > 0) o.q = r.orderQty;
+    return o;
+  });
   if (resultEl) resultEl.textContent = 'กำลังบันทึก...';
   nextHistoryPlanNo(db, company, now).then(function(planNo) {
     return db.doc('mrp_plans/' + planNo).set({
@@ -4094,6 +4103,7 @@ document.getElementById('saveHistoryBtn').addEventListener('click', function(e) 
       stockHealth: stockHealth,
       customerTaggedCount: customerTaggedCount,
       customerTaggedQty: customerTaggedQty,
+      snap: snap,
       cancelled: false,
       note: note,
       items: compactItems
@@ -5936,29 +5946,71 @@ function refreshSalesReqReportPanel() {
     });
     scopeSel.value = SALES_REQ_REPORT_SCOPES[0].key;
   }
-  const hintEl = document.getElementById('salesReqReportCompaniesHint');
-  if (hintEl) {
-    const processed = Object.keys(state.rowsCacheByCompany);
-    hintEl.textContent = processed.length > 0
-      ? 'ข้อมูลสต็อก/WIP ที่ประมวลผลไว้รอบนี้: ' + processed.join(', ')
-      : 'ยังไม่ได้ประมวลผลบริษัทไหนเลยในรอบนี้ — ไปที่แท็บ "สร้างแผน" อัปโหลดไฟล์สต็อก/WIP แล้วกดประมวลผลก่อน รายงานถึงจะมีสต็อกให้เทียบ';
-  }
+  updateSalesReqReportSources();
   const headerInput = document.getElementById('salesReqReportHeader');
   if (headerInput && !headerInput.value) headerInput.value = 'ดึงสต็อคเมื่อเช้าวันที่ ' + slashThaiDate(new Date()) + ' / WIP';
+}
+
+// แหล่งข้อมูลสต็อก/WIP ที่ใช้เทียบ (per user 2026-09-21): ต่อบริษัท ถ้าเพิ่งประมวลผลในรอบเปิดเว็บนี้ใช้ผลนั้นก่อน
+// (สดที่สุด) ถ้าไม่มีให้ใช้ "ภาพสต็อก/WIP" (snap) ที่เก็บไว้กับแผน MRP ล่าสุดที่บันทึกของบริษัทนั้น — แผนเก่าก่อนมีฟีเจอร์นี้
+// ไม่มี snap จึงไม่ถูกนับ ต้องบันทึกแผนใหม่ 1 ครั้งก่อนถึงจะใช้ได้
+function rowsFromSnap(snap) {
+  return (snap || []).map(function(x) { return { sku: x.s, stock: x.k || 0, wip: x.w || 0, needOrder: x.n === 1, avgWeekly: x.a || 0, orderQty: x.q || 0 }; });
+}
+function fetchLatestSnapshots() {
+  if (!state.dbApi) return Promise.resolve({});
+  return state.dbApi.collection('mrp_plans').orderBy('createdAt', 'desc').limit(200).get().then(function(snapshot) {
+    const out = {};
+    snapshot.docs.forEach(function(d) {
+      const p = d.data();
+      if (p && p.company && Array.isArray(p.snap) && !out[p.company]) out[p.company] = { planNo: p.planNo, createdAt: p.createdAt, rows: rowsFromSnap(p.snap) };
+    });
+    return out;
+  }).catch(function() { return {}; });
+}
+function mergeReportRowSources(liveByCompany, savedByCompany) {
+  const rowsByCompany = {}, sources = {};
+  Object.keys(savedByCompany || {}).forEach(function(c) {
+    rowsByCompany[c] = savedByCompany[c].rows;
+    sources[c] = 'จากแผน ' + savedByCompany[c].planNo + ' (' + thaiHistoryDate(savedByCompany[c].createdAt) + ')';
+  });
+  Object.keys(liveByCompany || {}).forEach(function(c) {
+    rowsByCompany[c] = liveByCompany[c];
+    sources[c] = 'ประมวลผลรอบนี้';
+  });
+  return { rowsByCompany: rowsByCompany, sources: sources };
+}
+function describeReportSources(sources) {
+  const companies = Object.keys(sources);
+  if (companies.length === 0) return 'ยังไม่มีข้อมูลสต็อก/WIP ให้เทียบ — ไปแท็บ "สร้างแผน" ประมวลผลแล้วกด "บันทึกแผนนี้ลงประวัติ MRP" (หรือแค่ประมวลผลไว้ในรอบนี้) ก่อน';
+  return 'แหล่งข้อมูลที่ใช้เทียบ: ' + companies.map(function(c) { return c + ' — ' + sources[c]; }).join(' · ');
+}
+function updateSalesReqReportSources() {
+  const hintEl = document.getElementById('salesReqReportCompaniesHint');
+  if (!hintEl) return Promise.resolve();
+  hintEl.textContent = describeReportSources(mergeReportRowSources(state.rowsCacheByCompany, {}).sources);
+  return fetchLatestSnapshots().then(function(saved) {
+    hintEl.textContent = describeReportSources(mergeReportRowSources(state.rowsCacheByCompany, saved).sources);
+  });
 }
 refreshSalesReqReportPanel();
 
 document.getElementById('salesReqReportBtn').addEventListener('click', function() {
   const resultEl = document.getElementById('salesReqReportResult');
   if (!salesReqCache) { resultEl.textContent = 'ยังไม่ได้โหลดรายการคำขอ — เปิดแท็บนี้ใหม่หรือกด "รีเฟรช" ก่อน'; return; }
-  refreshSalesReqReportPanel();
   const scopeKey = document.getElementById('salesReqReportScope').value;
   const scope = SALES_REQ_REPORT_SCOPES.find(function(sc) { return sc.key === scopeKey; }) || SALES_REQ_REPORT_SCOPES[0];
   const reqs = salesReqCache.filter(function(r) { return !scope.statuses || scope.statuses.indexOf(r.status || 'ใหม่') !== -1; });
   const headerLine = document.getElementById('salesReqReportHeader').value.trim();
   const includeExtras = document.getElementById('salesReqReportExtras').checked;
-  document.getElementById('salesReqReportText').value = buildSalesRequestReportText(reqs, state.rowsCacheByCompany, headerLine, includeExtras);
-  resultEl.textContent = 'สร้างจาก ' + reqs.length.toLocaleString('th-TH') + ' คำขอแล้ว';
+  resultEl.textContent = 'กำลังดึงข้อมูลสต็อก/WIP ล่าสุด...';
+  // ดึงแผนที่บันทึกล่าสุดใหม่ทุกครั้งที่กดสร้าง (ไม่ใช้ค่าที่โหลดค้างไว้ตอนเปิดแท็บ) เพื่อให้เทียบกับข้อมูลล่าสุดเสมอ
+  return fetchLatestSnapshots().then(function(saved) {
+    const merged = mergeReportRowSources(state.rowsCacheByCompany, saved);
+    document.getElementById('salesReqReportText').value = buildSalesRequestReportText(reqs, merged.rowsByCompany, headerLine, includeExtras);
+    document.getElementById('salesReqReportCompaniesHint').textContent = describeReportSources(merged.sources);
+    resultEl.textContent = 'สร้างจาก ' + reqs.length.toLocaleString('th-TH') + ' คำขอแล้ว';
+  });
 });
 document.getElementById('salesReqReportCopyBtn').addEventListener('click', function() {
   const resultEl = document.getElementById('salesReqReportResult');
