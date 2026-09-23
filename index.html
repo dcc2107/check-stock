@@ -5531,11 +5531,12 @@ updateUploadGate();
 // ปัญหาที่แก้: เซลล์เดิมพิมพ์รหัส+จำนวนในไลน์กลุ่ม แต่ข้อความจมหายไปกับข้อความอื่นระหว่างวัน ตามย้อนหลังยาก
 // แถมรหัสที่เซลล์ส่งมาไม่ได้แปลว่าต้องสั่งทันที (อาจสั่งผลิตไปแล้ว/ลาวกำลังส่งของอยู่) ต้องเอามาเทียบกับ
 // รีพอร์ตก่อนเสมอ — เก็บเป็นรายการถาวรใน Firestore (collection "sales_requests") พร้อมสถานะติดตามแทน
-const SALES_REQ_STATUSES = ['ใหม่', 'รอเช็ค', 'กำลังเช็ค', 'มีในสต็อค', 'ของกำลังมา', 'สั่งแล้ว'];
+const SALES_REQ_STATUSES = ['ใหม่', 'รอเช็ค', 'รอของ', 'มีในสต็อค', 'ของกำลังมา', 'สั่งแล้ว'];
 // สถานะที่ยังต้องเทียบ/ตัดสินใจ (ใช้เป็นค่าเริ่มต้นของรายงาน "เซลล์แจ้งขอสั่งของ")
-const SALES_REQ_PENDING_STATUSES = ['ใหม่', 'รอเช็ค', 'กำลังเช็ค'];
-// คำขอที่บันทึกไว้ก่อนเปลี่ยนชุดสถานะ (2026-09-21) ยังมีชื่อสถานะเดิมค้างใน db — แปลงตอนอ่านอย่างเดียว ไม่เขียนทับ db
-const SALES_REQ_LEGACY_STATUS = { 'มีอยู่แล้ว/สั่งผลิตไปแล้ว': 'มีในสต็อค', 'สั่งซื้อไปแล้ว': 'สั่งแล้ว' };
+const SALES_REQ_PENDING_STATUSES = ['ใหม่', 'รอเช็ค', 'รอของ'];
+// คำขอที่บันทึกไว้ก่อนเปลี่ยนชุดสถานะ (2026-09-21, ต่อด้วยเปลี่ยนชื่อ "กำลังเช็ค"->"รอของ" 2026-09-23)
+// ยังมีชื่อสถานะเดิมค้างใน db — แปลงตอนอ่านอย่างเดียว ไม่เขียนทับ db
+const SALES_REQ_LEGACY_STATUS = { 'มีอยู่แล้ว/สั่งผลิตไปแล้ว': 'มีในสต็อค', 'สั่งซื้อไปแล้ว': 'สั่งแล้ว', 'กำลังเช็ค': 'รอของ' };
 function normalizeSalesReqStatus(s) {
   if (!s) return 'ใหม่';
   return SALES_REQ_LEGACY_STATUS[s] || s;
@@ -5875,7 +5876,7 @@ if (salesReqRefreshBtnEl) salesReqRefreshBtnEl.addEventListener('click', loadSal
 // อยู่หมวดท้ายสุดพร้อมบอกเหตุผล (เช่น ยังไม่ได้ประมวลผลบริษัทนั้น)
 const SALES_REQ_REPORT_SPLIT = 5; // เกณฑ์เดียวกับตารางแบ่งกลุ่มในรีพอร์ต Excel
 const SALES_REQ_REPORT_SCOPES = [
-  { key: 'pending', label: 'ใหม่ + รอเช็ค + กำลังเช็ค (แนะนำ)', statuses: SALES_REQ_PENDING_STATUSES },
+  { key: 'pending', label: 'ใหม่ + รอเช็ค + รอของ (แนะนำ)', statuses: SALES_REQ_PENDING_STATUSES },
   { key: 'all', label: 'ทุกสถานะ', statuses: null }
 ].concat(SALES_REQ_STATUSES.map(function(s) { return { key: 's:' + s, label: 'เฉพาะ "' + s + '"', statuses: [s] }; }));
 const SALES_REQ_REPORT_CATS = [
