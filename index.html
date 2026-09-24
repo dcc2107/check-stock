@@ -2052,6 +2052,7 @@ function loadStandardOverrides() {
       if (data && data.sku) map.set(data.sku, data);
     });
     state.standardOverrides = map;
+    rebuildSkuToCompanies();
     renderHomeTab();
     renderStandardTable();
   }).catch(function() {
@@ -2072,6 +2073,19 @@ function computeAllStandardsIncludingInactive() {
 }
 function computeEffectiveStandards() {
   return computeAllStandardsIncludingInactive().filter(function(s) { return s.active !== false; });
+}
+// skuToCompanies ด้านบนถูกสร้างครั้งเดียวตอนโหลดสคริปต์จาก STANDARDS ที่ฝังในโค้ดเท่านั้น ไม่รู้จัก SKU
+// ที่เพิ่ม/แก้ทีหลังผ่าน db (state.standardOverrides) — ทำให้ SKU ใหม่ที่เพิ่งเพิ่มผ่านฟอร์ม "+ เพิ่ม SKU ใหม่"
+// ยังโดนตีตรา "ไม่รู้จักรหัสนี้" ในแท็บคำขอเซลล์/ฟอร์มเซลล์อยู่ ทั้งที่มี Standard แล้วจริงๆ (เจอจริง 2026-09-24,
+// รหัส IC-22-502) — ต้องเรียกฟังก์ชันนี้ทุกครั้งที่ state.standardOverrides เปลี่ยน เพื่อ sync ให้ตรงกัน
+function rebuildSkuToCompanies() {
+  Object.keys(skuToCompanies).forEach(function(k) { delete skuToCompanies[k]; });
+  computeAllStandardsIncludingInactive().forEach(function(s) {
+    companiesOf(s).forEach(function(c) {
+      if (!skuToCompanies[s.sku]) skuToCompanies[s.sku] = [];
+      if (skuToCompanies[s.sku].indexOf(c) === -1) skuToCompanies[s.sku].push(c);
+    });
+  });
 }
 // sku อาจมีอักขระที่ path ของฐานข้อมูลไม่รับ (เช่น "/") — แทนด้วย "_" เฉพาะตอนใช้เป็น doc id เท่านั้น
 // ค่า sku จริงยังเก็บแยกไว้ในตัวเอกสารเสมอ ไม่ได้อิงจาก doc id ตอนอ่านกลับมา
@@ -5331,6 +5345,7 @@ document.getElementById('standardBulkUpdateConfirmBtn').addEventListener('click'
     showToast('อัปเดต Standard สำเร็จ ' + changedRows.length.toLocaleString('th-TH') + ' รายการ');
     standardBulkUpdatePreviewCache = null;
     document.getElementById('standardBulkUpdatePanel').style.display = 'none';
+    rebuildSkuToCompanies();
     renderHomeTab();
     renderStandardTable();
   }).catch(function(err) {
@@ -5378,6 +5393,7 @@ document.getElementById('standardFormSaveBtn').addEventListener('click', functio
   resultEl.textContent = 'กำลังบันทึก...';
   state.dbApi.doc('standards/' + standardDocId(sku)).set(doc).then(function() {
     state.standardOverrides.set(sku, doc);
+    rebuildSkuToCompanies();
     document.getElementById('standardEditForm').style.display = 'none';
     renderHomeTab();
     renderStandardTable();
