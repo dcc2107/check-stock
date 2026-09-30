@@ -3354,22 +3354,39 @@ function buildAllSkuSheetXml(company, items, notItems) {
   // แยกรหัสมิยาโมโตะ (MA/MIG/MI/MX) ออกมาเป็นอีกชุดตารางต่างหาก เฉพาะตอนประมวลผลบริษัท "ปีเตอร์" และมี
   // รหัสกลุ่มนี้ปนอยู่จริงเท่านั้น (บริษัทอื่นไม่ต้องแยก เพราะรหัสพวกนี้เป็นของเขาอยู่แล้วตามปกติ) (per user 2026-09-10)
   function isMiyaPrefix(prefix) { return MIYA_SHARED_PREFIXES.indexOf(prefix) !== -1; }
-  const splitMiya = company === 'ปีเตอร์' && (items.some(function(it) { return isMiyaPrefix(it.prefix); }) || notList.some(function(it) { return isMiyaPrefix(it.prefix); }));
+  // แยกรหัสคลังทิตย์ (ร้าน ทิตย์แม็กชิ่ง) ออกมาเป็นอีกชุดตารางต่างหากเหมือนกัน — สต็อกของลูกค้ารายนี้จริงๆ
+  // อยู่คนละคลัง (ท-01) แต่ในไฟล์ที่ดึงจาก Express รวมมากับคลัง 01 ปกติของปีเตอร์ แยกด้วย SKU ได้ตรงๆ เพราะ
+  // ทุกรหัสของคลังทิตย์ใช้ prefix AIF และลงท้ายด้วย "ST" เสมอ ไม่ปนกับรหัส AIF ปกติ (per user 2026-09-30)
+  function isThitSuffix(prefix, sku) { return prefix === 'AIF' && /ST$/.test(sku); }
+  const hasMiya = items.some(function(it) { return isMiyaPrefix(it.prefix); }) || notList.some(function(it) { return isMiyaPrefix(it.prefix); });
+  const hasThit = items.some(function(it) { return isThitSuffix(it.prefix, it.sku); }) || notList.some(function(it) { return isThitSuffix(it.prefix, it.sku); });
+  const splitMiya = company === 'ปีเตอร์' && (hasMiya || hasThit);
 
   if (splitMiya) {
-    const nativeItems = items.filter(function(it) { return !isMiyaPrefix(it.prefix); });
-    const nativeNotItems = notList.filter(function(it) { return !isMiyaPrefix(it.prefix); });
+    const nativeItems = items.filter(function(it) { return !isMiyaPrefix(it.prefix) && !isThitSuffix(it.prefix, it.sku); });
+    const nativeNotItems = notList.filter(function(it) { return !isMiyaPrefix(it.prefix) && !isThitSuffix(it.prefix, it.sku); });
     const miyaItems = items.filter(function(it) { return isMiyaPrefix(it.prefix); });
     const miyaNotItems = notList.filter(function(it) { return isMiyaPrefix(it.prefix); });
+    const thitItems = items.filter(function(it) { return isThitSuffix(it.prefix, it.sku); });
+    const thitNotItems = notList.filter(function(it) { return isThitSuffix(it.prefix, it.sku); });
 
     const sec1Row = nextRow();
     rows.push('<row r="' + sec1Row + '">' + cellStr('A' + sec1Row, '■ รหัสของปีเตอร์', 1) + '</row>');
     buildOrderSection(nativeItems, nativeNotItems);
 
-    nextRow(); // เว้น 1 แถวก่อนขึ้น section ถัดไป
-    const sec2Row = nextRow();
-    rows.push('<row r="' + sec2Row + '">' + cellStr('A' + sec2Row, '■ รหัสมิยาโมโตะ (ใช้ร่วมกับปีเตอร์)', 1) + '</row>');
-    buildOrderSection(miyaItems, miyaNotItems);
+    if (hasMiya) {
+      nextRow(); // เว้น 1 แถวก่อนขึ้น section ถัดไป
+      const sec2Row = nextRow();
+      rows.push('<row r="' + sec2Row + '">' + cellStr('A' + sec2Row, '■ รหัสมิยาโมโตะ (ใช้ร่วมกับปีเตอร์)', 1) + '</row>');
+      buildOrderSection(miyaItems, miyaNotItems);
+    }
+
+    if (hasThit) {
+      nextRow(); // เว้น 1 แถวก่อนขึ้น section ถัดไป
+      const sec3Row = nextRow();
+      rows.push('<row r="' + sec3Row + '">' + cellStr('A' + sec3Row, '■ รหัสคลังทิตย์', 1) + '</row>');
+      buildOrderSection(thitItems, thitNotItems);
+    }
   } else {
     buildOrderSection(items, notList);
   }
