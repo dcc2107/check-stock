@@ -2820,7 +2820,15 @@ const STANDARDS = [
 {"sku":"TR-24-724","prefix":"TR","min":2,"max":12,"lot":10,"avg":2.22,"person":"วิภาวี","company":"อามาด้า"},
 {"sku":"TR-26-504","prefix":"TR","min":3,"max":13,"lot":10,"avg":4,"person":"วิภาวี","company":"อามาด้า"},
 {"sku":"TR3-18-506","prefix":"TR3","min":3,"max":13,"lot":10,"avg":4,"person":"วิภาวี","company":"อามาด้า"},
-{"sku":"TR3-21-502","prefix":"TR3","min":1,"max":11,"lot":10,"avg":0.22,"person":"วิภาวี","company":"อามาด้า"}
+{"sku":"TR3-21-502","prefix":"TR3","min":1,"max":11,"lot":10,"avg":0.22,"person":"วิภาวี","company":"อามาด้า"},
+{"sku":"3-HD-22-502(ฟ)","prefix":"3HDF","min":2,"max":12,"lot":10,"avg":2.44,"person":"ธวัชชัย","company":"เฟิร์ส"},
+{"sku":"3-HD-22-506(ฟ)","prefix":"3HDF","min":4,"max":14,"lot":10,"avg":4.44,"person":"ธวัชชัย","company":"เฟิร์ส"},
+{"sku":"3-HD-24-502(ฟ)","prefix":"3HDF","min":6,"max":16,"lot":10,"avg":7.56,"person":"ธวัชชัย","company":"เฟิร์ส"},
+{"sku":"3-HD-24-506(ฟ)","prefix":"3HDF","min":4,"max":14,"lot":10,"avg":5.11,"person":"ธวัชชัย","company":"เฟิร์ส"},
+{"sku":"3-HD-26-502(ฟ)","prefix":"3HDF","min":9,"max":19,"lot":10,"avg":11.56,"person":"ธวัชชัย","company":"เฟิร์ส"},
+{"sku":"3-HD-26-506(ฟ)","prefix":"3HDF","min":2,"max":12,"lot":10,"avg":2.22,"person":"ธวัชชัย","company":"เฟิร์ส"},
+{"sku":"3-HD-28-502(ฟ)","prefix":"3HDF","min":2,"max":12,"lot":10,"avg":2.22,"person":"ธวัชชัย","company":"เฟิร์ส"},
+{"sku":"3-HD-28-506(ฟ)","prefix":"3HDF","min":3,"max":13,"lot":10,"avg":4,"person":"ธวัชชัย","company":"เฟิร์ส"}
 ];
 
 const COMPANY_ORDER = ['อามาด้า', 'มิยาโมโตะ', 'ปีเตอร์', 'เฟิร์ส'];
@@ -3422,6 +3430,20 @@ function mergeEntries(entries) {
 }
 
 function computeRowsForCompany(company, merged, mergedDesc, diag, wip1Map, wip2Map) {
+  // รหัสตระกูล 3-HD เขียนเหมือนกันเป๊ะในไฟล์สต็อกของทั้งอามาด้าและเฟิร์ส แต่เป็นยอดขาย/สต็อกคนละชุดจริง
+  // (คนละบัญชี คนละคนดูแล — ไม่ใช่ของใช้ร่วมแบบ MA/MI/MX) ระบบเก็บ Standard ได้แค่ชุดเดียวต่อ 1 sku ตรงๆ
+  // เลยแยก Standard ฝั่งเฟิร์สไว้เป็นรหัสพิเศษปิดท้าย "(ฟ)" เช่น "3-HD-22-502(ฟ)" — ตอนประมวลผลบริษัทเฟิร์ส
+  // ต้องแปลงรหัสดิบจากไฟล์สต็อก "3-HD-xx-xxx" ให้ไปจับคู่กับ Standard รหัส (ฟ) แทน ไม่งั้นจะหาไม่เจอเลย
+  // (per user 2026-09-30) — ทำเฉพาะตอน company นี้เท่านั้น ไม่กระทบรหัส 3-HD ของอามาด้าเอง
+  if (company === 'เฟิร์ส') {
+    const is3HD = function(sku) { return /^3-HD-\d+-\d+$/.test(sku); };
+    const renamedMerged = new Map();
+    merged.forEach(function(qty, sku) { renamedMerged.set(is3HD(sku) ? sku + '(ฟ)' : sku, qty); });
+    merged = renamedMerged;
+    const renamedDesc = new Map();
+    mergedDesc.forEach(function(d, sku) { renamedDesc.set(is3HD(sku) ? sku + '(ฟ)' : sku, d); });
+    mergedDesc = renamedDesc;
+  }
   // ใช้ computeEffectiveStandards() แทน STANDARDS ตรงๆ เพื่อให้ Standard ที่แก้ไข/เพิ่ม/ปิดใช้งาน
   // ผ่านแท็บ Standard (บันทึกลง db) มีผลกับการคำนวณจริงด้วย ไม่ใช่แค่โชว์ในหน้า Standard เฉยๆ (per user 2026-09-07)
   // ใช้ companiesOf(s) แทน s.company === company ตรงๆ เพราะบาง SKU (เช่นตระกูล MA/MIG/MI/MX) ผูกได้
@@ -3558,7 +3580,7 @@ const PREFIX_PERSON_MAP = {
   'AG': 'ธนากร', 'MIG': 'ธนากร', 'OKR': 'ธนากร', 'OKU': 'ธนากร',
   'FE': 'ดุรงฤทธิ์', 'II': 'ดุรงฤทธิ์', 'IC': 'ดุรงฤทธิ์', 'FD': 'ดุรงฤทธิ์', 'HD': 'ดุรงฤทธิ์', 'FA': 'ดุรงฤทธิ์',
   'GE': 'ดุรงฤทธิ์', 'HC': 'ดุรงฤทธิ์', 'ID': 'ดุรงฤทธิ์', 'FK': 'ดุรงฤทธิ์', 'GA': 'ดุรงฤทธิ์', 'HE': 'ดุรงฤทธิ์', 'FC': 'ดุรงฤทธิ์',
-  'AP': 'ธวัชชัย', 'APG': 'ธวัชชัย', 'APR': 'ธวัชชัย',
+  'AP': 'ธวัชชัย', 'APG': 'ธวัชชัย', 'APR': 'ธวัชชัย', '3HDF': 'ธวัชชัย',
   'TR': 'วิภาวี', 'TR3': 'วิภาวี', '3HD': 'วิภาวี',
   'MI': 'ธนกร',
   'AIF': 'ณัฐพล',
