@@ -4373,7 +4373,12 @@ function buildAllSkuSheetXml(company, items, notItems) {
   // แยกรหัสคลังทิตย์ (ร้าน ทิตย์แม็กชิ่ง) ออกมาเป็นอีกชุดตารางต่างหากเหมือนกัน — สต็อกของลูกค้ารายนี้จริงๆ
   // อยู่คนละคลัง (ท-01) แต่ในไฟล์ที่ดึงจาก Express รวมมากับคลัง 01 ปกติของปีเตอร์ แยกด้วย SKU ได้ตรงๆ เพราะ
   // ทุกรหัสของคลังทิตย์ใช้ prefix AIF และลงท้ายด้วย "ST" เสมอ ไม่ปนกับรหัส AIF ปกติ (per user 2026-09-30)
-  function isThitSuffix(prefix, sku) { return prefix === 'AIF' && /ST$/.test(sku); }
+  // รหัสคลังทิตย์ทั้งหมดตอนนี้ใช้ prefix สังเคราะห์ลงท้ายด้วย "T" (AIFT/FDT/FET/ICT/IIT/TFT/TRT/TR3T)
+  // เพื่อแยกคนดูแล/บริษัทออกจากฝั่งอามาด้าเดิมของ prefix เดียวกัน (per user 2026-09-30) — เดิมเช็คแค่
+  // "prefix === 'AIF' && ลงท้าย ST" ซึ่งพอเปลี่ยนมาใช้ prefix สังเคราะห์แล้วไม่ match อะไรเลย ทำให้รหัส
+  // คลังทิตย์ตระกูลอื่น (FD/FE/IC/II/TF/TR) ตกไปปนอยู่ใน "รหัสของปีเตอร์" แทน (เจอจริง 2026-10-02)
+  const THIT_PREFIXES = ['AIFT', 'FDT', 'FET', 'ICT', 'IIT', 'TFT', 'TRT', 'TR3T'];
+  function isThitSuffix(prefix, sku) { return THIT_PREFIXES.indexOf(prefix) !== -1; }
   const hasMiya = items.some(function(it) { return isMiyaPrefix(it.prefix); }) || notList.some(function(it) { return isMiyaPrefix(it.prefix); });
   const hasThit = items.some(function(it) { return isThitSuffix(it.prefix, it.sku); }) || notList.some(function(it) { return isThitSuffix(it.prefix, it.sku); });
   const splitMiya = company === 'ปีเตอร์' && (hasMiya || hasThit);
