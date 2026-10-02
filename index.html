@@ -271,15 +271,6 @@
   }
   .standard-form-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-  .bom-placeholder {
-    text-align: center;
-    color: var(--ink-muted);
-    padding: 50px 20px;
-    border: 1.5px dashed var(--line);
-    border-radius: 12px;
-  }
-  .bom-placeholder .bom-icon { font-size: 32px; display: block; margin-bottom: 10px; }
-
   section.card {
     background: var(--surface);
     border: 1px solid var(--line);
@@ -820,11 +811,6 @@
           <span><strong>ดู Standard สินค้า</strong><small id="homeStandardCount">— SKU</small></span>
           <b>&#8250;</b>
         </button>
-        <button type="button" class="home-shortcut" id="homeGoBomBtn">
-          <span class="shortcut-icon">▦</span>
-          <span><strong>BOM สินค้า</strong><small>กำลังพัฒนา</small></span>
-          <b>&#8250;</b>
-        </button>
         <button type="button" class="home-shortcut" id="homeGoHistoryBtn">
           <span class="shortcut-icon">▤</span>
           <span><strong>ประวัติแผน MRP</strong><small>ดูแผนที่เคยบันทึกไว้ย้อนหลัง</small></span>
@@ -1032,14 +1018,6 @@
 
   </section>
 
-  <section class="tab-panel" id="tab-bom">
-    <div class="step-head"><span class="step-title">BOM สินค้า</span></div>
-    <div class="bom-placeholder">
-      <span class="bom-icon">▦</span>
-      กำลังพัฒนา — บอก Claude ได้เลยว่าอยากให้ BOM เก็บข้อมูลอะไรบ้าง<br>(เช่น รหัสสินค้าหลัก, รายชื่อชิ้นส่วนประกอบ, จำนวนต่อชิ้น)
-    </div>
-  </section>
-
   <section class="tab-panel" id="tab-history">
   <section class="card" id="historySection">
     <div class="step-head"><span class="step-title">ประวัติแผน MRP</span></div>
@@ -1117,7 +1095,6 @@
   <button type="button" class="nav-btn active" id="nav-home" data-tab="home"><span class="nav-icon">⌂</span>หน้าหลัก</button>
   <button type="button" class="nav-btn" id="nav-standard" data-tab="standard"><span class="nav-icon">⚙</span>Standard</button>
   <button type="button" class="nav-btn nav-center" id="nav-plan" data-tab="plan"><span class="nav-icon">＋</span>สร้างแผน</button>
-  <button type="button" class="nav-btn" id="nav-bom" data-tab="bom"><span class="nav-icon">▦</span>BOM</button>
   <button type="button" class="nav-btn" id="nav-history" data-tab="history"><span class="nav-icon">▤</span>แผน MRP</button>
   <button type="button" class="nav-btn" id="nav-dashboard" data-tab="dashboard"><span class="nav-icon">▥</span>แดชบอร์ด</button>
   <button type="button" class="nav-btn" id="nav-salesreq" data-tab="salesreq"><span class="nav-icon">✉</span>คำขอเซลล์</button>
@@ -5435,10 +5412,11 @@ document.getElementById('exportHistoryBtn').addEventListener('click', function(e
   });
 });
 
-// ---------- app shell: แท็บเนวิเกชัน 5 ปุ่ม (หน้าหลัก/Standard/สร้างแผน/BOM/แผน MRP) ----------
+// ---------- app shell: แท็บเนวิเกชัน (หน้าหลัก/Standard/สร้างแผน/แผน MRP) ----------
 // เดิมหน้านี้เป็นหน้าเดียวยาวๆ เปลี่ยนมาแบ่งเป็นแท็บให้ใช้งานคล้ายแอปมือถือ (per user 2026-09-07)
 // ทุก id ของ element เดิมยังอยู่ครบ แค่ย้ายไปอยู่ในกล่อง tab-panel เฉยๆ ตรรกะข้างในไม่ได้แก้อะไรเลย
-const TABS = ['home', 'standard', 'plan', 'bom', 'history', 'dashboard', 'salesreq'];
+// ตัดแท็บ "bom" (เป็นแค่หน้า placeholder "กำลังพัฒนา" ไม่เคยทำจริง) ออกแล้วตามที่ผู้ใช้ขอ (per user 2026-10-02)
+const TABS = ['home', 'standard', 'plan', 'history', 'dashboard', 'salesreq'];
 function showTab(tab) {
   // บั๊กเดิม: เคยตั้งแค่ panel.style.display ล้าง inline style เฉยๆ แต่ .tab-panel { display:none }
   // เป็น class-level rule อยู่แล้ว การล้าง inline ไม่ได้ทำให้โผล่ขึ้นมา ต้องเติม/เอาคลาส "active" ออก
@@ -5685,7 +5663,6 @@ document.getElementById('homeKpiGrid').addEventListener('click', function(e) {
 });
 document.getElementById('homeGoPlanBtn').addEventListener('click', function() { showTab('plan'); });
 document.getElementById('homeGoStandardBtn').addEventListener('click', function() { showTab('standard'); });
-document.getElementById('homeGoBomBtn').addEventListener('click', function() { showTab('bom'); });
 document.getElementById('homeGoHistoryBtn').addEventListener('click', function() { showTab('history'); });
 document.getElementById('homeGoDashboardBtn').addEventListener('click', function() { showTab('dashboard'); });
 
