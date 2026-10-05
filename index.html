@@ -1084,6 +1084,15 @@
         <span class="bulk-status-result" id="salesReqReportResult"></span>
       </div>
       <textarea id="salesReqReportText" readonly rows="14" style="width:100%;box-sizing:border-box;margin-top:10px;font-family:'IBM Plex Mono','Noto Sans Thai',monospace;font-size:12.5px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);"></textarea>
+
+      <h4 style="margin-top:18px;">สร้างข้อความ "รายการสินค้าที่มีในสต็อก" (พิมพ์ส่งเซลล์)</h4>
+      <p class="lede" style="margin:-6px 0 10px;font-size:12.5px;">เอาไว้บอกเซลล์ว่ารหัสไหนพร้อมส่งได้เลย — จัดกลุ่มตามชื่อเซลล์ แสดงเฉพาะรหัสที่ <b>สต็อกคงเหลือ ≥ จำนวนที่ขอ</b> เท่านั้น (รหัสที่สต็อกไม่พอจะไม่โชว์ในนี้เลย) ใช้ตัวเลือก "คำขอที่จะรวมในรายงาน"/"บรรทัดหัวรายงาน"/"แนบข้อมูลเพิ่ม" ชุดเดียวกับด้านบน</p>
+      <div class="standard-form-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="salesReqInStockBtn">สร้างข้อความ (มีในสต็อก)</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="salesReqInStockCopyBtn">คัดลอก</button>
+        <span class="bulk-status-result" id="salesReqInStockResult"></span>
+      </div>
+      <textarea id="salesReqInStockText" readonly rows="14" style="width:100%;box-sizing:border-box;margin-top:10px;font-family:'IBM Plex Mono','Noto Sans Thai',monospace;font-size:12.5px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);"></textarea>
     </div>
 
     <div id="salesReqListWrap" style="margin-top:14px;"></div>
@@ -5976,6 +5985,60 @@ function buildSalesRequestReportText(requests, rowsByCompany, headerLine, includ
   return head.join('\n') + '\n' + SEP + '\n' + blocks.join('\n' + SEP + '\n');
 }
 
+// ข้อความ "รายการสินค้าที่มีในสต็อก" — คนละจุดประสงค์กับ buildSalesRequestReportText ด้านบน (อันนั้นบอก
+// ว่า "ต้องสั่งไหม" ทุกคำขอ ส่วนอันนี้บอกเซลล์ว่า "รหัสไหนพร้อมส่งได้เลยตอนนี้" เอาไว้พิมพ์ส่งเซลล์ตรงๆ
+// เกณฑ์ผ่าน: สต็อกคงเหลือ >= จำนวนที่ขอ เท่านั้น — รหัสที่สต็อกไม่พอหรือไม่มีข้อมูลเทียบเลยจะไม่โชว์ในนี้
+// (ต่างจากรายงานเดิมที่ยังโชว์ทุกคำขอพร้อมเหตุผล) ตามที่ผู้ใช้ขอ (per user 2026-10-05)
+function buildSalesInStockReportText(requests, rowsByCompany, headerLine, includeExtras) {
+  if (!requests || requests.length === 0) return 'ไม่มีคำขอในสถานะที่เลือก';
+  const fmt = function(n) { return Number(n || 0).toLocaleString('th-TH'); };
+
+  const rowIndex = {};
+  Object.keys(rowsByCompany || {}).forEach(function(c) {
+    const m = new Map();
+    (rowsByCompany[c] || []).forEach(function(r) { m.set(r.sku, r); });
+    rowIndex[c] = m;
+  });
+  const effCompanies = {};
+  computeEffectiveStandards().forEach(function(s) { effCompanies[s.sku] = companiesOf(s); });
+  function lookup(sku) {
+    const companies = effCompanies[sku];
+    if (!companies) return null;
+    for (let i = 0; i < companies.length; i++) {
+      const m = rowIndex[companies[i]];
+      if (m && m.has(sku)) return m.get(sku);
+    }
+    return null;
+  }
+
+  const bySales = {};
+  requests.forEach(function(r) {
+    const n = r.salesperson || '(ไม่ระบุชื่อ)';
+    (bySales[n] = bySales[n] || []).push(r);
+  });
+  const names = Object.keys(bySales).sort(function(a, b) { return a.localeCompare(b, 'th'); });
+
+  const blocks = [];
+  names.forEach(function(name) {
+    const reqs = bySales[name].slice().sort(function(a, b) { return String(a.createdAt || '').localeCompare(String(b.createdAt || '')); });
+    const lines = [];
+    reqs.forEach(function(r) {
+      const row = lookup(r.sku);
+      if (!row || row.stock < r.qty) return; // สต็อกไม่พอ หรือยังไม่มีข้อมูลเทียบ -- ข้ามไปเลย ไม่โชว์
+      const noteText = (includeExtras && r.note) ? ' (หมายเหตุ: ' + r.note + ')' : '';
+      lines.push(r.sku + ' ขอจำนวน ' + fmt(r.qty) + ' / ในสต็อคเหลือ ' + fmt(row.stock) + noteText);
+    });
+    if (lines.length > 0) blocks.push(name + '\n' + lines.join('\n'));
+  });
+
+  if (blocks.length === 0) return 'ไม่มีรหัสไหนที่สต็อกคงเหลือพอกับจำนวนที่ขอเลย';
+
+  const SEP = '---------------------';
+  const head = ['รายการสินค้าที่มีในสต็อก', ''];
+  if (headerLine) head.push(headerLine);
+  return head.join('\n') + '\n' + SEP + '\n' + blocks.join('\n' + SEP + '\n');
+}
+
 function refreshSalesReqReportPanel() {
   const scopeSel = document.getElementById('salesReqReportScope');
   if (scopeSel && scopeSel.children.length === 0) {
@@ -6057,6 +6120,38 @@ document.getElementById('salesReqReportCopyBtn').addEventListener('click', funct
   const ta = document.getElementById('salesReqReportText');
   const text = ta.value;
   if (!text) { resultEl.textContent = 'ยังไม่มีข้อความ — กด "สร้างข้อความ" ก่อน'; return; }
+  function fallbackCopy() {
+    try { ta.select(); document.execCommand('copy'); resultEl.textContent = 'คัดลอกแล้ว'; }
+    catch (err) { resultEl.textContent = 'คัดลอกอัตโนมัติไม่ได้ — ลากเลือกข้อความในช่องแล้วกด Ctrl+C เอง'; }
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() { resultEl.textContent = 'คัดลอกแล้ว'; }).catch(fallbackCopy);
+  } else {
+    fallbackCopy();
+  }
+});
+
+document.getElementById('salesReqInStockBtn').addEventListener('click', function() {
+  const resultEl = document.getElementById('salesReqInStockResult');
+  if (!salesReqCache) { resultEl.textContent = 'ยังไม่ได้โหลดรายการคำขอ — เปิดแท็บนี้ใหม่หรือกด "รีเฟรช" ก่อน'; return; }
+  const scopeKey = document.getElementById('salesReqReportScope').value;
+  const scope = SALES_REQ_REPORT_SCOPES.find(function(sc) { return sc.key === scopeKey; }) || SALES_REQ_REPORT_SCOPES[0];
+  const reqs = salesReqCache.filter(function(r) { return !scope.statuses || scope.statuses.indexOf(normalizeSalesReqStatus(r.status)) !== -1; });
+  const headerLine = document.getElementById('salesReqReportHeader').value.trim();
+  const includeExtras = document.getElementById('salesReqReportExtras').checked;
+  resultEl.textContent = 'กำลังดึงข้อมูลสต็อก/WIP ล่าสุด...';
+  return fetchLatestSnapshots().then(function(saved) {
+    const merged = mergeReportRowSources(state.rowsCacheByCompany, saved);
+    document.getElementById('salesReqInStockText').value = buildSalesInStockReportText(reqs, merged.rowsByCompany, headerLine, includeExtras);
+    document.getElementById('salesReqReportCompaniesHint').textContent = describeReportSources(merged.sources);
+    resultEl.textContent = 'สร้างจาก ' + reqs.length.toLocaleString('th-TH') + ' คำขอแล้ว';
+  });
+});
+document.getElementById('salesReqInStockCopyBtn').addEventListener('click', function() {
+  const resultEl = document.getElementById('salesReqInStockResult');
+  const ta = document.getElementById('salesReqInStockText');
+  const text = ta.value;
+  if (!text) { resultEl.textContent = 'ยังไม่มีข้อความ — กด "สร้างข้อความ (มีในสต็อก)" ก่อน'; return; }
   function fallbackCopy() {
     try { ta.select(); document.execCommand('copy'); resultEl.textContent = 'คัดลอกแล้ว'; }
     catch (err) { resultEl.textContent = 'คัดลอกอัตโนมัติไม่ได้ — ลากเลือกข้อความในช่องแล้วกด Ctrl+C เอง'; }
